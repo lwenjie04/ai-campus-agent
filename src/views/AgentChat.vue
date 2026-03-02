@@ -92,6 +92,17 @@
                     @clear="clearMajor"
                   />
 
+                  <div class="demo-switch">
+                    <span class="demo-switch-label">演示模式</span>
+                    <el-switch
+                      v-model="demoModeEnabled"
+                      inline-prompt
+                      active-text="开"
+                      inactive-text="关"
+                      @change="onDemoModeChange"
+                    />
+                  </div>
+
                   <el-button text class="reset-btn" @click="resetChat">重置会话</el-button>
                 </div>
               </div>
@@ -130,6 +141,7 @@ const logoLoadFailed = ref(false)
 const schoolLogoSrc = '/branding/gdei-logo.png'
 const settingsExpanded = ref(false)
 const stopPlaySignal = ref(0)
+const demoModeEnabled = ref(true)
 
 const visibleMessages = computed(() => store.messages.filter((msg) => msg.role !== 'system'))
 
@@ -171,6 +183,7 @@ const syncFormFromStore = () => {
   selectedGrade.value = (store.userProfile.grade as GradeValue) || ''
   selectedMajor.value = store.userProfile.major || ''
   draftMajor.value = selectedMajor.value
+  demoModeEnabled.value = store.demoMode
 }
 
 const onRoleChange = (role: UserRole) => {
@@ -195,6 +208,10 @@ const commitMajorDraft = () => {
 const clearMajor = () => {
   draftMajor.value = ''
   commitMajorDraft()
+}
+
+const onDemoModeChange = (value: boolean) => {
+  store.setDemoMode(value)
 }
 
 const resetChat = () => {
@@ -454,6 +471,21 @@ onMounted(() => {
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.8);
   box-shadow: inset 0 0 0 1px rgba(46, 113, 53, 0.14) !important;
+}
+
+.demo-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.demo-switch-label {
+  font-size: 12px;
+  color: #1f6a39;
+  font-weight: 600;
 }
 
 .reset-btn {

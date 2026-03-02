@@ -10,6 +10,7 @@
         playsinline
         preload="metadata"
         :src="currentVideoSrc"
+        @loadeddata="onLoadedData"
         @ended="onEnded"
         @error="onError"
       />
@@ -30,12 +31,24 @@
 
       <div class="floor-line"></div>
       <div class="cue-chip">{{ cueText }}</div>
+
+      <div v-if="showDebug" class="debug-box">
+        <div>cue: {{ normalizedCue }}</div>
+        <div>src: {{ currentVideoSrc }}</div>
+        <div>readyState: {{ debugState.readyState }}</div>
+        <div>networkState: {{ debugState.networkState }}</div>
+        <div>paused: {{ debugState.paused }}</div>
+        <div>error: {{ debugState.error || '-' }}</div>
+        <div>lastAction: {{ debugState.lastAction || '-' }}</div>
+        <div>resourceChecked: {{ debugState.resourceChecked }}</div>
+        <div>missingVideos: {{ debugState.missingVideos.join(', ') || '-' }}</div>
+      </div>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { appConfig } from '@/config/app'
 import { requestBackendTts } from '@/api/tts'
 
@@ -58,11 +71,87 @@ const narrationAudioRef = ref<HTMLAudioElement | null>(null)
 const narrationToken = ref(0)
 const activeAudioUrl = ref('')
 
+const debugState = ref({
+  readyState: 0,
+  networkState: 0,
+  paused: true,
+  error: '',
+  lastAction: '',
+  resourceChecked: false,
+  missingVideos: [] as string[],
+})
+
 const normalizedCue = computed(() => (props.cueKey || 'idle').trim() || 'idle')
 const currentVideoSrc = computed(
   () => `${appConfig.digitalHumanVideoBasePath}/${normalizedCue.value}.mp4`,
 )
 const cueText = computed(() => `视频状态：${normalizedCue.value}`)
+const showDebug = computed(() => appConfig.videoDebug)
+
+const setDebugAction = (text: string) => {
+  debugState.value.lastAction = text
+}
+
+const syncVideoDebugState = () => {
+  const el = videoRef.value
+  if (!el) return
+  debugState.value.readyState = el.readyState
+  debugState.value.networkState = el.networkState
+  debugState.value.paused = el.paused
+  if (!el.error) {
+    debugState.value.error = ''
+    return
+  }
+  const codeMap: Record<number, string> = {
+    1: 'MEDIA_ERR_ABORTED',
+    2: 'MEDIA_ERR_NETWORK',
+    3: 'MEDIA_ERR_DECODE',
+    4: 'MEDIA_ERR_SRC_NOT_SUPPORTED',
+  }
+  debugState.value.error = codeMap[el.error.code] || `UNKNOWN(${el.error.code})`
+}
+
+const probeVideoByMetadata = (src: string, timeoutMs = 4000) =>
+  new Promise<boolean>((resolve) => {
+    const v = document.createElement('video')
+    let done = false
+    const finish = (ok: boolean) => {
+      if (done) return
+      done = true
+      v.src = ''
+      resolve(ok)
+    }
+    const timer = window.setTimeout(() => finish(false), timeoutMs)
+    v.preload = 'metadata'
+    v.muted = true
+    v.onloadedmetadata = () => {
+      window.clearTimeout(timer)
+      finish(true)
+    }
+    v.onerror = () => {
+      window.clearTimeout(timer)
+      finish(false)
+    }
+    v.src = src
+    v.load()
+  })
+
+const checkRequiredVideos = async () => {
+  const names = ['greeting', 'idle', 'teaching']
+  const missing: string[] = []
+  for (const name of names) {
+    const src = `${appConfig.digitalHumanVideoBasePath}/${name}.mp4`
+    const ok = await probeVideoByMetadata(src)
+    if (!ok) missing.push(`${name}.mp4`)
+  }
+  debugState.value.resourceChecked = true
+  debugState.value.missingVideos = missing
+  if (missing.length > 0) {
+    setDebugAction(`resource-missing: ${missing.join(', ')}`)
+  } else {
+    setDebugAction('resource-check-ok')
+  }
+}
 
 const stopNarration = () => {
   narrationToken.value += 1
@@ -93,7 +182,6 @@ const startNarrationWithBrowser = (text: string, token: number) => {
     emit('narration-ended')
     return
   }
-
   const utter = new SpeechSynthesisUtterance(text)
   utter.lang = 'zh-CN'
   utter.rate = 0.95
@@ -105,7 +193,6 @@ const startNarrationWithBrowser = (text: string, token: number) => {
   utter.onerror = () => {
     if (token === narrationToken.value) emit('narration-ended')
   }
-
   window.speechSynthesis.cancel()
   window.speechSynthesis.speak(utter)
 }
@@ -122,14 +209,11 @@ const startNarration = async (text: string) => {
   try {
     const blob = await requestBackendTts({ text: content })
     if (token !== narrationToken.value) return
-
     const audioUrl = URL.createObjectURL(blob)
     const audioEl = narrationAudioRef.value || new Audio()
     narrationAudioRef.value = audioEl
-
     if (activeAudioUrl.value) URL.revokeObjectURL(activeAudioUrl.value)
     activeAudioUrl.value = audioUrl
-
     audioEl.onended = () => {
       if (token === narrationToken.value) emit('narration-ended')
     }
@@ -140,9 +224,8 @@ const startNarration = async (text: string) => {
     await audioEl.play()
     return
   } catch {
-    // fallback
+    // fallback to browser tts
   }
-
   startNarrationWithBrowser(content, token)
 }
 
@@ -152,6 +235,7 @@ const playCurrentVideo = async () => {
 
   const el = videoRef.value
   if (!el) return
+  setDebugAction('playCurrentVideo')
 
   try {
     el.currentTime = 0
@@ -165,9 +249,10 @@ const playCurrentVideo = async () => {
       el.muted = false
       el.volume = 1
       await el.play()
+      syncVideoDebugState()
       return
     } catch {
-      // fallback to muted autoplay
+      setDebugAction('greeting-play-failed-fallback-muted')
     }
   }
 
@@ -175,23 +260,34 @@ const playCurrentVideo = async () => {
     el.muted = true
     el.volume = 1
     await el.play()
+    syncVideoDebugState()
   } catch {
-    // 自动播放受限时不直接显示占位，等待媒体错误事件做最终判定。
+    setDebugAction('muted-play-failed')
+    syncVideoDebugState()
   }
 }
 
 const stopVideo = () => {
   const el = videoRef.value
   if (!el) return
+  setDebugAction('stopVideo')
   el.pause()
   try {
     el.currentTime = 0
   } catch {
     // ignore
   }
+  syncVideoDebugState()
+}
+
+const onLoadedData = () => {
+  setDebugAction('loadeddata')
+  showPlaceholder.value = false
+  syncVideoDebugState()
 }
 
 const onEnded = async () => {
+  setDebugAction('ended')
   if (normalizedCue.value === 'greeting') {
     emit('request-idle')
     return
@@ -202,12 +298,12 @@ const onEnded = async () => {
 }
 
 const onError = () => {
-  // 欢迎视频加载失败时，直接切待机，避免首屏直接落到占位文案。
+  setDebugAction('error')
+  syncVideoDebugState()
   if (normalizedCue.value === 'greeting' || normalizedCue.value === 'teaching') {
     emit('request-idle')
     return
   }
-  // 待机视频也失败，才显示占位提示。
   showPlaceholder.value = true
 }
 
@@ -229,9 +325,7 @@ watch(
 watch(
   () => normalizedCue.value,
   (cue) => {
-    if (cue !== 'teaching') {
-      stopNarration()
-    }
+    if (cue !== 'teaching') stopNarration()
   },
 )
 
@@ -242,6 +336,10 @@ watch(
     stopNarration()
   },
 )
+
+onMounted(() => {
+  void checkRequiredVideos()
+})
 
 onBeforeUnmount(() => {
   stopVideo()
@@ -369,5 +467,21 @@ onBeforeUnmount(() => {
   color: #2f5c33;
   font-size: 11px;
   line-height: 1.2;
+}
+
+.debug-box {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  z-index: 3;
+  max-width: calc(100% - 20px);
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: #15321a;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(21, 50, 26, 0.2);
+  backdrop-filter: blur(4px);
 }
 </style>

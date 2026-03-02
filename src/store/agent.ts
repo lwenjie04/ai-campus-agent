@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import type { Message, MessageSource } from '@/types/agent'
 import { streamChat } from '@/api/llm'
+import { appConfig } from '@/config/app'
 
 const STORAGE_KEY = 'ai-campus-agent.session.v1'
 
@@ -11,6 +12,7 @@ type PersistedAgentSession = {
     major?: string
   }
   messages?: Message[]
+  demoMode?: boolean
 }
 
 const createMessage = (role: Message['role'], content: string, extra?: Partial<Message>): Message => ({
@@ -33,21 +35,22 @@ export const useAgentStore = defineStore('agent', {
       grade: '',
       major: '',
     },
-    videoCueKey: 'idle',
+    videoCueKey: 'idle' as 'greeting' | 'idle' | 'teaching',
     videoPlayTick: 0,
     narrationText: '',
     narrationTick: 0,
+    demoMode: appConfig.demoMode,
   }),
 
   actions: {
     persistSession() {
       if (!canUseStorage()) return
 
-      const payload = {
+      const payload: PersistedAgentSession = {
         userProfile: this.userProfile,
         messages: this.messages,
+        demoMode: this.demoMode,
       }
-
       localStorage.setItem(STORAGE_KEY, JSON.stringify(payload))
     },
 
@@ -76,6 +79,10 @@ export const useAgentStore = defineStore('agent', {
               ['system', 'user', 'assistant'].includes(msg.role),
           )
         }
+
+        if (typeof parsed.demoMode === 'boolean') {
+          this.demoMode = parsed.demoMode
+        }
       } catch {
         localStorage.removeItem(STORAGE_KEY)
       }
@@ -86,6 +93,11 @@ export const useAgentStore = defineStore('agent', {
         ...this.userProfile,
         ...profile,
       }
+      this.persistSession()
+    },
+
+    setDemoMode(enabled: boolean) {
+      this.demoMode = !!enabled
       this.persistSession()
     },
 
@@ -172,7 +184,6 @@ export const useAgentStore = defineStore('agent', {
       } else {
         this.messages = [createMessage('system', this.buildSystemPrompt())]
       }
-
       this.clearNarration()
       this.triggerVideoCue('greeting')
       this.persistSession()

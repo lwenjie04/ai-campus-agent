@@ -3,4 +3,6 @@ export const appConfig = {
   useMockChat: (import.meta.env.VITE_USE_MOCK_CHAT ?? 'false') === 'true',
   digitalHumanVideoBasePath: '/videos/digital-human',
   ttsAuthToken: import.meta.env.VITE_TTS_AUTH_TOKEN || '',
+  videoDebug: (import.meta.env.VITE_VIDEO_DEBUG ?? 'false') === 'true',
+  demoMode: (import.meta.env.VITE_DEMO_MODE ?? 'true') === 'true',
 } as const
