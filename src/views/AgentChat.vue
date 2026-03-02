@@ -20,7 +20,15 @@
         </header>
 
         <div class="stage-wrap">
-          <DigitalHumanPlayer :cue-key="store.videoCueKey" :play-signal="store.videoPlayTick" />
+          <DigitalHumanPlayer
+            :cue-key="store.videoCueKey"
+            :play-signal="store.videoPlayTick"
+            :narration-text="store.narrationText"
+            :narration-signal="store.narrationTick"
+            :stop-signal="stopPlaySignal"
+            @request-idle="onGreetingEnded"
+            @narration-ended="onNarrationEnded"
+          />
         </div>
       </section>
 
@@ -94,6 +102,10 @@
             <ChatWindow :messages="visibleMessages" :loading="store.loading" />
           </div>
 
+          <div class="chat-actions-bar">
+            <el-button class="stop-btn" size="small" @click="onStopPlayback">停止播放</el-button>
+          </div>
+
           <footer class="input-area">
             <InputBox :loading="store.loading" @send="store.sendMessage" />
           </footer>
@@ -117,12 +129,13 @@ const store = useAgentStore()
 const logoLoadFailed = ref(false)
 const schoolLogoSrc = '/branding/gdei-logo.png'
 const settingsExpanded = ref(false)
+const stopPlaySignal = ref(0)
 
 const visibleMessages = computed(() => store.messages.filter((msg) => msg.role !== 'system'))
 
 const selectedRole = ref<UserRole>('student')
 const selectedGrade = ref<GradeValue>('大三')
-const selectedMajor = ref('计算机科学与技术')
+const selectedMajor = ref('软件工程')
 const draftMajor = ref(selectedMajor.value)
 
 const roleOptions: Array<{ label: string; value: UserRole }> = [
@@ -174,7 +187,6 @@ const onGradeChange = (grade: GradeValue | undefined) => {
 const commitMajorDraft = () => {
   const next = draftMajor.value.trim()
   if (next === selectedMajor.value) return
-
   selectedMajor.value = next
   store.setUserProfile({ major: selectedMajor.value })
   store.refreshSystemPrompt()
@@ -189,6 +201,19 @@ const resetChat = () => {
   store.resetSession()
 }
 
+const onStopPlayback = () => {
+  store.stopNarrationPlayback()
+  stopPlaySignal.value += 1
+}
+
+const onGreetingEnded = () => {
+  store.onGreetingEnded()
+}
+
+const onNarrationEnded = () => {
+  store.onNarrationEnded()
+}
+
 onMounted(() => {
   store.hydrateSession()
   syncFormFromStore()
@@ -196,11 +221,9 @@ onMounted(() => {
   if (!store.userProfile.role) {
     store.setUserProfile({ role: selectedRole.value })
   }
-
   if (!store.userProfile.grade && selectedGrade.value) {
     store.setUserProfile({ grade: selectedGrade.value })
   }
-
   if (!store.userProfile.major && selectedMajor.value) {
     store.setUserProfile({ major: selectedMajor.value })
   }
@@ -384,11 +407,18 @@ onMounted(() => {
   color: rgba(37, 92, 49, 0.55);
 }
 
-.settings-btn {
+.settings-btn,
+.stop-btn {
   border-radius: 999px;
   border-color: rgba(46, 113, 53, 0.18);
   color: #1f6a39;
   background: rgba(255, 255, 255, 0.7);
+}
+
+.chat-actions-bar {
+  display: flex;
+  justify-content: flex-start;
+  padding: 0 4px;
 }
 
 .settings-panel {

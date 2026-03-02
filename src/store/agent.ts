@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { Message } from '@/types/agent'
+import type { Message, MessageSource } from '@/types/agent'
 import { streamChat } from '@/api/llm'
 
 const STORAGE_KEY = 'ai-campus-agent.session.v1'
@@ -35,6 +35,8 @@ export const useAgentStore = defineStore('agent', {
     },
     videoCueKey: 'idle',
     videoPlayTick: 0,
+    narrationText: '',
+    narrationTick: 0,
   }),
 
   actions: {
@@ -94,16 +96,16 @@ export const useAgentStore = defineStore('agent', {
         guest: '访客',
       }
 
-      return `你是广二师校园智能问答助手。
+      return `你是广东第二师范学院校园智能问答助手。
 当前用户信息：
 - 身份：${roleLabelMap[this.userProfile.role] || this.userProfile.role}
 - 专业：${this.userProfile.major || '未填写'}
 - 年级：${this.userProfile.grade || '未填写'}
 
 回答要求：
-1. 优先提供准确、清晰、步骤化的校园服务信息
-2. 信息不确定时明确说明，并提示用户去官方渠道核实
-3. 不编造校内政策、流程或时间安排`
+1. 优先提供准确、清晰、步骤化的校园服务信息。
+2. 信息不确定时明确说明，并提示用户去官方渠道核实。
+3. 不编造校内政策、流程或时间安排。`
     },
 
     refreshSystemPrompt() {
@@ -124,36 +126,63 @@ export const useAgentStore = defineStore('agent', {
       this.persistSession()
     },
 
+    triggerVideoCue(cue: 'greeting' | 'idle' | 'teaching') {
+      this.videoCueKey = cue
+      this.videoPlayTick += 1
+    },
+
+    clearNarration() {
+      this.narrationText = ''
+      this.narrationTick += 1
+    },
+
+    triggerNarration(text: string) {
+      const next = String(text || '').trim()
+      if (!next) {
+        this.clearNarration()
+        return
+      }
+      this.narrationText = next
+      this.narrationTick += 1
+    },
+
+    stopNarrationPlayback() {
+      this.clearNarration()
+      this.triggerVideoCue('idle')
+      this.persistSession()
+    },
+
+    onNarrationEnded() {
+      if (this.videoCueKey === 'teaching') {
+        this.triggerVideoCue('idle')
+        this.persistSession()
+      }
+    },
+
+    onGreetingEnded() {
+      if (this.videoCueKey === 'greeting') {
+        this.triggerVideoCue('idle')
+        this.persistSession()
+      }
+    },
+
     initAgent() {
       if (this.messages.length > 0) {
         this.refreshSystemPrompt()
-        return
+      } else {
+        this.messages = [createMessage('system', this.buildSystemPrompt())]
       }
 
-      this.messages = [createMessage('system', this.buildSystemPrompt())]
-      this.videoCueKey = 'idle'
-      this.videoPlayTick = 0
+      this.clearNarration()
+      this.triggerVideoCue('greeting')
       this.persistSession()
     },
 
     resetSession() {
       this.messages = [createMessage('system', this.buildSystemPrompt())]
-      this.videoCueKey = 'idle'
-      this.videoPlayTick = 0
+      this.clearNarration()
+      this.triggerVideoCue('greeting')
       this.persistSession()
-    },
-
-    resolveVideoCue(content: string) {
-      if (/你好|您好|hi|hello/i.test(content)) return 'greeting'
-      if (/课程|课表|选课|教务/.test(content)) return 'teaching'
-      if (/考试|补考|重修/.test(content)) return 'exam'
-      if (/宿舍|饭堂|食堂|图书馆|生活/.test(content)) return 'life'
-      return 'idle'
-    },
-
-    triggerVideoCue(cue?: string, replyContent?: string) {
-      this.videoCueKey = cue || this.resolveVideoCue(replyContent || '')
-      this.videoPlayTick += 1
     },
 
     async sendMessage(content: string) {
@@ -167,11 +196,12 @@ export const useAgentStore = defineStore('agent', {
       })
       this.messages.push(assistantPlaceholder)
       this.loading = true
+      this.clearNarration()
+      this.triggerVideoCue('idle')
       this.persistSession()
 
       let finalContent = ''
-      let finalVideoCue: string | undefined
-      let finalSources: any[] = []
+      let finalSources: MessageSource[] = []
       let finalRequestId: string | undefined
 
       try {
@@ -188,7 +218,6 @@ export const useAgentStore = defineStore('agent', {
           },
           onMeta: (meta) => {
             finalContent = meta.content || finalContent
-            finalVideoCue = meta.videoCue
             finalSources = meta.sources ?? []
           },
         })
@@ -196,13 +225,19 @@ export const useAgentStore = defineStore('agent', {
         const target = this.messages.find((msg) => msg.id === assistantPlaceholder.id)
         if (target) {
           target.content = (finalContent || target.content || '').trim()
-          target.videoCue = finalVideoCue
+          target.videoCue = 'teaching'
           target.sources = finalSources
           target.requestId = finalRequestId || target.requestId
           target.status = 'sent'
         }
 
-        this.triggerVideoCue(finalVideoCue, finalContent)
+        const narration = (finalContent || target?.content || '').trim()
+        if (narration) {
+          this.triggerVideoCue('teaching')
+          this.triggerNarration(narration)
+        } else {
+          this.triggerVideoCue('idle')
+        }
         this.persistSession()
       } catch (error: any) {
         const errorReply = '请求失败，请稍后重试。'
@@ -218,12 +253,12 @@ export const useAgentStore = defineStore('agent', {
             createMessage('assistant', errorReply, { status: 'error', sources: [], errorCode }),
           )
         }
-        this.triggerVideoCue(undefined, errorReply)
+        this.clearNarration()
+        this.triggerVideoCue('idle')
         this.persistSession()
       } finally {
         this.loading = false
       }
     },
-
   },
 })
