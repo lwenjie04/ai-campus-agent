@@ -8,6 +8,7 @@
         :class="{ 'is-visible': videoVisible, 'is-switching': videoSwitching }"
         autoplay
         muted
+        :loop="isIdleLoop"
         playsinline
         preload="metadata"
         :src="currentVideoSrc"
@@ -29,9 +30,6 @@
           </div>
         </div>
       </div>
-
-      <div class="floor-line"></div>
-      <div class="cue-chip">{{ cueText }}</div>
 
       <div v-if="showDebug" class="debug-box">
         <div>cue: {{ normalizedCue }}</div>
@@ -86,10 +84,10 @@ const debugState = ref({
 })
 
 const normalizedCue = computed(() => (props.cueKey || 'idle').trim() || 'idle')
+const isIdleLoop = computed(() => normalizedCue.value === 'idle')
 const currentVideoSrc = computed(
   () => `${appConfig.digitalHumanVideoBasePath}/${normalizedCue.value}.mp4`,
 )
-const cueText = computed(() => `视频状态：${normalizedCue.value}`)
 const showDebug = computed(() => appConfig.videoDebug)
 
 const setDebugAction = (text: string) => {
@@ -388,9 +386,9 @@ onBeforeUnmount(() => {
     radial-gradient(circle at 50% 6%, rgba(240, 251, 240, 0.55), transparent 40%),
     linear-gradient(
       180deg,
-      rgba(214, 238, 214, 0.92) 0%,
-      rgba(191, 229, 192, 0.94) 58%,
-      rgba(167, 220, 169, 0.95) 100%
+      rgba(206, 228, 206, 0.92) 0%,
+      rgba(184, 227, 185, 0.94) 58%,
+      rgba(146, 211, 148, 0.95) 100%
     );
 }
 
@@ -484,32 +482,6 @@ onBeforeUnmount(() => {
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.45);
   border: 1px solid rgba(255, 255, 255, 0.5);
-}
-
-.floor-line {
-  position: absolute;
-  left: 16%;
-  right: 16%;
-  bottom: 14%;
-  height: 4px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.85), rgba(58, 103, 61, 0.7));
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
-}
-
-.cue-chip {
-  position: absolute;
-  right: 10px;
-  top: 10px;
-  max-width: 70%;
-  padding: 5px 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(8px);
-  color: #2f5c33;
-  font-size: 11px;
-  line-height: 1.2;
 }
 
 .debug-box {
