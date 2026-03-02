@@ -5,6 +5,7 @@
         v-show="!showPlaceholder"
         ref="videoRef"
         class="video"
+        :class="{ 'is-visible': videoVisible, 'is-switching': videoSwitching }"
         autoplay
         muted
         playsinline
@@ -67,9 +68,12 @@ const emit = defineEmits<{
 
 const videoRef = ref<HTMLVideoElement | null>(null)
 const showPlaceholder = ref(false)
+const videoVisible = ref(false)
 const narrationAudioRef = ref<HTMLAudioElement | null>(null)
 const narrationToken = ref(0)
 const activeAudioUrl = ref('')
+const lastVideoSrc = ref('')
+const videoSwitching = ref(false)
 
 const debugState = ref({
   readyState: 0,
@@ -231,6 +235,12 @@ const startNarration = async (text: string) => {
 
 const playCurrentVideo = async () => {
   showPlaceholder.value = false
+  const nextSrc = currentVideoSrc.value
+  const isSourceChanged = nextSrc !== lastVideoSrc.value
+  if (isSourceChanged) {
+    videoVisible.value = false
+    videoSwitching.value = true
+  }
   await nextTick()
 
   const el = videoRef.value
@@ -249,6 +259,7 @@ const playCurrentVideo = async () => {
       el.muted = false
       el.volume = 1
       await el.play()
+      lastVideoSrc.value = nextSrc
       syncVideoDebugState()
       return
     } catch {
@@ -260,6 +271,7 @@ const playCurrentVideo = async () => {
     el.muted = true
     el.volume = 1
     await el.play()
+    lastVideoSrc.value = nextSrc
     syncVideoDebugState()
   } catch {
     setDebugAction('muted-play-failed')
@@ -283,6 +295,12 @@ const stopVideo = () => {
 const onLoadedData = () => {
   setDebugAction('loadeddata')
   showPlaceholder.value = false
+  requestAnimationFrame(() => {
+    videoVisible.value = true
+    window.setTimeout(() => {
+      videoSwitching.value = false
+    }, 460)
+  })
   syncVideoDebugState()
 }
 
@@ -293,7 +311,15 @@ const onEnded = async () => {
     return
   }
   if (normalizedCue.value === 'idle' || normalizedCue.value === 'teaching') {
-    await playCurrentVideo()
+    const el = videoRef.value
+    if (!el) return
+    try {
+      el.currentTime = 0
+      await el.play()
+      syncVideoDebugState()
+    } catch {
+      await playCurrentVideo()
+    }
   }
 }
 
@@ -304,6 +330,7 @@ const onError = () => {
     emit('request-idle')
     return
   }
+  videoVisible.value = false
   showPlaceholder.value = true
 }
 
@@ -358,12 +385,12 @@ onBeforeUnmount(() => {
   border-radius: 20px;
   overflow: hidden;
   background:
-    radial-gradient(circle at 50% 8%, rgba(255, 255, 255, 0.8), transparent 34%),
+    radial-gradient(circle at 50% 6%, rgba(240, 251, 240, 0.55), transparent 40%),
     linear-gradient(
       180deg,
-      rgba(236, 248, 234, 0.72) 0%,
-      rgba(166, 236, 156, 0.62) 65%,
-      rgba(99, 221, 85, 0.8) 100%
+      rgba(214, 238, 214, 0.92) 0%,
+      rgba(191, 229, 192, 0.94) 58%,
+      rgba(167, 220, 169, 0.95) 100%
     );
 }
 
@@ -374,6 +401,22 @@ onBeforeUnmount(() => {
   height: 100%;
   object-fit: contain;
   background: transparent;
+  opacity: 0;
+  transition: opacity 420ms ease-in-out;
+  transform: scale(1);
+  transform-origin: center;
+}
+
+.video.is-switching {
+  transform: scale(1.01);
+  transition:
+    opacity 420ms ease-in-out,
+    transform 460ms ease-out;
+}
+
+.video.is-visible {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .placeholder-stage {

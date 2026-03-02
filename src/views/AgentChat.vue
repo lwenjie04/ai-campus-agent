@@ -282,8 +282,10 @@ onMounted(() => {
   gap: 10px;
   padding: 10px;
   border-radius: 22px;
-  background: rgba(255, 255, 255, 0.22);
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  background:
+    radial-gradient(circle at 50% 6%, rgba(240, 251, 240, 0.5), transparent 40%),
+    linear-gradient(180deg, #d9edd9 0%, #c1e4c2 58%, #a9dbab 100%);
+  border: 1px solid rgba(181, 219, 182, 0.88);
   backdrop-filter: blur(8px);
 }
 
