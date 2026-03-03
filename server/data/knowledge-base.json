@@ -1,5 +1,251 @@
 [
   {
+    "id": "2025-2026-5b405f",
+    "title": "2025-2026学年第二学期开学首日教学检查情况通报",
+    "category": "general",
+    "sourceType": "official_notice",
+    "authority": "官网通知导出",
+    "updatedAt": "2026-03-03",
+    "keywords": [],
+    "url": "https://www.gdei.edu.cn/nw/2026/0303/c2066a104514/page.psp?ticket=ST-2896607-cMKqE0GM4SaQh3oJZISu",
+    "content": "2025-2026学年第二学期开学首日教学检查情况通报 发布者：吴开华发布时间：2026-03-03浏览次数：24",
+    "attachments": [],
+    "importedFrom": "D:/VUE3-GDES-Agent/ai-campus-agent/src/project-text/exports/2025-2026学年第二学期开学首日教学检查情况通报.json"
+  },
+  {
+    "id": "2025-2026-64d3ea",
+    "title": "2025-2026学年第二学期开学首日教学检查情况通报",
+    "category": "general",
+    "sourceType": "local_text",
+    "authority": "本地批量入库",
+    "updatedAt": "2026-03-03",
+    "keywords": [
+      "2025",
+      "general"
+    ],
+    "url": "",
+    "content": "{\"schemaVersion\":1,\"source\":{\"site\":\"https://www.gdei.edu.cn\",\"pageUrl\":\"https://www.gdei.edu.cn/nw/2026/0303/c2066a104514/page.psp?ticket=ST-2896607-cMKqE0GM4SaQh3oJZISu\",\"pageTitle\":\"2025-2026学年第二学期开学首日教学检查情况通报\",\"exportedAt\":\"2026-03-03T02:12:28.235Z\"},\"notice\":{\"title\":\"2025-2026学年第二学期开学首日教学检查情况通报\",\"publishedAt\":\"2026-03-03\",\"content\":\"2025-2026学年第二学期开学首日教学检查情况通报\\n发布者：吴开华发布时间：2026-03-03浏览次数：24\",\"attachments\":[]}}",
+    "downloadPath": "src/project-text/exports/2025-2026学年第二学期开学首日教学检查情况通报.json",
+    "downloadName": "2025-2026学年第二学期开学首日教学检查情况通报.json"
+  },
+  {
+    "id": "20261-4da2e6",
+    "title": "2026年第1期教学督导简报",
+    "category": "general",
+    "sourceType": "local_text",
+    "authority": "本地批量入库",
+    "updatedAt": "2026-03-03",
+    "keywords": [
+      "2026年第1期教学督导简报",
+      "general"
+    ],
+    "url": "",
+    "content": "{\"schemaVersion\":1,\"source\":{\"site\":\"https://www.gdei.edu.cn\",\"pageUrl\":\"https://www.gdei.edu.cn/nw/2026/0127/c2066a104351/page.psp\",\"pageTitle\":\"2026年第1期教学督导简报\",\"exportedAt\":\"2026-03-03T02:14:12.551Z\"},\"notice\":{\"title\":\"2026年第1期教学督导简报\",\"publishedAt\":\"2026-01-27\",\"content\":\"2026年第1期教学督导简报\\n发布者：吴开华发布时间：2026-01-27浏览次数：335\",\"attachments\":[]}}",
+    "downloadPath": "src/project-text/exports/2026年第1期教学督导简报.json",
+    "downloadName": "2026年第1期教学督导简报.json"
+  },
+  {
+    "id": "2025-2026-d1f119",
+    "title": "关于做好2025-2026学年第二学期本科学生学业预警工作的通知",
+    "category": "general",
+    "sourceType": "local_text",
+    "authority": "本地批量入库",
+    "updatedAt": "2026-03-03",
+    "keywords": [
+      "关于做好2025",
+      "general"
+    ],
+    "url": "",
+    "content": "{\"schemaVersion\":1,\"source\":{\"site\":\"https://www.gdei.edu.cn\",\"pageUrl\":\"https://www.gdei.edu.cn/nw/2026/0227/c2066a104447/page.psp\",\"pageTitle\":\"关于做好2025-2026学年第二学期本科学生学业预警工作的通知\",\"exportedAt\":\"2026-03-03T02:13:49.919Z\"},\"notice\":{\"title\":\"关于做好2025-2026学年第二学期本科学生学业预警工作的通知\",\"publishedAt\":\"2026-02-27\",\"content\":\"关于做好2025-2026学年第二学期本科学生学业预警工作的通知\\n发布者：吴开华发布时间：2026-02-27浏览次数：207\",\"attachments\":[]}}",
+    "downloadPath": "src/project-text/exports/关于做好2025-2026学年第二学期本科学生学业预警工作的通知.json",
+    "downloadName": "关于做好2025-2026学年第二学期本科学生学业预警工作的通知.json"
+  },
+  {
+    "id": "2026-9f1259",
+    "title": "关于做好2026年春季开学实验教学准备工作的通知",
+    "category": "general",
+    "sourceType": "local_text",
+    "authority": "本地批量入库",
+    "updatedAt": "2026-03-03",
+    "keywords": [
+      "general"
+    ],
+    "url": "",
+    "content": "{\"schemaVersion\":1,\"source\":{\"site\":\"https://www.gdei.edu.cn\",\"pageUrl\":\"https://www.gdei.edu.cn/nw/2026/0302/c2066a104499/page.psp\",\"pageTitle\":\"关于做好2026年春季开学实验教学准备工作的通知\",\"exportedAt\":\"2026-03-03T02:12:37.744Z\"},\"notice\":{\"title\":\"关于做好2026年春季开学实验教学准备工作的通知\",\"publishedAt\":\"2026-03-02\",\"content\":\"关于做好2026年春季开学实验教学准备工作的通知\\n发布者：吴开华发布时间：2026-03-02浏览次数：125\",\"attachments\":[]}}",
+    "downloadPath": "src/project-text/exports/关于做好2026年春季开学实验教学准备工作的通知.json",
+    "downloadName": "关于做好2026年春季开学实验教学准备工作的通知.json"
+  },
+  {
+    "id": "2026-000958",
+    "title": "关于开展2026年春季学期开学首日教学检查的通知",
+    "category": "general",
+    "sourceType": "local_text",
+    "authority": "本地批量入库",
+    "updatedAt": "2026-03-03",
+    "keywords": [
+      "general"
+    ],
+    "url": "",
+    "content": "{\"schemaVersion\":1,\"source\":{\"site\":\"https://www.gdei.edu.cn\",\"pageUrl\":\"https://www.gdei.edu.cn/nw/2026/0227/c2066a104460/page.psp\",\"pageTitle\":\"关于开展2026年春季学期开学首日教学检查的通知\",\"exportedAt\":\"2026-03-03T02:13:39.696Z\"},\"notice\":{\"title\":\"关于开展2026年春季学期开学首日教学检查的通知\",\"publishedAt\":\"2026-02-27\",\"content\":\"关于开展2026年春季学期开学首日教学检查的通知\\n发布者：吴开华发布时间：2026-02-27浏览次数：271\",\"attachments\":[]}}",
+    "downloadPath": "src/project-text/exports/关于开展2026年春季学期开学首日教学检查的通知.json",
+    "downloadName": "关于开展2026年春季学期开学首日教学检查的通知.json"
+  },
+  {
+    "id": "a94065b2-9c631e",
+    "title": "关于开展广东省学校国家安全教育教学指导委员会委员遴选工作的通知",
+    "category": "general",
+    "sourceType": "local_text",
+    "authority": "本地批量入库",
+    "updatedAt": "2026-03-03",
+    "keywords": [
+      "general"
+    ],
+    "url": "",
+    "content": "{\"schemaVersion\":1,\"source\":{\"site\":\"https://www.gdei.edu.cn\",\"pageUrl\":\"https://www.gdei.edu.cn/nw/2026/0126/c2066a104329/page.psp\",\"pageTitle\":\"关于开展广东省学校国家安全教育教学指导委员会委员遴选工作的通知\",\"exportedAt\":\"2026-03-03T02:14:26.168Z\"},\"notice\":{\"title\":\"关于开展广东省学校国家安全教育教学指导委员会委员遴选工作的通知\",\"publishedAt\":\"2026-01-27\",\"content\":\"关于开展广东省学校国家安全教育教学指导委员会委员遴选工作的通知\\n发布者：吴开华发布时间：2026-01-27浏览次数：158\\n附件2 广东省学校国家安全教育教学指导委员会委员推荐表.doc附件3 广东省学校国家安全教育教学指导委员会委员推荐人选汇总表.doc附件4 个人业绩证明材料佐证材料模板.doc\",\"attachments\":[{\"name\":\"附件2 广东省学校国家安全教育教学指导委员会委员推荐表.doc\",\"url\":\"https://www.gdei.edu.cn/_upload/article/files/8f/0e/b6d8f66442fe8be3e093328843b1/dd81c072-8be1-4d5d-9a7d-8ab2d83eb151.doc\"},{\"name\":\"附件3 广东省学校国家安全教育教学指导委员会委员推荐人选汇总表.doc\",\"url\":\"https://www.gdei.edu.cn/_upload/article/files/8f/0e/b6d8f66442fe8be3e093328843b1/e7e2cf53-6a3c-41bc-a002-4d564dd1a0ca.doc\"},{\"name\":\"附件4 个人业绩证明材料佐证材料模板.doc\",\"url\":\"https://www.gdei.edu.cn/_upload/article/files/8f/0e/b6d8f66442fe8be3e093328843b1/c5fec58e-7b8c-47b4-a639-5e0ef7ebd5ed.doc\"}]}}",
+    "downloadPath": "src/project-text/exports/关于开展广东省学校国家安全教育教学指导委员会委员遴选工作的通知.json",
+    "downloadName": "关于开展广东省学校国家安全教育教学指导委员会委员遴选工作的通知.json"
+  },
+  {
+    "id": "2026-f1d0a4",
+    "title": "关于组织参加2026年广东省大学生计算机设计大赛校内选拔赛的通知",
+    "category": "general",
+    "sourceType": "local_text",
+    "authority": "本地批量入库",
+    "updatedAt": "2026-03-03",
+    "keywords": [
+      "general"
+    ],
+    "url": "",
+    "content": "{\"schemaVersion\":1,\"source\":{\"site\":\"https://www.gdei.edu.cn\",\"pageUrl\":\"https://www.gdei.edu.cn/nw/2026/0302/c2066a104500/page.psp\",\"pageTitle\":\"关于组织参加2026年广东省大学生计算机设计大赛校内选拔赛的通知\",\"exportedAt\":\"2026-03-03T02:13:07.519Z\"},\"notice\":{\"title\":\"关于组织参加2026年广东省大学生计算机设计大赛校内选拔赛的通知\",\"publishedAt\":\"2026-03-02\",\"content\":\"关于组织参加2026年广东省大学生计算机设计大赛校内选拔赛的通知\\n发布者：吴开华发布时间：2026-03-02浏览次数：159\\n附件1：关于举办2026年广东省大学生计算机设计大赛的预通知.pdf附件2：2026广东省赛作品类别说明.docx附件3：2026参赛AI工具列表.docx附件4：参赛作品汇总表.xlsx附件5：参赛作者报名操作说明.pdf\",\"attachments\":[{\"name\":\"附件1：关于举办2026年广东省大学生计算机设计大赛的预通知.pdf\",\"url\":\"https://www.gdei.edu.cn/_upload/article/files/94/71/8c7b49a040ab9eda9551a205f5be/210f0d9c-d6b8-4f58-b430-4a21942c43dc.pdf\"},{\"name\":\"附件2：2026广东省赛作品类别说明.docx\",\"url\":\"https://www.gdei.edu.cn/_upload/article/files/94/71/8c7b49a040ab9eda9551a205f5be/b1cada89-8cc2-4a81-bc44-f4f1634100e5.docx\"},{\"name\":\"附件3：2026参赛AI工具列表.docx\",\"url\":\"https://www.gdei.edu.cn/_upload/article/files/94/71/8c7b49a040ab9eda9551a205f5be/924f6646-b434-444f-aed1-e71c258334fb.docx\"},{\"name\":\"附件4：参赛作品汇总表.xlsx\",\"url\":\"https://www.gdei.edu.cn/_upload/article/files/94/71/8c7b49a040ab9eda9551a205f5be/ea76ecc4-fdd6-435b-97bd-41a7ad6597af.xlsx\"},{\"name\":\"附件5：参赛作者报名操作说明.pdf\",\"url\":\"https://www.gdei.edu.cn/_upload/article/files/94/71/8c7b49a040ab9eda9551a205f5be/4c01d4ef-9bd2-45eb-ae1d-e8c6d7f0b243.pdf\"}]}}",
+    "downloadPath": "src/project-text/exports/关于组织参加2026年广东省大学生计算机设计大赛校内选拔赛的通知.json",
+    "downloadName": "关于组织参加2026年广东省大学生计算机设计大赛校内选拔赛的通知.json"
+  },
+  {
+    "id": "2026-bb9286",
+    "title": "关于组织开展2026年度文化和旅游部部级社科研究项目申报工作的通知",
+    "category": "general",
+    "sourceType": "local_text",
+    "authority": "本地批量入库",
+    "updatedAt": "2026-03-03",
+    "keywords": [
+      "general"
+    ],
+    "url": "",
+    "content": "{\"schemaVersion\":1,\"source\":{\"site\":\"https://www.gdei.edu.cn\",\"pageUrl\":\"https://www.gdei.edu.cn/nw/2026/0215/c2066a104426/page.psp\",\"pageTitle\":\"关于组织开展2026年度文化和旅游部部级社科研究项目申报工作的通知\",\"exportedAt\":\"2026-03-03T02:14:01.444Z\"},\"notice\":{\"title\":\"关于组织开展2026年度文化和旅游部部级社科研究项目申报工作的通知\",\"publishedAt\":\"2026-02-15\",\"content\":\"关于组织开展2026年度文化和旅游部部级社科研究项目申报工作的通知\\n发布者：华子荀发布时间：2026-02-15浏览次数：159\\n附件1.2026年文化和旅游部部级社科研究项目选题方向.doc\\n附件2.2026年文化和旅游部部级社科研究项目申报书.doc\\n附件3.文化和旅游部部级社科研究项目推荐汇总表.xls\\n附件4.文化和旅游部办公厅关于推荐2026年文化和旅游部部级社科研究项目的通知.pdf\",\"attachments\":[{\"name\":\"附件1.2026年文化和旅游部部级社科研究项目选题方向.doc\",\"url\":\"https://www.gdei.edu.cn/_upload/article/files/43/5f/467526e543cabdd5ebb57e127199/178f9cfd-2fed-4bf2-b808-840154ced646.doc\"},{\"name\":\"附件2.2026年文化和旅游部部级社科研究项目申报书.doc\",\"url\":\"https://www.gdei.edu.cn/_upload/article/files/43/5f/467526e543cabdd5ebb57e127199/50894418-5270-45c2-b278-d71f2019e83b.doc\"},{\"name\":\"附件3.文化和旅游部部级社科研究项目推荐汇总表.xls\",\"url\":\"https://www.gdei.edu.cn/_upload/article/files/43/5f/467526e543cabdd5ebb57e127199/04838e83-e5e6-452f-8447-286fda1dccee.xls\"},{\"name\":\"附件4.文化和旅游部办公厅关于推荐2026年文化和旅游部部级社科研究项目的通知.pdf\",\"url\":\"https://www.gdei.edu.cn/_upload/article/files/43/5f/467526e543cabdd5ebb57e127199/5816c0cf-1871-4058-b4b3-b7c118dd2658.pdf\"}]}}",
+    "downloadPath": "src/project-text/exports/关于组织开展2026年度文化和旅游部部级社科研究项目申报工作的通知.json",
+    "downloadName": "关于组织开展2026年度文化和旅游部部级社科研究项目申报工作的通知.json"
+  },
+  {
+    "id": "92b28e32-9a9c2e",
+    "title": "关于遴选推荐第六届广东省高校教师教学创新大赛评审专家的通知",
+    "category": "general",
+    "sourceType": "local_text",
+    "authority": "本地批量入库",
+    "updatedAt": "2026-03-03",
+    "keywords": [
+      "general"
+    ],
+    "url": "",
+    "content": "{\"schemaVersion\":1,\"source\":{\"site\":\"https://www.gdei.edu.cn\",\"pageUrl\":\"https://www.gdei.edu.cn/nw/2026/0228/c2066a104477/page.psp\",\"pageTitle\":\"关于遴选推荐第六届广东省高校教师教学创新大赛评审专家的通知\",\"exportedAt\":\"2026-03-03T02:13:24.151Z\"},\"notice\":{\"title\":\"关于遴选推荐第六届广东省高校教师教学创新大赛评审专家的通知\",\"publishedAt\":\"2026-02-28\",\"content\":\"关于遴选推荐第六届广东省高校教师教学创新大赛评审专家的通知\\n发布者：吴开华发布时间：2026-02-28浏览次数：179\\n附件1.第六届广东省高校教师教学创新大赛评审专家信息表.docx附件2.第六届广东省高校教师教学创新大赛评审专家推荐表.docx\",\"attachments\":[{\"name\":\"附件1.第六届广东省高校教师教学创新大赛评审专家信息表.docx\",\"url\":\"https://www.gdei.edu.cn/_upload/article/files/0b/bb/b5f567494e48ba188b162e02f070/e3871732-cd55-46d0-8295-eda0a2565a9d.docx\"},{\"name\":\"附件2.第六届广东省高校教师教学创新大赛评审专家推荐表.docx\",\"url\":\"https://www.gdei.edu.cn/_upload/article/files/0b/bb/b5f567494e48ba188b162e02f070/a5351c5e-7fbe-4381-b9fc-7fca4a419602.docx\"}]}}",
+    "downloadPath": "src/project-text/exports/关于遴选推荐第六届广东省高校教师教学创新大赛评审专家的通知.json",
+    "downloadName": "关于遴选推荐第六届广东省高校教师教学创新大赛评审专家的通知.json"
+  },
+  {
+    "id": "2026-b1fd43",
+    "title": "关于做好2026年春季开学实验教学准备工作的通知",
+    "category": "general",
+    "sourceType": "official_notice",
+    "authority": "官网通知导出",
+    "updatedAt": "2026-03-02",
+    "keywords": [],
+    "url": "https://www.gdei.edu.cn/nw/2026/0302/c2066a104499/page.psp",
+    "content": "关于做好2026年春季开学实验教学准备工作的通知 发布者：吴开华发布时间：2026-03-02浏览次数：125",
+    "attachments": [],
+    "importedFrom": "D:/VUE3-GDES-Agent/ai-campus-agent/src/project-text/exports/关于做好2026年春季开学实验教学准备工作的通知.json"
+  },
+  {
+    "id": "2026-26bf38",
+    "title": "关于组织参加2026年广东省大学生计算机设计大赛校内选拔赛的通知",
+    "category": "general",
+    "sourceType": "official_notice",
+    "authority": "官网通知导出",
+    "updatedAt": "2026-03-02",
+    "keywords": [],
+    "url": "https://www.gdei.edu.cn/nw/2026/0302/c2066a104500/page.psp",
+    "content": "关于组织参加2026年广东省大学生计算机设计大赛校内选拔赛的通知 发布者：吴开华发布时间：2026-03-02浏览次数：159 附件1：关于举办2026年广东省大学生计算机设计大赛的预通知.pdf附件2：2026广东省赛作品类别说明.docx附件3：2026参赛AI工具列表.docx附件4：参赛作品汇总表.xlsx附件5：参赛作者报名操作说明.pdf",
+    "attachments": [
+      {
+        "name": "附件1：关于举办2026年广东省大学生计算机设计大赛的预通知.pdf",
+        "url": "https://www.gdei.edu.cn/_upload/article/files/94/71/8c7b49a040ab9eda9551a205f5be/210f0d9c-d6b8-4f58-b430-4a21942c43dc.pdf"
+      },
+      {
+        "name": "附件2：2026广东省赛作品类别说明.docx",
+        "url": "https://www.gdei.edu.cn/_upload/article/files/94/71/8c7b49a040ab9eda9551a205f5be/b1cada89-8cc2-4a81-bc44-f4f1634100e5.docx"
+      },
+      {
+        "name": "附件3：2026参赛AI工具列表.docx",
+        "url": "https://www.gdei.edu.cn/_upload/article/files/94/71/8c7b49a040ab9eda9551a205f5be/924f6646-b434-444f-aed1-e71c258334fb.docx"
+      },
+      {
+        "name": "附件4：参赛作品汇总表.xlsx",
+        "url": "https://www.gdei.edu.cn/_upload/article/files/94/71/8c7b49a040ab9eda9551a205f5be/ea76ecc4-fdd6-435b-97bd-41a7ad6597af.xlsx"
+      },
+      {
+        "name": "附件5：参赛作者报名操作说明.pdf",
+        "url": "https://www.gdei.edu.cn/_upload/article/files/94/71/8c7b49a040ab9eda9551a205f5be/4c01d4ef-9bd2-45eb-ae1d-e8c6d7f0b243.pdf"
+      }
+    ],
+    "importedFrom": "D:/VUE3-GDES-Agent/ai-campus-agent/src/project-text/exports/关于组织参加2026年广东省大学生计算机设计大赛校内选拔赛的通知.json"
+  },
+  {
+    "id": "92b28e-b28921",
+    "title": "关于遴选推荐第六届广东省高校教师教学创新大赛评审专家的通知",
+    "category": "general",
+    "sourceType": "official_notice",
+    "authority": "官网通知导出",
+    "updatedAt": "2026-02-28",
+    "keywords": [],
+    "url": "https://www.gdei.edu.cn/nw/2026/0228/c2066a104477/page.psp",
+    "content": "关于遴选推荐第六届广东省高校教师教学创新大赛评审专家的通知 发布者：吴开华发布时间：2026-02-28浏览次数：179 附件1.第六届广东省高校教师教学创新大赛评审专家信息表.docx附件2.第六届广东省高校教师教学创新大赛评审专家推荐表.docx",
+    "attachments": [
+      {
+        "name": "附件1.第六届广东省高校教师教学创新大赛评审专家信息表.docx",
+        "url": "https://www.gdei.edu.cn/_upload/article/files/0b/bb/b5f567494e48ba188b162e02f070/e3871732-cd55-46d0-8295-eda0a2565a9d.docx"
+      },
+      {
+        "name": "附件2.第六届广东省高校教师教学创新大赛评审专家推荐表.docx",
+        "url": "https://www.gdei.edu.cn/_upload/article/files/0b/bb/b5f567494e48ba188b162e02f070/a5351c5e-7fbe-4381-b9fc-7fca4a419602.docx"
+      }
+    ],
+    "importedFrom": "D:/VUE3-GDES-Agent/ai-campus-agent/src/project-text/exports/关于遴选推荐第六届广东省高校教师教学创新大赛评审专家的通知.json"
+  },
+  {
+    "id": "2025-2026-33311c",
+    "title": "关于做好2025-2026学年第二学期本科学生学业预警工作的通知",
+    "category": "general",
+    "sourceType": "official_notice",
+    "authority": "官网通知导出",
+    "updatedAt": "2026-02-27",
+    "keywords": [],
+    "url": "https://www.gdei.edu.cn/nw/2026/0227/c2066a104447/page.psp",
+    "content": "关于做好2025-2026学年第二学期本科学生学业预警工作的通知 发布者：吴开华发布时间：2026-02-27浏览次数：207",
+    "attachments": [],
+    "importedFrom": "D:/VUE3-GDES-Agent/ai-campus-agent/src/project-text/exports/关于做好2025-2026学年第二学期本科学生学业预警工作的通知.json"
+  },
+  {
+    "id": "2026-b70d67",
+    "title": "关于开展2026年春季学期开学首日教学检查的通知",
+    "category": "general",
+    "sourceType": "official_notice",
+    "authority": "官网通知导出",
+    "updatedAt": "2026-02-27",
+    "keywords": [],
+    "url": "https://www.gdei.edu.cn/nw/2026/0227/c2066a104460/page.psp",
+    "content": "关于开展2026年春季学期开学首日教学检查的通知 发布者：吴开华发布时间：2026-02-27浏览次数：271",
+    "attachments": [],
+    "importedFrom": "D:/VUE3-GDES-Agent/ai-campus-agent/src/project-text/exports/关于开展2026年春季学期开学首日教学检查的通知.json"
+  },
+  {
     "id": "2025-2026-36da70",
     "title": "关于2025-2026学年第二学期两校区交通车运行时间安排的通知",
     "category": "teaching",
@@ -14,6 +260,209 @@
     "content": "关于2025-2026学年第二学期两校区交通车运行时间安排的通知 发布者：叶鹏晖发布时间：2026-02-25浏览次数：31 各位教职工： 根据《关于2026年寒假放假安排的通知》以及学校2025-2026学年第二学期校历安排，现将2026年春季开学两校区交通车运行时间安排如下： 一、2月27日至2月28日交通车运行时间： 日期运行区间乘车地点发车时间 日期 运行区间 乘车地点 发车时间 2月27日至2月28日海珠—花都海珠综合楼下8:00 2月27日 至 2月28日 海珠—花都 海珠综合楼下 8:00 12:30 12:30 花都—海珠花都候车亭12:30 花都—海珠 花都候车亭 12:30 17:15 17:15 二、第一周至第十七周（3月2日起）交通车运行时间： 日期运行区间乘车地点发车时间 日期 运行区间 乘车地点 发车时间 星期一至星期五海珠—花都海珠综合楼下7:15 星期一 至 星期五 海珠—花都 海珠综合楼下 7:15 8:00 8:00 12:30 12:30 16:30 16:30 花都—海珠花都候车亭12:30 花都—海珠 花都候车亭 12:30 17:15 17:15 20:20 20:20 说明： 1.请需要乘坐交通车的教职工，至少提前一天登录\"二师校园卡\"小程序进行校车预订。无预约车票的教职工，不得乘坐交通车。预约交通车成功后，教职工不乘车也不取消累计三次将列入爽约\"黑名单\"，系统自动锁定一周预约功能，一周内将无法操作预约系统。 2.总务部每天安排专人查看乘车预约系统，并根据当天交通车预约数据安排次日交通车班次；若教职工于17:30后预约次日交通车的，则按剩余车票数量预约，约满无票则需自行解决乘车问题。 3.考试周将根据教务部安排的考试时间另行发布交通车运行时间通知。 总务部 2026年2月25日",
     "attachments": [],
     "importedFrom": "D:/VUE3-GDES-Agent/ai-campus-agent/src/project-text/exports/关于2025-2026学年第二学期两校区交通车运行时间安排的通知.json"
+  },
+  {
+    "id": "2025-2026-6b1574",
+    "title": "关于2025-2026学年第二学期两校区交通车运行时间安排的通知",
+    "category": "general",
+    "sourceType": "local_text",
+    "authority": "本地批量入库",
+    "updatedAt": "2026-02-25",
+    "keywords": [
+      "关于2025",
+      "general"
+    ],
+    "url": "",
+    "content": "{\"schemaVersion\":1,\"source\":{\"site\":\"https://www.gdei.edu.cn\",\"pageUrl\":\"https://www.gdei.edu.cn/nw/2026/0225/c1673a104437/page.psp\",\"pageTitle\":\"关于2025-2026学年第二学期两校区交通车运行时间安排的通知\",\"exportedAt\":\"2026-02-25T18:32:00.610Z\"},\"notice\":{\"title\":\"关于2025-2026学年第二学期两校区交通车运行时间安排的通知\",\"publishedAt\":\"2026-02-25\",\"content\":\"关于2025-2026学年第二学期两校区交通车运行时间安排的通知\\n发布者：叶鹏晖发布时间：2026-02-25浏览次数：31\\n各位教职工：\\n根据《关于2026年寒假放假安排的通知》以及学校2025-2026学年第二学期校历安排，现将2026年春季开学两校区交通车运行时间安排如下：\\n一、2月27日至2月28日交通车运行时间：\\n日期运行区间乘车地点发车时间\\n日期\\n运行区间\\n乘车地点\\n发车时间\\n2月27日至2月28日海珠—花都海珠综合楼下8:00\\n2月27日\\n至\\n2月28日\\n海珠—花都\\n海珠综合楼下\\n8:00\\n12:30\\n12:30\\n花都—海珠花都候车亭12:30\\n花都—海珠\\n花都候车亭\\n12:30\\n17:15\\n17:15\\n二、第一周至第十七周（3月2日起）交通车运行时间：\\n日期运行区间乘车地点发车时间\\n日期\\n运行区间\\n乘车地点\\n发车时间\\n星期一至星期五海珠—花都海珠综合楼下7:15\\n星期一\\n至\\n星期五\\n海珠—花都\\n海珠综合楼下\\n7:15\\n8:00\\n8:00\\n12:30\\n12:30\\n16:30\\n16:30\\n花都—海珠花都候车亭12:30\\n花都—海珠\\n花都候车亭\\n12:30\\n17:15\\n17:15\\n20:20\\n20:20\\n说明：\\n1.请需要乘坐交通车的教职工，至少提前一天登录\\\"二师校园卡\\\"小程序进行校车预订。无预约车票的教职工，不得乘坐交通车。预约交通车成功后，教职工不乘车也不取消累计三次将列入爽约\\\"黑名单\\\"，系统自动锁定一周预约功能，一周内将无法操作预约系统。\\n2.总务部每天安排专人查看乘车预约系统，并根据当天交通车预约数据安排次日交通车班次；若教职工于17:30后预约次日交通车的，则按剩余车票数量预约，约满无票则需自行解决乘车问题。\\n3.考试周将根据教务部安排的考试时间另行发布交通车运行时间通知。\\n总务部\\n2026年2月25日\",\"attachments\":[]}}",
+    "downloadPath": "src/project-text/exports/关于2025-2026学年第二学期两校区交通车运行时间安排的通知.json",
+    "downloadName": "关于2025-2026学年第二学期两校区交通车运行时间安排的通知.json"
+  },
+  {
+    "id": "2025-8b96b4",
+    "title": "关于2025年普通本科生转专业名单的公示",
+    "category": "teaching",
+    "sourceType": "local_text",
+    "authority": "本地批量入库",
+    "updatedAt": "2026-02-25",
+    "keywords": [
+      "转专业",
+      "关于2025年普通本科生转专业名单的公示",
+      "teaching"
+    ],
+    "url": "",
+    "content": "{\"schemaVersion\":1,\"source\":{\"site\":\"https://www.gdei.edu.cn\",\"pageUrl\":\"https://www.gdei.edu.cn/nw/2026/0115/c2066a103933/page.psp\",\"pageTitle\":\"关于2025年普通本科生转专业名单的公示\",\"exportedAt\":\"2026-02-25T18:37:36.203Z\"},\"notice\":{\"title\":\"关于2025年普通本科生转专业名单的公示\",\"publishedAt\":\"2026-01-15\",\"content\":\"关于2025年普通本科生转专业名单的公示\\n发布者：吴开华发布时间：2026-01-15浏览次数：1634\",\"attachments\":[{\"name\":\"附件：2025年普通本科生转专业名单.xlsx\",\"url\":\"https://www.gdei.edu.cn/_upload/article/files/f1/32/97c4b7ac43d2a601f78cad7a0c71/af524f09-13b3-4003-ac0f-dcc8cb9f78a9.xlsx\"}]}}",
+    "downloadPath": "src/project-text/exports/关于2025年普通本科生转专业名单的公示.json",
+    "downloadName": "关于2025年普通本科生转专业名单的公示.json"
+  },
+  {
+    "id": "2026-dbf019",
+    "title": "关于2026年寒假学生宿舍区封闭管理的通知",
+    "category": "life",
+    "sourceType": "local_text",
+    "authority": "后勤服务",
+    "updatedAt": "2026-02-25",
+    "keywords": [
+      "宿舍",
+      "life"
+    ],
+    "url": "",
+    "content": "{\"schemaVersion\":1,\"source\":{\"site\":\"https://www.gdei.edu.cn\",\"pageUrl\":\"https://www.gdei.edu.cn/nw/2026/0122/c1674a104134/page.psp\",\"pageTitle\":\"关于2026年寒假学生宿舍区封闭管理的通知\",\"exportedAt\":\"2026-02-25T18:35:42.515Z\"},\"notice\":{\"title\":\"关于2026年寒假学生宿舍区封闭管理的通知\",\"publishedAt\":\"2026-01-22\",\"content\":\"关于2026年寒假学生宿舍区封闭管理的通知\\n发布者：叶鹏晖发布时间：2026-01-22浏览次数：361\\n各位师生：\\n根据学校校历安排，学校2026年寒假学生放假时间为2026年1月 24日至2月27日。今年寒假期间，学生宿舍区维修检修项目比较多。为做好学生宿舍区各项维修和设备设施检修工作，迎接新学期的到来，学生宿舍区将于 2026年1月 27日下午5点起进行封闭管理，关闭首层铁门及楼宇电梯和楼梯门，并实行断水、断电处理。学生需在封楼前离开宿舍（请同学们放假离开宿舍之前收好衣服，以免被风吹走），封闭管理期间学生不得进入学生宿舍区，学生宿舍区新的开放时间为2026年2月27日。\\n祝同学们度过一个愉快的假期，特此通知!\\n总务部\\n2026年1月22日\",\"attachments\":[]}}",
+    "downloadPath": "src/project-text/exports/关于2026年寒假学生宿舍区封闭管理的通知.json",
+    "downloadName": "关于2026年寒假学生宿舍区封闭管理的通知.json"
+  },
+  {
+    "id": "2026-4a5d54",
+    "title": "关于公布2026年度校级大学生创新创业训练计划项目立项结果的通知",
+    "category": "general",
+    "sourceType": "local_text",
+    "authority": "本地批量入库",
+    "updatedAt": "2026-02-25",
+    "keywords": [
+      "general"
+    ],
+    "url": "",
+    "content": "{\"schemaVersion\":1,\"source\":{\"site\":\"https://www.gdei.edu.cn\",\"pageUrl\":\"https://www.gdei.edu.cn/nw/2026/0115/c2066a103954/page.psp\",\"pageTitle\":\"关于公布2026年度校级大学生创新创业训练计划项目立项结果的通知\",\"exportedAt\":\"2026-02-25T18:37:02.045Z\"},\"notice\":{\"title\":\"关于公布2026年度校级大学生创新创业训练计划项目立项结果的通知\",\"publishedAt\":\"2026-01-15\",\"content\":\"关于公布2026年度校级大学生创新创业训练计划项目立项结果的通知\\n发布者：吴开华发布时间：2026-01-15浏览次数：418\",\"attachments\":[]}}",
+    "downloadPath": "src/project-text/exports/关于公布2026年度校级大学生创新创业训练计划项目立项结果的通知.json",
+    "downloadName": "关于公布2026年度校级大学生创新创业训练计划项目立项结果的通知.json"
+  },
+  {
+    "id": "2025-13e792",
+    "title": "关于开展2025年学生竞赛奖学金申请和评审工作的通知",
+    "category": "scholarship",
+    "sourceType": "local_text",
+    "authority": "本地批量入库",
+    "updatedAt": "2026-02-25",
+    "keywords": [
+      "竞赛奖学金",
+      "奖学金",
+      "scholarship"
+    ],
+    "url": "",
+    "content": "{\"schemaVersion\":1,\"source\":{\"site\":\"https://www.gdei.edu.cn\",\"pageUrl\":\"https://www.gdei.edu.cn/nw/2026/0115/c1670a103955/page.psp\",\"pageTitle\":\"关于开展2025年学生竞赛奖学金申请和评审工作的通知\",\"exportedAt\":\"2026-02-25T18:37:15.024Z\"},\"notice\":{\"title\":\"关于开展2025年学生竞赛奖学金申请和评审工作的通知\",\"publishedAt\":\"2026-01-15\",\"content\":\"关于开展2025年学生竞赛奖学金申请和评审工作的通知\\n发布者：徐志林发布时间：2026-01-15浏览次数：454\",\"attachments\":[{\"name\":\"附件.zip\",\"url\":\"https://www.gdei.edu.cn/_upload/article/files/2d/85/bc20e1d442369f26b983becd028a/62984423-d8d4-48ff-997f-09e6f88c889a.zip\"}]}}",
+    "downloadPath": "src/project-text/exports/关于开展2025年学生竞赛奖学金申请和评审工作的通知.json",
+    "downloadName": "关于开展2025年学生竞赛奖学金申请和评审工作的通知.json"
+  },
+  {
+    "id": "954817f2-528b78",
+    "title": "关于开展学校第二届“花海青年”优秀志愿服务评选活动的通知",
+    "category": "general",
+    "sourceType": "local_text",
+    "authority": "本地批量入库",
+    "updatedAt": "2026-02-25",
+    "keywords": [
+      "关于开展学校第二届",
+      "花海青年",
+      "优秀志愿服务评选活动的通知",
+      "general"
+    ],
+    "url": "",
+    "content": "{\"schemaVersion\":1,\"source\":{\"site\":\"https://www.gdei.edu.cn\",\"pageUrl\":\"https://www.gdei.edu.cn/nw/2026/0116/c2068a103965/page.psp\",\"pageTitle\":\"关于开展学校第二届“花海青年”优秀志愿服务评选活动的通知\",\"exportedAt\":\"2026-02-25T18:36:51.879Z\"},\"notice\":{\"title\":\"关于开展学校第二届“花海青年”优秀志愿服务评选活动的通知\",\"publishedAt\":\"2026-01-16\",\"content\":\"关于开展学校第二届“花海青年”优秀志愿服务评选活动的通知\\n发布者：刘黎莉发布时间：2026-01-16浏览次数：761\\n附件2 星级志愿者认证个人申报表.docx\\n附件3 优秀志愿服务队申报表.docx\\n附件4 优秀志愿服务项目申报表 .doc\\n附件5 志愿服务时长截图操作.docx\",\"attachments\":[{\"name\":\"附件1 广东第二师范学院 “花海青年”优秀志愿服务评选汇总表.docx\",\"url\":\"https://www.gdei.edu.cn/_upload/article/files/93/41/c296702a4adb9ba77de8a3689f03/16eba8e1-126b-4e3f-863a-4a3b57f4b534.docx\"},{\"name\":\"附件2 星级志愿者认证个人申报表.docx\",\"url\":\"https://www.gdei.edu.cn/_upload/article/files/93/41/c296702a4adb9ba77de8a3689f03/16da9674-224c-404b-89fb-9571ea11dab7.docx\"},{\"name\":\"附件3 优秀志愿服务队申报表.docx\",\"url\":\"https://www.gdei.edu.cn/_upload/article/files/93/41/c296702a4adb9ba77de8a3689f03/81331243-f5e3-44e1-a48a-c1f44e4654b1.docx\"},{\"name\":\"附件4 优秀志愿服务项目申报表 .doc\",\"url\":\"https://www.gdei.edu.cn/_upload/article/files/93/41/c296702a4adb9ba77de8a3689f03/eca924dd-b25f-413b-b98d-c926b83eddc2.doc\"},{\"name\":\"附件5 志愿服务时长截图操作.docx\",\"url\":\"https://www.gdei.edu.cn/_upload/article/files/93/41/c296702a4adb9ba77de8a3689f03/ce9bfd61-d9fa-4fc4-b657-cfc0fcf2a93c.docx\"}]}}",
+    "downloadPath": "src/project-text/exports/关于开展学校第二届“花海青年”优秀志愿服务评选活动的通知.json",
+    "downloadName": "关于开展学校第二届“花海青年”优秀志愿服务评选活动的通知.json"
+  },
+  {
+    "id": "2026-bcc095",
+    "title": "关于开展广东第二师范学院2026年提案大赛的通知",
+    "category": "general",
+    "sourceType": "local_text",
+    "authority": "本地批量入库",
+    "updatedAt": "2026-02-25",
+    "keywords": [
+      "general"
+    ],
+    "url": "",
+    "content": "{\"schemaVersion\":1,\"source\":{\"site\":\"https://www.gdei.edu.cn\",\"pageUrl\":\"https://www.gdei.edu.cn/nw/2026/0121/c1668a104121/page.psp\",\"pageTitle\":\"关于开展广东第二师范学院2026年提案大赛的通知\",\"exportedAt\":\"2026-02-25T18:35:59.767Z\"},\"notice\":{\"title\":\"关于开展广东第二师范学院2026年提案大赛的通知\",\"publishedAt\":\"2026-01-21\",\"content\":\"关于开展广东第二师范学院2026年提案大赛的通知\\n发布者：刘黎莉发布时间：2026-01-21浏览次数：174\\n附件1.广东第二师范学院提案大赛提案表.docx\\n附件2.广东第二师范学院提案大赛报名表.docx\\n附件3.广东第二师范学院提案大赛汇总表.docx\\n附件4.广东第二师范学院提案大赛评审评分细则.docx\",\"attachments\":[{\"name\":\"附件1.广东第二师范学院提案大赛提案表.docx\",\"url\":\"https://www.gdei.edu.cn/_upload/article/files/22/0d/68e47dd948e9937963d4f0056418/e1648f9a-4f4c-4daa-9228-17be3a581091.docx\"},{\"name\":\"附件2.广东第二师范学院提案大赛报名表.docx\",\"url\":\"https://www.gdei.edu.cn/_upload/article/files/22/0d/68e47dd948e9937963d4f0056418/e4f9c89a-8484-4e9d-a488-01c26890eed3.docx\"},{\"name\":\"附件3.广东第二师范学院提案大赛汇总表.docx\",\"url\":\"https://www.gdei.edu.cn/_upload/article/files/22/0d/68e47dd948e9937963d4f0056418/4a1c9cf4-fd1d-4852-a74a-c0f85e82335c.docx\"},{\"name\":\"附件4.广东第二师范学院提案大赛评审评分细则.docx\",\"url\":\"https://www.gdei.edu.cn/_upload/article/files/22/0d/68e47dd948e9937963d4f0056418/1979fb4d-3670-45f0-8ac3-4f95607785f5.docx\"}]}}",
+    "downloadPath": "src/project-text/exports/关于开展广东第二师范学院2026年提案大赛的通知.json",
+    "downloadName": "关于开展广东第二师范学院2026年提案大赛的通知.json"
+  },
+  {
+    "id": "e6f55ea0-a76545",
+    "title": "关于更换两校区智能报修系统的通知",
+    "category": "life",
+    "sourceType": "local_text",
+    "authority": "后勤服务",
+    "updatedAt": "2026-02-25",
+    "keywords": [
+      "报修",
+      "关于更换两校区智能报修系统的通知",
+      "life"
+    ],
+    "url": "",
+    "content": "{\"schemaVersion\":1,\"source\":{\"site\":\"https://www.gdei.edu.cn\",\"pageUrl\":\"https://www.gdei.edu.cn/nw/2026/0113/c2065a103846/page.psp\",\"pageTitle\":\"关于更换两校区智能报修系统的通知\",\"exportedAt\":\"2026-02-25T18:38:00.176Z\"},\"notice\":{\"title\":\"关于更换两校区智能报修系统的通知\",\"publishedAt\":\"2026-01-13\",\"content\":\"关于更换两校区智能报修系统的通知\\n发布者：叶鹏晖发布时间：2026-01-13浏览次数：348\\n关于更换两校区智能报修系统的通知\\n全体师生：\\n我校海珠、花都校区智能报修系统已更换。新的报修系统具体操作流程如下图：\\n（1）海珠校区\\n（2）花都校区\\n若在报修过程中若遇到系统操作问题，请拨打两校区物业电话进行反馈，欢迎提出宝贵意见和建议。\\n海珠校区物业电话：020-3411 3363\\n花都校区物业电话：186 8692 0655 。\\n总务部\\n2026年1月13日\",\"attachments\":[]}}",
+    "downloadPath": "src/project-text/exports/关于更换两校区智能报修系统的通知.json",
+    "downloadName": "关于更换两校区智能报修系统的通知.json"
+  },
+  {
+    "id": "2026-97e4f7",
+    "title": "关于组织参加2026年粤港澳学生信息科技创新大赛活动的通知",
+    "category": "general",
+    "sourceType": "local_text",
+    "authority": "本地批量入库",
+    "updatedAt": "2026-02-25",
+    "keywords": [
+      "general"
+    ],
+    "url": "",
+    "content": "{\"schemaVersion\":1,\"source\":{\"site\":\"https://www.gdei.edu.cn\",\"pageUrl\":\"https://www.gdei.edu.cn/nw/2026/0122/c1650a104140/page.psp\",\"pageTitle\":\"关于组织参加2026年粤港澳学生信息科技创新大赛活动的通知\",\"exportedAt\":\"2026-02-25T18:35:29.107Z\"},\"notice\":{\"title\":\"关于组织参加2026年粤港澳学生信息科技创新大赛活动的通知\",\"publishedAt\":\"2026-01-22\",\"content\":\"关于组织参加2026年粤港澳学生信息科技创新大赛活动的通知\\n发布者：吴开华发布时间：2026-01-22浏览次数：537\\n附件1：广东省教育厅关于举办2026年粤港澳学生信息科技创新大赛活动的通知.pdf\\n附件2：2026年粤港澳学生信息科技创新大赛活动指南.doc\\n附件3：各类项目相关要求.zip\",\"attachments\":[{\"name\":\"附件1：广东省教育厅关于举办2026年粤港澳学生信息科技创新大赛活动的通知.pdf\",\"url\":\"https://www.gdei.edu.cn/_upload/article/files/26/7a/1bff1b32499eb3c1d57137496dbc/51b3ae13-1e58-4d54-8684-3999fbf2aaee.pdf\"},{\"name\":\"附件2：2026年粤港澳学生信息科技创新大赛活动指南.doc\",\"url\":\"https://www.gdei.edu.cn/_upload/article/files/26/7a/1bff1b32499eb3c1d57137496dbc/9fe5b508-0357-4d7b-9d5a-3f5fd7f34fee.doc\"},{\"name\":\"附件3：各类项目相关要求.zip\",\"url\":\"https://www.gdei.edu.cn/_upload/article/files/26/7a/1bff1b32499eb3c1d57137496dbc/e84fb3e3-75a1-4c2f-8e7d-20f430043bbf.zip\"}]}}",
+    "downloadPath": "src/project-text/exports/关于组织参加2026年粤港澳学生信息科技创新大赛活动的通知.json",
+    "downloadName": "关于组织参加2026年粤港澳学生信息科技创新大赛活动的通知.json"
+  },
+  {
+    "id": "2026-bbb32d",
+    "title": "关于组织开展2026年度国家社科基金艺术学年度项目申报工作的通知",
+    "category": "general",
+    "sourceType": "local_text",
+    "authority": "本地批量入库",
+    "updatedAt": "2026-02-25",
+    "keywords": [
+      "general"
+    ],
+    "url": "",
+    "content": "{\"schemaVersion\":1,\"source\":{\"site\":\"https://www.gdei.edu.cn\",\"pageUrl\":\"https://www.gdei.edu.cn/nw/2026/0215/c2066a104425/page.psp\",\"pageTitle\":\"关于组织开展2026年度国家社科基金艺术学年度项目申报工作的通知\",\"exportedAt\":\"2026-02-25T18:30:50.788Z\"},\"notice\":{\"title\":\"关于组织开展2026年度国家社科基金艺术学年度项目申报工作的通知\",\"publishedAt\":\"2026-02-16\",\"content\":\"关于组织开展2026年度国家社科基金艺术学年度项目申报工作的通知\\n发布者：华子荀发布时间：2026-02-16浏览次数：78\\n附件1.2026年国家社科基金艺术学年度项目申报公告.pdf\\n附件2.国家社科基金艺术学历年立项项目汇编（2021-2025）.xlsx\",\"attachments\":[{\"name\":\"附件1.2026年国家社科基金艺术学年度项目申报公告.pdf\",\"url\":\"https://www.gdei.edu.cn/_upload/article/files/7a/6b/91f94ed4497bb93ec840d9514589/1828a96f-d9f4-424f-8f6e-1944bd23d3f7.pdf\"},{\"name\":\"附件2.国家社科基金艺术学历年立项项目汇编（2021-2025）.xlsx\",\"url\":\"https://www.gdei.edu.cn/_upload/article/files/7a/6b/91f94ed4497bb93ec840d9514589/01d94d38-3495-4a63-bca7-184faa23ada6.xlsx\"}]}}",
+    "downloadPath": "src/project-text/exports/关于组织开展2026年度国家社科基金艺术学年度项目申报工作的通知.json",
+    "downloadName": "关于组织开展2026年度国家社科基金艺术学年度项目申报工作的通知.json"
+  },
+  {
+    "id": "2025-2026-3e8b22",
+    "title": "关于转专业学生办理 2025-2026学年课程补退选和成绩认定的通知",
+    "category": "teaching",
+    "sourceType": "local_text",
+    "authority": "本地批量入库",
+    "updatedAt": "2026-02-25",
+    "keywords": [
+      "转专业",
+      "补退选",
+      "成绩认定",
+      "关于转专业学生办理",
+      "2025",
+      "2026学年课程补退选和成绩认定的通知",
+      "teaching"
+    ],
+    "url": "",
+    "content": "{\"schemaVersion\":1,\"source\":{\"site\":\"https://www.gdei.edu.cn\",\"pageUrl\":\"https://www.gdei.edu.cn/nw/2026/0126/c1650a104327/page.psp\",\"pageTitle\":\"关于转专业学生办理 2025-2026学年课程补退选和成绩认定的通知\",\"exportedAt\":\"2026-02-25T18:32:57.108Z\"},\"notice\":{\"title\":\"关于转专业学生办理 2025-2026学年课程补退选和成绩认定的通知\",\"publishedAt\":\"2026-01-26\",\"content\":\"关于转专业学生办理 2025-2026学年课程补退选和成绩认定的通知\\n发布者：吴开华发布时间：2026-01-26浏览次数：140\\n附件1 广东第二师范学院课程认定申请表.pdf\\n附件2 广东第二师范学院转专业学生公共任选课学分认定申请表.xlsx\\n附件3：2025-2026学年转专业学生清除转入专业相关公选课选课记录及成绩数据.xlsx\",\"attachments\":[{\"name\":\"附件1 广东第二师范学院课程认定申请表.pdf\",\"url\":\"https://www.gdei.edu.cn/_upload/article/files/27/a3/646cba9f4ded83c6fd3a2541f7c2/40f50505-758a-4cfd-9ef1-c0b91ffebfc7.pdf\"},{\"name\":\"附件2 广东第二师范学院转专业学生公共任选课学分认定申请表.xlsx\",\"url\":\"https://www.gdei.edu.cn/_upload/article/files/27/a3/646cba9f4ded83c6fd3a2541f7c2/c7b1129c-2d66-43d1-a0f8-f1eff5f56117.xlsx\"},{\"name\":\"附件3：2025-2026学年转专业学生清除转入专业相关公选课选课记录及成绩数据.xlsx\",\"url\":\"https://www.gdei.edu.cn/_upload/article/files/27/a3/646cba9f4ded83c6fd3a2541f7c2/dd6d5fe3-4392-436a-bae7-d33d6feae04f.xlsx\"}]}}",
+    "downloadPath": "src/project-text/exports/关于转专业学生办理 2025-2026学年课程补退选和成绩认定的通知.json",
+    "downloadName": "关于转专业学生办理 2025-2026学年课程补退选和成绩认定的通知.json"
+  },
+  {
+    "id": "2025-2026-d961d7",
+    "title": "关于转专业学生办理 2025-2026学年课程补退选和成绩认定的通知",
+    "category": "teaching",
+    "sourceType": "attachment_index",
+    "authority": "本地批量入库",
+    "updatedAt": "2026-02-24",
+    "keywords": [
+      "转专业",
+      "补退选",
+      "成绩认定",
+      "关于转专业学生办理",
+      "2025",
+      "2026学年课程补退选和成绩认定的通知",
+      "teaching"
+    ],
+    "url": "",
+    "content": "本地批量入库：已发现压缩包文件“关于转专业学生办理 2025-2026学年课程补退选和成绩认定的通知.zip”（约 569 KB）。建议后续解压并补充其中通知正文/附件清单的结构化内容。",
+    "downloadPath": "src/project-text/关于转专业学生办理 2025-2026学年课程补退选和成绩认定的通知.zip",
+    "downloadName": "关于转专业学生办理 2025-2026学年课程补退选和成绩认定的通知.zip"
   },
   {
     "id": "2026-63d031",
@@ -36,6 +485,75 @@
       }
     ],
     "importedFrom": "D:/VUE3-GDES-Agent/ai-campus-agent/src/project-text/exports/关于组织开展2026年度国家社科基金艺术学年度项目申报工作的通知.json"
+  },
+  {
+    "id": "2026-595576",
+    "title": "关于组织开展2026年度文化和旅游部部级社科研究项目申报工作的通知",
+    "category": "general",
+    "sourceType": "official_notice",
+    "authority": "官网通知导出",
+    "updatedAt": "2026-02-15",
+    "keywords": [],
+    "url": "https://www.gdei.edu.cn/nw/2026/0215/c2066a104426/page.psp",
+    "content": "关于组织开展2026年度文化和旅游部部级社科研究项目申报工作的通知 发布者：华子荀发布时间：2026-02-15浏览次数：159 附件1.2026年文化和旅游部部级社科研究项目选题方向.doc 附件2.2026年文化和旅游部部级社科研究项目申报书.doc 附件3.文化和旅游部部级社科研究项目推荐汇总表.xls 附件4.文化和旅游部办公厅关于推荐2026年文化和旅游部部级社科研究项目的通知.pdf",
+    "attachments": [
+      {
+        "name": "附件1.2026年文化和旅游部部级社科研究项目选题方向.doc",
+        "url": "https://www.gdei.edu.cn/_upload/article/files/43/5f/467526e543cabdd5ebb57e127199/178f9cfd-2fed-4bf2-b808-840154ced646.doc"
+      },
+      {
+        "name": "附件2.2026年文化和旅游部部级社科研究项目申报书.doc",
+        "url": "https://www.gdei.edu.cn/_upload/article/files/43/5f/467526e543cabdd5ebb57e127199/50894418-5270-45c2-b278-d71f2019e83b.doc"
+      },
+      {
+        "name": "附件3.文化和旅游部部级社科研究项目推荐汇总表.xls",
+        "url": "https://www.gdei.edu.cn/_upload/article/files/43/5f/467526e543cabdd5ebb57e127199/04838e83-e5e6-452f-8447-286fda1dccee.xls"
+      },
+      {
+        "name": "附件4.文化和旅游部办公厅关于推荐2026年文化和旅游部部级社科研究项目的通知.pdf",
+        "url": "https://www.gdei.edu.cn/_upload/article/files/43/5f/467526e543cabdd5ebb57e127199/5816c0cf-1871-4058-b4b3-b7c118dd2658.pdf"
+      }
+    ],
+    "importedFrom": "D:/VUE3-GDES-Agent/ai-campus-agent/src/project-text/exports/关于组织开展2026年度文化和旅游部部级社科研究项目申报工作的通知.json"
+  },
+  {
+    "id": "20261-42694b",
+    "title": "2026年第1期教学督导简报",
+    "category": "general",
+    "sourceType": "official_notice",
+    "authority": "官网通知导出",
+    "updatedAt": "2026-01-27",
+    "keywords": [],
+    "url": "https://www.gdei.edu.cn/nw/2026/0127/c2066a104351/page.psp",
+    "content": "2026年第1期教学督导简报 发布者：吴开华发布时间：2026-01-27浏览次数：335",
+    "attachments": [],
+    "importedFrom": "D:/VUE3-GDES-Agent/ai-campus-agent/src/project-text/exports/2026年第1期教学督导简报.json"
+  },
+  {
+    "id": "a94065-1e35ad",
+    "title": "关于开展广东省学校国家安全教育教学指导委员会委员遴选工作的通知",
+    "category": "general",
+    "sourceType": "official_notice",
+    "authority": "官网通知导出",
+    "updatedAt": "2026-01-27",
+    "keywords": [],
+    "url": "https://www.gdei.edu.cn/nw/2026/0126/c2066a104329/page.psp",
+    "content": "关于开展广东省学校国家安全教育教学指导委员会委员遴选工作的通知 发布者：吴开华发布时间：2026-01-27浏览次数：158 附件2 广东省学校国家安全教育教学指导委员会委员推荐表.doc附件3 广东省学校国家安全教育教学指导委员会委员推荐人选汇总表.doc附件4 个人业绩证明材料佐证材料模板.doc",
+    "attachments": [
+      {
+        "name": "附件2 广东省学校国家安全教育教学指导委员会委员推荐表.doc",
+        "url": "https://www.gdei.edu.cn/_upload/article/files/8f/0e/b6d8f66442fe8be3e093328843b1/dd81c072-8be1-4d5d-9a7d-8ab2d83eb151.doc"
+      },
+      {
+        "name": "附件3 广东省学校国家安全教育教学指导委员会委员推荐人选汇总表.doc",
+        "url": "https://www.gdei.edu.cn/_upload/article/files/8f/0e/b6d8f66442fe8be3e093328843b1/e7e2cf53-6a3c-41bc-a002-4d564dd1a0ca.doc"
+      },
+      {
+        "name": "附件4 个人业绩证明材料佐证材料模板.doc",
+        "url": "https://www.gdei.edu.cn/_upload/article/files/8f/0e/b6d8f66442fe8be3e093328843b1/c5fec58e-7b8c-47b4-a639-5e0ef7ebd5ed.doc"
+      }
+    ],
+    "importedFrom": "D:/VUE3-GDES-Agent/ai-campus-agent/src/project-text/exports/关于开展广东省学校国家安全教育教学指导委员会委员遴选工作的通知.json"
   },
   {
     "id": "transfer-major-add-drop-2025-2026",
