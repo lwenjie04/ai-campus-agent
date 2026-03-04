@@ -251,7 +251,10 @@ export const useAgentStore = defineStore('agent', {
         }
         this.persistSession()
       } catch (error: any) {
-        const errorReply = '请求失败，请稍后重试。'
+        const errorReply =
+          typeof error?.message === 'string' && error.message.trim()
+            ? `请求失败：${error.message}`
+            : '请求失败，请稍后重试。'
         const errorCode = typeof error?.code === 'string' ? error.code : undefined
         const target = this.messages.find((msg) => msg.id === assistantPlaceholder.id)
         if (target) {

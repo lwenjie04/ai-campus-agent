@@ -697,6 +697,7 @@ const server = createServer(async (req, res) => {
   }
 
   const requestUrl = new URL(req.url, `http://${req.headers.host || `localhost:${PORT}`}`)
+  const isPath = (path) => requestUrl.pathname === path || requestUrl.pathname === `/api${path}`
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {
@@ -707,7 +708,7 @@ const server = createServer(async (req, res) => {
     return res.end()
   }
 
-  if (req.method === 'GET' && requestUrl.pathname === '/health') {
+  if (req.method === 'GET' && isPath('/health')) {
     return json(res, 200, {
       ok: true,
       service: 'ai-campus-agent-backend',
@@ -717,15 +718,15 @@ const server = createServer(async (req, res) => {
     })
   }
 
-  if (req.method === 'POST' && requestUrl.pathname === '/chat') {
+  if (req.method === 'POST' && isPath('/chat')) {
     return handleChat(req, res)
   }
 
-  if (req.method === 'POST' && requestUrl.pathname === '/chat/stream') {
+  if (req.method === 'POST' && isPath('/chat/stream')) {
     return handleChatStream(req, res)
   }
 
-  if (req.method === 'GET' && requestUrl.pathname === '/kb/download') {
+  if (req.method === 'GET' && isPath('/kb/download')) {
     return handleKnowledgeBaseDownload(req, res)
   }
 

@@ -8,6 +8,8 @@
     "server": "node server/index.mjs",
     "ingest:local": "node server/scripts/batch-ingest-local.mjs",
     "ingest:browser-json": "node server/scripts/import-browser-export-json.mjs",
+    "kb:repair": "node server/scripts/kb-clean-tag-qc.mjs",
+    "kb:repair:dry": "node server/scripts/kb-clean-tag-qc.mjs --dry-run",
     "dev:all": "run-p dev server",
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="message-row" :class="`is-${message.role}`">
     <div v-if="message.role === 'assistant'" class="avatar">👩‍🏫</div>
 
@@ -68,11 +68,11 @@
       </div>
 
       <div v-if="message.role === 'assistant' && message.status === 'pending'" class="pending-tip">
-        ??????...
+        正在生成回复...
       </div>
 
       <div v-if="message.status === 'error'" class="error-tip">
-        ??????????
+        发送异常，请稍后重试
         <span v-if="message.errorCode" class="error-code">({{ message.errorCode }})</span>
       </div>
     </div>
@@ -94,13 +94,14 @@ const resolveSourceHref = (url?: string) => {
 
 const isFileLikeLink = (url?: string) => {
   if (!url) return false
-  if (url.startsWith('/kb/download')) return true
+  if (url.startsWith('/kb/download') || url.startsWith('/api/kb/download')) return true
   return /\.(pdf|doc|docx|xls|xlsx|zip|rar|7z|ppt|pptx|txt)(?:$|\?)/i.test(url)
 }
 
 const getPrimaryLinkKindLabel = (url?: string) => (isFileLikeLink(url) ? '来源文件' : '正文链接')
 
-const getPrimaryLinkActionLabel = (url?: string) => (isFileLikeLink(url) ? '下载/打开文件' : '打开通知页面')
+const getPrimaryLinkActionLabel = (url?: string) =>
+  isFileLikeLink(url) ? '下载/打开文件' : '打开通知页面'
 
 defineProps<{
   message: Message
@@ -307,17 +308,6 @@ defineProps<{
   max-width: 100%;
   font-size: 12px;
   word-break: break-all;
-}
-
-.login-hint {
-  display: inline-flex;
-  align-items: center;
-  padding: 1px 6px;
-  border-radius: 999px;
-  font-size: 11px;
-  color: #8a5a11;
-  background: rgba(255, 201, 107, 0.25);
-  border: 1px solid rgba(202, 152, 69, 0.35);
 }
 
 .error-tip {
