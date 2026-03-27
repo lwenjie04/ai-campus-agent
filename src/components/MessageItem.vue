@@ -1,14 +1,17 @@
 ﻿<template>
+  <!-- 单条消息由头像、消息气泡和可选的来源信息组成。 -->
   <div class="message-row" :class="`is-${message.role}`">
     <div v-if="message.role === 'assistant'" class="avatar">👩‍🏫</div>
 
     <div class="bubble-wrap">
+      <!-- 用户消息和助手消息复用同一个气泡结构，通过 role 决定额外装饰。 -->
       <div class="bubble">
         <span v-if="message.role === 'assistant'" class="bubble-icon">✨</span>
         <span class="content">{{ message.content }}</span>
         <span v-if="message.role === 'assistant' && message.status === 'pending'" class="typing-cursor" />
       </div>
 
+      <!-- 只有 assistant 消息才会展示来源，因为来源来自后端 RAG 检索结果。 -->
       <div
         v-if="message.role === 'assistant' && Array.isArray(message.sources) && message.sources.length > 0"
         class="sources"
@@ -19,6 +22,7 @@
           :key="`${source.title || 'src'}-${index}`"
           class="source-item"
         >
+          <!-- 标题行展示来源名称，以及类型/可信度这些摘要标签。 -->
           <div class="source-head">
             <a
               v-if="source.url"
@@ -39,6 +43,7 @@
             </div>
           </div>
 
+          <!-- 主链接可能是正文链接，也可能直接是文件下载链接。 -->
           <div v-if="source.url" class="source-link-row">
             <span class="source-label">{{ getPrimaryLinkKindLabel(source.url) }}</span>
             <a class="inline-link" :href="resolveSourceHref(source.url)" target="_blank" rel="noreferrer">
@@ -46,6 +51,19 @@
             </a>
           </div>
 
+          <div v-else-if="source.postId" class="source-link-row">
+            <span class="source-label">来源帖子</span>
+            <button type="button" class="inline-link inline-link--button" @click="emit('openCommunityPost', source.postId)">
+              查看来源帖子
+            </button>
+          </div>
+
+          <!-- 社区来源需要显式提示“仅供参考”，避免和官方通知混淆。 -->
+          <div v-if="source.note" class="source-note">
+            {{ source.note }}
+          </div>
+
+          <!-- 附件列表单独列出，避免把多个下载链接挤在标题旁边。 -->
           <div
             v-if="Array.isArray(source.attachments) && source.attachments.length > 0"
             class="source-attachments"
@@ -85,6 +103,8 @@
 import { appConfig } from '@/config/app'
 import type { Message } from '@/types/agent'
 
+// 把后端返回的来源地址统一转换成浏览器可直接访问的链接。
+// 这里要兼容完整链接、后端相对路径以及原样透传三种情况。
 const resolveSourceHref = (url?: string) => {
   if (!url) return ''
   if (/^https?:\/\//i.test(url)) return url
@@ -92,19 +112,27 @@ const resolveSourceHref = (url?: string) => {
   return url
 }
 
+// 判断来源链接是否更像“文件”而不是“网页正文”，用于切换展示文案。
 const isFileLikeLink = (url?: string) => {
   if (!url) return false
   if (url.startsWith('/kb/download') || url.startsWith('/api/kb/download')) return true
   return /\.(pdf|doc|docx|xls|xlsx|zip|rar|7z|ppt|pptx|txt)(?:$|\?)/i.test(url)
 }
 
+// 给来源主链接生成更直观的类别标签。
 const getPrimaryLinkKindLabel = (url?: string) => (isFileLikeLink(url) ? '来源文件' : '正文链接')
 
+// 根据链接类型返回更符合用户心理预期的操作提示。
 const getPrimaryLinkActionLabel = (url?: string) =>
   isFileLikeLink(url) ? '下载/打开文件' : '打开通知页面'
 
+// 当前组件只关心“如何展示一条消息”，消息列表的遍历由父组件负责。
 defineProps<{
   message: Message
+}>()
+
+const emit = defineEmits<{
+  (e: 'openCommunityPost', postId: string): void
 }>()
 </script>
 
@@ -274,6 +302,17 @@ defineProps<{
   gap: 6px;
 }
 
+.source-note {
+  margin-top: 4px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: rgba(255, 244, 214, 0.8);
+  border: 1px solid rgba(214, 171, 58, 0.2);
+  color: #8a5a08;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
 .source-label {
   font-size: 11px;
   color: #54715b;
@@ -287,8 +326,20 @@ defineProps<{
   border-bottom: 1px dashed rgba(15, 110, 68, 0.35);
 }
 
+.inline-link--button {
+  padding: 0;
+  background: transparent;
+  border-top: 0;
+  border-left: 0;
+  border-right: 0;
+  border-bottom-style: dashed;
+  font: inherit;
+  cursor: pointer;
+}
+
 .inline-link:hover,
-.attachment-link:hover {
+.attachment-link:hover,
+.inline-link--button:hover {
   border-bottom-style: solid;
 }
 

@@ -1,4 +1,5 @@
 <template>
+  <!-- 该组件只负责聊天窗口滚动和列表组织，单条消息由 MessageItem 渲染。 -->
   <div ref="containerRef" class="chat-window">
     <div v-if="messages.length === 0 && !loading" class="empty-state">
       你好，我是广二师数字人助手，请输入你想咨询的问题。
@@ -8,6 +9,7 @@
       v-for="msg in messages"
       :key="msg.id || `${msg.role}-${msg.createdAt}`"
       :message="msg"
+      @open-community-post="emit('openCommunityPost', $event)"
     />
 
     <div v-if="loading" class="typing-row">
@@ -30,11 +32,17 @@ const props = defineProps<{
   loading?: boolean
 }>()
 
+const emit = defineEmits<{
+  (e: 'openCommunityPost', postId: string): void
+}>()
+
+// 保存容器引用，便于在新消息进入后自动滚动到底部。
 const containerRef = ref<HTMLDivElement | null>(null)
 
 watch(
   () => [props.messages.length, props.loading],
   async () => {
+    // 先等待 DOM 更新完成，再读取 scrollHeight 计算滚动位置。
     await nextTick()
     const el = containerRef.value
     if (!el) return

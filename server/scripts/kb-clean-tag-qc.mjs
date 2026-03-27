@@ -56,6 +56,25 @@ const detectMojibake = (value) => {
   return MOJIBAKE_MARKERS.some((marker) => text.includes(marker))
 }
 
+const tryParseEmbeddedNotice = (contentText) => {
+  const text = normalizeText(contentText)
+  if (!text || !text.startsWith('{')) return null
+  try {
+    const parsed = JSON.parse(text)
+    const notice = parsed?.notice
+    if (!notice || typeof notice !== 'object') return null
+    return {
+      title: normalizeText(notice.title),
+      publishedAt: normalizeDate(notice.publishedAt),
+      content: normalizeText(notice.content),
+      attachments: Array.isArray(notice.attachments) ? notice.attachments : [],
+      pageUrl: normalizeText(parsed?.source?.pageUrl),
+    }
+  } catch {
+    return null
+  }
+}
+
 const uniqBy = (list, keyFn) => {
   const map = new Map()
   for (const item of list || []) {
@@ -156,17 +175,24 @@ const makeDedupeKey = (item) => {
 }
 
 const sanitizeEntry = (raw) => {
+  const embedded = tryParseEmbeddedNotice(raw.content)
+  const normalizedAttachmentsFromRaw = Array.isArray(raw.attachments) ? raw.attachments : []
+  const mergedRawAttachments = [
+    ...normalizedAttachmentsFromRaw,
+    ...(embedded?.attachments || []),
+  ]
+
   const entry = {
     ...raw,
-    title: normalizeText(raw.title),
+    title: normalizeText(raw.title) || normalizeText(embedded?.title),
     category: normalizeText(raw.category),
     sourceType: normalizeText(raw.sourceType),
     authority: normalizeText(raw.authority),
-    updatedAt: normalizeDate(raw.updatedAt) || normalizeDate(Date.now()),
+    updatedAt: normalizeDate(raw.updatedAt) || normalizeDate(embedded?.publishedAt) || normalizeDate(Date.now()),
     keywords: Array.isArray(raw.keywords) ? raw.keywords.map((x) => normalizeText(x)).filter(Boolean) : [],
-    url: normalizeText(raw.url),
-    content: normalizeText(raw.content),
-    attachments: Array.isArray(raw.attachments) ? raw.attachments : [],
+    url: normalizeText(raw.url) || normalizeText(embedded?.pageUrl),
+    content: normalizeText(embedded?.content || raw.content),
+    attachments: mergedRawAttachments,
     importedFrom: normalizeText(raw.importedFrom),
     downloadPath: normalizeText(raw.downloadPath),
     downloadName: normalizeText(raw.downloadName),
@@ -183,7 +209,9 @@ const sanitizeEntry = (raw) => {
   )
 
   entry.category = entry.category || inferCategory(entry.title, entry.content)
-  entry.sourceType = inferSourceType(entry)
+  entry.sourceType =
+    entry.sourceType ||
+    (entry.url || entry.attachments.length > 0 ? 'official_notice' : inferSourceType(entry))
   entry.keywords = generateKeywords(entry.title, entry.content, entry.category)
   entry.id = normalizeText(raw.id) || makeStableId(entry.title, entry.url, entry.updatedAt)
 

@@ -2,9 +2,12 @@ import { createServer } from 'node:http'
 import { randomUUID } from 'node:crypto'
 import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs'
 import { extname, resolve } from 'node:path'
+import { handleCommunityRoute } from './community.mjs'
 import { buildRuleBasedSources } from './sources-rules.mjs'
 import { buildRagContext, getKnowledgeBaseEntryById, ragHitsToSources, searchKnowledgeBase } from './rag.mjs'
 
+// 读取 .env 文件并注入到 process.env。
+// 这里没有依赖 dotenv，而是自己做了一个极简解析器，便于保持后端零额外依赖。
 const loadEnvFile = (filePath) => {
   if (!existsSync(filePath)) return
 
@@ -35,6 +38,8 @@ const loadEnvFile = (filePath) => {
 loadEnvFile(resolve(process.cwd(), 'server/.env'))
 loadEnvFile(resolve(process.cwd(), '.env.server'))
 
+// 后端运行时配置。
+// 这里集中定义服务端口、模型提供商地址、模型名称和 CORS 来源。
 const PORT = Number(process.env.PORT || 3000)
 const PROVIDER_MODE = 'deepseek'
 const LLM_API_BASE_URL = process.env.LLM_API_BASE_URL || 'https://api.deepseek.com'
@@ -51,6 +56,8 @@ const MIME_BY_EXT = {
   '.zip': 'application/zip',
 }
 
+// 统一输出 JSON 响应。
+// 这样所有接口返回结构、CORS 头和编码方式都保持一致。
 const json = (res, statusCode, data, headers = {}) => {
   res.writeHead(statusCode, {
     'Content-Type': 'application/json; charset=utf-8',
@@ -62,12 +69,17 @@ const json = (res, statusCode, data, headers = {}) => {
   res.end(JSON.stringify(data))
 }
 
+// 生成兼容中文文件名的下载响应头。
+// fallback 用于兼容只支持 ASCII 文件名的客户端；
+// filename* 用于现代浏览器正确识别 UTF-8 中文名。
 const fileNameHeaders = (fileName) => {
   const fallback = String(fileName || 'download.bin').replace(/[^\x20-\x7E]+/g, '_')
   const encoded = encodeURIComponent(String(fileName || 'download.bin'))
   return `attachment; filename="${fallback}"; filename*=UTF-8''${encoded}`
 }
 
+// 解析请求体中的 JSON。
+// 同时做 2MB 限制，避免请求体异常大导致后端被拖垮。
 const parseJsonBody = async (req) =>
   new Promise((resolvePromise, reject) => {
     let raw = ''
@@ -90,6 +102,8 @@ const parseJsonBody = async (req) =>
 
 const isValidRole = (role) => ['system', 'user', 'assistant'].includes(role)
 
+// 校验前端传来的 messages 是否符合聊天接口要求。
+// 如果消息结构不合法，就直接在这里拦截，不进入后续模型调用。
 const validateMessages = (messages) => {
   if (!Array.isArray(messages)) return 'messages must be an array'
   if (messages.length === 0) return 'messages cannot be empty'
@@ -103,6 +117,8 @@ const validateMessages = (messages) => {
   return null
 }
 
+// 确保消息列表里存在一条 system prompt。
+// 如果前端没有传 system 消息，后端会自动补一条默认提示词。
 const ensureSystemPrompt = (messages) => {
   const hasSystem = messages.some((m) => m.role === 'system')
   if (hasSystem) return messages
@@ -122,6 +138,8 @@ const ensureSystemPrompt = (messages) => {
   ]
 }
 
+// 根据回答内容粗略判断意图，并决定数字人应该切到哪个视频 cue。
+// 这是一个轻量级规则分类，不是严格的 NLP 意图识别。
 const classifyIntentAndVideoCue = (content) => {
   if (/你好|您好|hi|hello/i.test(content)) return { intent: 'greeting', videoCue: 'greeting' }
   if (/课程|课表|选课|教务/.test(content)) return { intent: 'teaching', videoCue: 'teaching' }
@@ -131,6 +149,8 @@ const classifyIntentAndVideoCue = (content) => {
   return { intent: 'general', videoCue: 'idle' }
 }
 
+// Mock 回复。
+// 仅在没有接入真实模型时用于前后端联调，现在保留它主要是为了兜底和演示。
 const mockChatResult = (messages) => {
   const userText = [...messages].reverse().find((m) => m.role === 'user')?.content ?? ''
 
@@ -180,6 +200,8 @@ const mockChatResult = (messages) => {
   }
 }
 
+// 非流式模型调用。
+// 适用于一次性拿完整答案的接口 /chat。
 const requestOpenAICompatibleChat = async (messages, requestId) => {
   if (!LLM_API_KEY) {
     const err = new Error('LLM_API_KEY is missing')
@@ -236,6 +258,8 @@ const requestOpenAICompatibleChat = async (messages, requestId) => {
   }
 }
 
+// 流式模型调用。
+// 这里按 OpenAI 兼容 SSE 流格式逐段读取 delta，并实时回调给外层。
 const requestOpenAICompatibleChatStream = async (messages, requestId, handlers = {}) => {
   if (!LLM_API_KEY) {
     const err = new Error('LLM_API_KEY is missing')
@@ -345,13 +369,17 @@ const requestOpenAICompatibleChatStream = async (messages, requestId, handlers =
   }
 }
 
+// 小工具：数组去重。
 const unique = (items) => Array.from(new Set(items.filter(Boolean)))
 
+// 小工具：从一段文本里取第一个符合正则的结果。
 const firstMatch = (text, pattern) => {
   const m = String(text || '').match(pattern)
   return m?.[0] || ''
 }
 
+// 根据 RAG 命中的原文，做一层规则型摘要整理。
+// 这个函数的目标是让回答更像“总结”，而不是把原文片段生硬拼接出来。
 const summarizeWithRagHits = (userText, ragHits) => {
   if (!Array.isArray(ragHits) || ragHits.length === 0) return ''
 
@@ -412,6 +440,8 @@ const summarizeWithRagHits = (userText, ragHits) => {
     .join('\n')
 }
 
+// 把 RAG 命中的资料拼接成额外的 system 上下文，发送给大模型。
+// 这样模型在生成答案时，就能优先参考知识库内容。
 const appendRagContextToMessages = (messages, ragHits) => {
   if (!Array.isArray(ragHits) || ragHits.length === 0) return messages
 
@@ -427,6 +457,8 @@ const appendRagContextToMessages = (messages, ragHits) => {
   ]
 }
 
+// 知识库附件下载接口。
+// 前端点击来源中的附件链接时，会通过这个接口下载本地知识库文件。
 const handleKnowledgeBaseDownload = (req, res) => {
   const requestUrl = new URL(req.url || '/kb/download', `http://${req.headers.host || `localhost:${PORT}`}`)
   const id = requestUrl.searchParams.get('id') || ''
@@ -464,10 +496,17 @@ const handleKnowledgeBaseDownload = (req, res) => {
   stream.pipe(res)
 }
 
+// 流式接口采用 NDJSON（一行一个 JSON 对象）返回事件。
 const writeNdjson = (res, payload) => {
   res.write(`${JSON.stringify(payload)}\n`)
 }
 
+// /chat/stream 主流程：
+// 1. 解析并校验前端消息
+// 2. 从知识库检索相关内容
+// 3. 把检索结果转成 sources 和额外上下文
+// 4. 调用 DeepSeek 流式生成
+// 5. 按 start / delta / meta / done 逐段返回给前端
 const handleChatStream = async (req, res) => {
   const requestId = randomUUID()
   const startedAt = Date.now()
@@ -482,12 +521,14 @@ const handleChatStream = async (req, res) => {
       })
     }
 
+    // 先确保 system prompt 存在，再提取最后一条用户问题做 RAG 检索。
     const messages = ensureSystemPrompt(body.messages)
     const userText = [...messages].reverse().find((m) => m.role === 'user')?.content ?? ''
-    const ragHits = searchKnowledgeBase(userText, { limit: 3, minScore: 3 })
+    const ragHits = await searchKnowledgeBase(userText, { limit: 3, minScore: 3 })
     const ragSources = ragHitsToSources(ragHits)
     const messagesForLlm = appendRagContextToMessages(messages, ragHits)
 
+    // 建立流式响应头，告诉浏览器这是持续输出的数据流。
     res.writeHead(200, {
       'Content-Type': 'application/x-ndjson; charset=utf-8',
       'Cache-Control': 'no-cache, no-transform',
@@ -500,12 +541,14 @@ const handleChatStream = async (req, res) => {
 
     writeNdjson(res, { type: 'start', requestId })
 
+    // 每收到一个 delta，就立刻写回前端，形成逐字/逐段显示效果。
     const content = await requestOpenAICompatibleChatStream(messagesForLlm, requestId, {
       onDelta(delta) {
         writeNdjson(res, { type: 'delta', delta })
       },
     })
 
+    // sources 优先使用真实 RAG 命中；如果没命中，再退回规则型来源。
     const classified = classifyIntentAndVideoCue(content)
     const sources =
       ragSources.length > 0 ? ragSources : buildRuleBasedSources(userText, classified.intent, 'real')
@@ -534,6 +577,9 @@ const handleChatStream = async (req, res) => {
       }),
     )
   } catch (error) {
+    // 流式接口分两种错误场景：
+    // 1. 还没写响应头：直接返回普通 JSON 错误
+    // 2. 已经开始流式输出：继续写一条 error 事件，再结束响应
     const durationMs = Date.now() - startedAt
     const code =
       error?.message === 'INVALID_JSON'
@@ -596,6 +642,8 @@ const handleChatStream = async (req, res) => {
   }
 }
 
+// /chat 非流式接口：
+// 逻辑与 /chat/stream 基本一致，只是最后一次性返回完整结果。
 const handleChat = async (req, res) => {
   const requestId = randomUUID()
   const startedAt = Date.now()
@@ -610,9 +658,10 @@ const handleChat = async (req, res) => {
       })
     }
 
+    // 先做 system prompt 补全，再拿用户问题做检索。
     const messages = ensureSystemPrompt(body.messages)
     const userText = [...messages].reverse().find((m) => m.role === 'user')?.content ?? ''
-    const ragHits = searchKnowledgeBase(userText, { limit: 3, minScore: 3 })
+    const ragHits = await searchKnowledgeBase(userText, { limit: 3, minScore: 3 })
     const ragSources = ragHitsToSources(ragHits)
 
     let content = ''
@@ -620,6 +669,7 @@ const handleChat = async (req, res) => {
     let videoCue = 'idle'
     let sources = []
 
+    // 把知识库上下文附加到消息列表中，让大模型带着资料回答。
     const messagesForLlm = appendRagContextToMessages(messages, ragHits)
     content = await requestOpenAICompatibleChat(messagesForLlm, requestId)
     const classified = classifyIntentAndVideoCue(content)
@@ -648,6 +698,7 @@ const handleChat = async (req, res) => {
       requestId,
     })
   } catch (error) {
+    // 非流式接口的错误处理更简单，统一返回一个 JSON 错误对象即可。
     const durationMs = Date.now() - startedAt
     const code =
       error?.message === 'INVALID_JSON'
@@ -691,14 +742,18 @@ const handleChat = async (req, res) => {
   }
 }
 
+// 原生 Node HTTP 服务入口。
+// 这里统一处理 CORS、健康检查、聊天接口和知识库下载接口。
 const server = createServer(async (req, res) => {
   if (!req.url || !req.method) {
     return json(res, 400, { error: { code: 'BAD_REQUEST', message: 'Invalid request' } })
   }
 
   const requestUrl = new URL(req.url, `http://${req.headers.host || `localhost:${PORT}`}`)
+  // 同时兼容 /chat 和 /api/chat 两种前缀，避免前端代理配置差异导致 404。
   const isPath = (path) => requestUrl.pathname === path || requestUrl.pathname === `/api${path}`
 
+  // 预检请求：浏览器跨域时会先发 OPTIONS。
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': ALLOW_ORIGIN,
@@ -708,6 +763,7 @@ const server = createServer(async (req, res) => {
     return res.end()
   }
 
+  // 健康检查接口，用于确认后端是否正常启动。
   if (req.method === 'GET' && isPath('/health')) {
     return json(res, 200, {
       ok: true,
@@ -718,14 +774,27 @@ const server = createServer(async (req, res) => {
     })
   }
 
+  // 学生社区模块接口。
+  // 当前先接入“可联调骨架”，后续再逐步替换为 MySQL 实现。
+  const communityHandled = await handleCommunityRoute(req, res, requestUrl, {
+    json,
+    parseJsonBody,
+  })
+  if (communityHandled !== false) {
+    return communityHandled
+  }
+
+  // 非流式聊天接口。
   if (req.method === 'POST' && isPath('/chat')) {
     return handleChat(req, res)
   }
 
+  // 流式聊天接口。
   if (req.method === 'POST' && isPath('/chat/stream')) {
     return handleChatStream(req, res)
   }
 
+  // 知识库文件下载接口。
   if (req.method === 'GET' && isPath('/kb/download')) {
     return handleKnowledgeBaseDownload(req, res)
   }

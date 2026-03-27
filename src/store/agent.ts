@@ -15,6 +15,7 @@ type PersistedAgentSession = {
   demoMode?: boolean
 }
 
+// 创建前端消息对象，便于流式输出时直接在界面上增量更新。
 const createMessage = (role: Message['role'], content: string, extra?: Partial<Message>): Message => ({
   id: `${role}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
   role,
@@ -24,6 +25,7 @@ const createMessage = (role: Message['role'], content: string, extra?: Partial<M
   ...extra,
 })
 
+// 访问 localStorage 前先做环境判断，避免测试环境或非浏览器环境报错。
 const canUseStorage = () => typeof window !== 'undefined' && !!window.localStorage
 
 export const useAgentStore = defineStore('agent', {
@@ -46,6 +48,7 @@ export const useAgentStore = defineStore('agent', {
     persistSession() {
       if (!canUseStorage()) return
 
+      // 只持久化恢复界面所需的最小状态，避免无关数据写入缓存。
       const payload: PersistedAgentSession = {
         userProfile: this.userProfile,
         messages: this.messages,
@@ -63,6 +66,7 @@ export const useAgentStore = defineStore('agent', {
       try {
         const parsed = JSON.parse(raw) as PersistedAgentSession
 
+        // 只恢复可信字段，因为 localStorage 本质上是用户可修改的数据。
         if (parsed.userProfile && typeof parsed.userProfile === 'object') {
           this.userProfile = {
             ...this.userProfile,
@@ -84,6 +88,7 @@ export const useAgentStore = defineStore('agent', {
           this.demoMode = parsed.demoMode
         }
       } catch {
+        // 缓存损坏时直接清掉，避免污染后续会话。
         localStorage.removeItem(STORAGE_KEY)
       }
     },
@@ -102,6 +107,7 @@ export const useAgentStore = defineStore('agent', {
     },
 
     buildSystemPrompt() {
+      // 把用户画像信息注入 system prompt，让模型按当前用户背景回答。
       const roleLabelMap: Record<string, string> = {
         student: '学生',
         teacher: '教师',
@@ -121,6 +127,7 @@ export const useAgentStore = defineStore('agent', {
     },
 
     refreshSystemPrompt() {
+      // 会话里始终只维护一条 system 消息，并固定放在最前面。
       const systemIndex = this.messages.findIndex((msg) => msg.role === 'system')
       const nextPrompt = this.buildSystemPrompt()
 
@@ -139,6 +146,7 @@ export const useAgentStore = defineStore('agent', {
     },
 
     triggerVideoCue(cue: 'greeting' | 'idle' | 'teaching') {
+      // tick 自增是一个“强提醒”，用于通知播放器即使 cue 相同也要重播。
       this.videoCueKey = cue
       this.videoPlayTick += 1
     },
@@ -179,6 +187,7 @@ export const useAgentStore = defineStore('agent', {
     },
 
     initAgent() {
+      // 初始化时补齐 system prompt，并把数字人切到欢迎开场状态。
       if (this.messages.length > 0) {
         this.refreshSystemPrompt()
       } else {
@@ -197,6 +206,7 @@ export const useAgentStore = defineStore('agent', {
     },
 
     async sendMessage(content: string) {
+      // 这里串起完整的发送链路：写入用户消息 -> 创建占位回复 -> 流式更新 -> 触发讲解。
       const trimmed = content.trim()
       if (!trimmed || this.loading) return
 
@@ -223,6 +233,7 @@ export const useAgentStore = defineStore('agent', {
             if (target) target.requestId = requestId
           },
           onDelta: (delta) => {
+            // 每一段流式文本都直接追加到占位消息里，用户能实时看到生成过程。
             const target = this.messages.find((msg) => msg.id === assistantPlaceholder.id)
             if (!target) return
             target.content += delta
@@ -242,6 +253,7 @@ export const useAgentStore = defineStore('agent', {
           target.status = 'sent'
         }
 
+        // 只有最终回复文本稳定后，才开始讲解视频和语音播报。
         const narration = (finalContent || target?.content || '').trim()
         if (narration) {
           this.triggerVideoCue('teaching')
@@ -251,6 +263,7 @@ export const useAgentStore = defineStore('agent', {
         }
         this.persistSession()
       } catch (error: any) {
+        // 后端异常也要转成聊天消息，避免界面静默失败。
         const errorReply =
           typeof error?.message === 'string' && error.message.trim()
             ? `请求失败：${error.message}`

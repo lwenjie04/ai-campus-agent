@@ -1,9 +1,115 @@
-import { existsSync, readFileSync } from 'node:fs'
+import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { isMySqlConfigured, query } from './mysql.mjs'
 
 const KB_PATH = resolve(process.cwd(), 'server/data/knowledge-base.json')
+const LOG_DIR = resolve(process.cwd(), 'server/logs')
+const LOG_PATH = resolve(LOG_DIR, 'rag-search.log.ndjson')
 
-let knowledgeBaseCache = null
+let kbCache = null
+
+const toNumber = (value, fallback) => {
+  const n = Number(value)
+  return Number.isFinite(n) ? n : fallback
+}
+
+const RAG_WEIGHTS = {
+  exactTitle: toNumber(process.env.RAG_WEIGHT_EXACT_TITLE, 10),
+  exactContent: toNumber(process.env.RAG_WEIGHT_EXACT_CONTENT, 4),
+  termTitleLong: toNumber(process.env.RAG_WEIGHT_TERM_TITLE_LONG, 5),
+  termTitleShort: toNumber(process.env.RAG_WEIGHT_TERM_TITLE_SHORT, 3),
+  termContentLong: toNumber(process.env.RAG_WEIGHT_TERM_CONTENT_LONG, 2),
+  termContentShort: toNumber(process.env.RAG_WEIGHT_TERM_CONTENT_SHORT, 1),
+  keywordMatch: toNumber(process.env.RAG_WEIGHT_KEYWORD_MATCH, 4),
+  categoryMatch: toNumber(process.env.RAG_WEIGHT_CATEGORY_MATCH, 2),
+  categoryScholarshipBoost: toNumber(process.env.RAG_WEIGHT_CATEGORY_SCHOLARSHIP_BOOST, 3),
+  categoryTeachingBoost: toNumber(process.env.RAG_WEIGHT_CATEGORY_TEACHING_BOOST, 3),
+  categoryExamBoost: toNumber(process.env.RAG_WEIGHT_CATEGORY_EXAM_BOOST, 2),
+  routeBoost: toNumber(process.env.RAG_WEIGHT_ROUTE_BOOST, 6),
+}
+
+const TIME_DECAY = {
+  enabled: (process.env.RAG_TIME_DECAY_ENABLED ?? 'true') === 'true',
+  halfLifeDays: toNumber(process.env.RAG_TIME_DECAY_HALFLIFE_DAYS, 90),
+  minFactor: toNumber(process.env.RAG_TIME_DECAY_MIN_FACTOR, 0.5),
+}
+
+const RAG_LOG_ENABLED = (process.env.RAG_LOG_ENABLED ?? 'true') === 'true'
+const ROUTE_MIN_HITS = toNumber(process.env.RAG_ROUTE_MIN_HITS, 2)
+
+const COMMUNITY_SOURCE_TYPES = new Set(['community_post', 'community_summary'])
+const COMMUNITY_SOURCE_NOTE = '以下内容来自学生社区经验总结，仅供参考，请以学校最新官方通知为准。'
+
+const CATEGORY_RULES = [
+  {
+    category: 'scholarship',
+    patterns: [/奖学金/, /助学金/, /资助/, /国家奖学金/, /国家励志奖学金/, /竞赛奖学金/],
+  },
+  {
+    category: 'teaching',
+    patterns: [/转专业/, /补退选/, /课程认定/, /学分认定/, /成绩认定/, /选课/, /课表/, /教务/],
+  },
+  {
+    category: 'exam',
+    patterns: [/考试/, /补考/, /重修/, /考核/],
+  },
+  {
+    category: 'life',
+    patterns: [/宿舍/, /图书馆/, /食堂/, /后勤/, /报修/, /交通车/, /校车/],
+  },
+  {
+    category: 'research',
+    patterns: [/科研/, /课题/, /立项/, /项目申报/, /社科基金/, /学术/],
+  },
+  {
+    category: 'competition',
+    patterns: [/竞赛/, /大赛/, /挑战杯/, /互联网\+/, /创新创业/],
+  },
+  {
+    category: 'student_affairs',
+    patterns: [/学籍/, /请假/, /评优/, /评先/, /辅导员/, /学生事务/],
+  },
+]
+
+const DOMAIN_KEYWORDS = [
+  '奖学金',
+  '助学金',
+  '国家奖学金',
+  '国家励志奖学金',
+  '竞赛奖学金',
+  '转专业',
+  '补退选',
+  '课程认定',
+  '学分认定',
+  '成绩认定',
+  '选课',
+  '课表',
+  '教务',
+  '考试',
+  '补考',
+  '重修',
+  '宿舍',
+  '图书馆',
+  '食堂',
+  '后勤',
+  '科研',
+  '课题',
+  '立项',
+  '项目申报',
+]
+
+const SYNONYM_GROUPS = [
+  ['奖学金', '奖助', '资助', '助学金'],
+  ['转专业', '转系', '专业调整'],
+  ['补退选', '退选', '补选', '改选'],
+  ['课程认定', '学分认定', '成绩认定', '学分转换'],
+  ['考试', '考核', '补考', '重修'],
+  ['宿舍', '宿舍管理', '公寓'],
+  ['图书馆', '借阅', '馆藏'],
+  ['食堂', '餐厅', '餐饮'],
+  ['科研', '课题', '立项', '项目申报'],
+  ['竞赛', '大赛', '比赛'],
+]
 
 const safeParseJson = (text) => {
   try {
@@ -14,51 +120,100 @@ const safeParseJson = (text) => {
 }
 
 const loadKnowledgeBase = () => {
-  if (knowledgeBaseCache) return knowledgeBaseCache
+  if (kbCache) return kbCache
   if (!existsSync(KB_PATH)) {
-    knowledgeBaseCache = []
-    return knowledgeBaseCache
+    kbCache = []
+    return kbCache
   }
 
   const raw = readFileSync(KB_PATH, 'utf8')
   const parsed = safeParseJson(raw)
-  knowledgeBaseCache = Array.isArray(parsed) ? parsed : []
-  return knowledgeBaseCache
+  kbCache = Array.isArray(parsed) ? parsed : []
+  return kbCache
 }
 
 const normalize = (text) => String(text || '').toLowerCase().trim()
 
-const CHINESE_KEYWORDS = [
-  '奖学金',
-  '国家奖学金',
-  '国家励志奖学金',
-  '竞赛奖学金',
-  '助学金',
-  '资助',
-  '转专业',
-  '补退选',
-  '课程补退选',
-  '成绩认定',
-  '课程认定',
-  '学分认定',
-  '教务',
-  '选课',
-  '课表',
-  '补考',
-  '重修',
-  '考试',
-]
+const normalizeJsonArray = (value) => {
+  if (!value) return []
+  if (Array.isArray(value)) return value.map((item) => String(item || '').trim()).filter(Boolean)
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value)
+      if (Array.isArray(parsed)) {
+        return parsed.map((item) => String(item || '').trim()).filter(Boolean)
+      }
+    } catch {
+      return []
+    }
+  }
+  return []
+}
 
-const generateChineseNGrams = (query) => {
+const mapCommunityKnowledgeRow = (row) => ({
+  id: row.id,
+  postId: row.post_id,
+  title: row.title,
+  content: row.content || row.summary || '',
+  category: row.category || 'general',
+  keywords: normalizeJsonArray(row.keywords),
+  updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : '',
+  sourceType: row.source_type || 'community_summary',
+  sourceStatus: row.status || 'pending',
+  confidenceBase: Number(row.confidence || 0.45),
+})
+
+const loadCommunityKnowledge = async () => {
+  if (!isMySqlConfigured()) return []
+
+  try {
+    const rows = await query(
+      `
+        SELECT
+          id,
+          post_id,
+          title,
+          summary,
+          content,
+          category,
+          keywords,
+          confidence,
+          status,
+          source_type,
+          updated_at
+        FROM community_knowledge
+        WHERE status = 'approved'
+        ORDER BY updated_at DESC
+      `,
+    )
+
+    return rows.map(mapCommunityKnowledgeRow)
+  } catch {
+    return []
+  }
+}
+
+const expandBySynonyms = (terms) => {
+  const set = new Set(terms)
+  for (const term of terms) {
+    for (const group of SYNONYM_GROUPS) {
+      if (group.some((item) => term.includes(item) || item.includes(term))) {
+        group.forEach((item) => set.add(item))
+      }
+    }
+  }
+  return Array.from(set)
+}
+
+const generateChineseNgrams = (query) => {
   const grams = new Set()
-  const segments = query.match(/[\u4e00-\u9fff]{2,}/g) || []
+  const chunks = query.match(/[\u4e00-\u9fff]{2,}/g) || []
 
-  for (const seg of segments) {
-    if (seg.length <= 6) grams.add(seg)
-    const maxGram = Math.min(4, seg.length)
+  for (const chunk of chunks) {
+    const maxGram = Math.min(4, chunk.length)
     for (let size = 2; size <= maxGram; size += 1) {
-      for (let i = 0; i <= seg.length - size; i += 1) {
-        grams.add(seg.slice(i, i + size))
+      for (let i = 0; i <= chunk.length - size; i += 1) {
+        grams.add(chunk.slice(i, i + size))
       }
     }
   }
@@ -68,158 +223,246 @@ const generateChineseNGrams = (query) => {
 
 const extractQueryTerms = (query) => {
   const q = normalize(query)
-  const terms = new Set()
   if (!q) return []
 
-  terms.add(q)
+  const terms = new Set([q])
 
-  q.split(/[\s,，。！？；:：、（）()【】\[\]\-_/]+/).forEach((t) => {
-    const term = t.trim()
-    if (term.length >= 2) terms.add(term)
-  })
+  q.split(/[\s,，。！？；:：、（）()\[\]\-_/]+/g)
+    .map((item) => item.trim())
+    .filter((item) => item.length >= 2)
+    .forEach((item) => terms.add(item))
 
-  for (const gram of generateChineseNGrams(q)) {
+  for (const gram of generateChineseNgrams(q)) {
     if (gram.length >= 2) terms.add(gram)
   }
 
-  CHINESE_KEYWORDS.forEach((kw) => {
-    if (q.includes(kw)) terms.add(kw)
-  })
+  for (const keyword of DOMAIN_KEYWORDS) {
+    if (q.includes(keyword)) terms.add(keyword)
+  }
 
-  return Array.from(terms)
+  return expandBySynonyms(Array.from(terms))
 }
 
-const entrySearchText = (entry) =>
-  normalize([entry.title, entry.content, ...(Array.isArray(entry.keywords) ? entry.keywords : [])].join(' '))
+const inferQueryCategories = (query) => {
+  const matched = []
+  for (const rule of CATEGORY_RULES) {
+    if (rule.patterns.some((pattern) => pattern.test(String(query || '')))) {
+      matched.push(rule.category)
+    }
+  }
+  return Array.from(new Set(matched))
+}
 
-const scoreEntry = (entry, query, terms) => {
+const computeTimeDecayFactor = (updatedAt) => {
+  if (!TIME_DECAY.enabled) return 1
+
+  const ts = Date.parse(String(updatedAt || ''))
+  if (!Number.isFinite(ts)) return 1
+
+  const ageDays = Math.max(0, (Date.now() - ts) / (24 * 3600 * 1000))
+  const halfLife = Math.max(1, TIME_DECAY.halfLifeDays)
+  const factor = Math.pow(0.5, ageDays / halfLife)
+  return Math.max(TIME_DECAY.minFactor, factor)
+}
+
+const scoreEntry = (entry, query, terms, preferredCategories = []) => {
   const q = normalize(query)
   const title = normalize(entry.title)
   const content = normalize(entry.content)
   const category = normalize(entry.category)
   const keywords = Array.isArray(entry.keywords) ? entry.keywords.map(normalize) : []
+  const preferred = preferredCategories.map(normalize)
 
-  let score = 0
-  const matched = new Set()
+  let baseScore = 0
+  const matchedTerms = new Set()
 
-  if (title && q && title.includes(q)) {
-    score += 10
-    matched.add(q)
+  if (q && title.includes(q)) {
+    baseScore += RAG_WEIGHTS.exactTitle
+    matchedTerms.add(q)
   }
-  if (content && q && content.includes(q)) {
-    score += 4
-    matched.add(q)
+
+  if (q && content.includes(q)) {
+    baseScore += RAG_WEIGHTS.exactContent
+    matchedTerms.add(q)
   }
 
   for (const term of terms) {
     if (!term || term.length < 2) continue
 
     if (title.includes(term)) {
-      score += term.length >= 4 ? 5 : 3
-      matched.add(term)
+      baseScore += term.length >= 4 ? RAG_WEIGHTS.termTitleLong : RAG_WEIGHTS.termTitleShort
+      matchedTerms.add(term)
     }
-    if (keywords.some((k) => k.includes(term) || term.includes(k))) {
-      score += 4
-      matched.add(term)
-    }
+
     if (content.includes(term)) {
-      score += term.length >= 4 ? 2 : 1
-      matched.add(term)
+      baseScore += term.length >= 4 ? RAG_WEIGHTS.termContentLong : RAG_WEIGHTS.termContentShort
+      matchedTerms.add(term)
     }
-    if (category && (term.includes(category) || category.includes(term))) {
-      score += 2
-      matched.add(term)
+
+    if (keywords.some((keyword) => keyword.includes(term) || term.includes(keyword))) {
+      baseScore += RAG_WEIGHTS.keywordMatch
+      matchedTerms.add(term)
+    }
+
+    if (category && (category.includes(term) || term.includes(category))) {
+      baseScore += RAG_WEIGHTS.categoryMatch
+      matchedTerms.add(term)
     }
   }
 
-  if (/(奖学金|资助|助学金)/.test(q) && category === 'scholarship') score += 3
-  if (/(转专业|补退选|成绩认定|课程认定|学分认定)/.test(q) && category === 'teaching') score += 3
-  if (/(考试|补考|重修)/.test(q) && /(teaching|exam)/.test(category)) score += 2
-
-  // Theme-specific bias to reduce scholarship cross-contamination.
-  const text = `${title} ${content} ${keywords.join(' ')}`
-  if (/竞赛.*奖学金|奖学金.*竞赛/.test(q)) {
-    if (/竞赛/.test(text)) score += 12
-    if (/国家奖学金|国家励志奖学金/.test(text) && !/竞赛/.test(text)) score -= 10
-  }
-  if (/国家励志奖学金/.test(q)) {
-    if (/国家励志奖学金/.test(text)) score += 12
-    if (/竞赛奖学金/.test(text)) score -= 8
-  }
-  if (/国家奖学金/.test(q) && !/国家励志奖学金/.test(q)) {
-    if (/国家奖学金/.test(text)) score += 10
-    if (/竞赛奖学金/.test(text)) score -= 8
+  if (preferred.includes(category)) {
+    baseScore += RAG_WEIGHTS.routeBoost
   }
 
-  return { score, matchedTerms: Array.from(matched) }
+  if (/(奖学金|助学金|资助)/.test(q) && category === 'scholarship') {
+    baseScore += RAG_WEIGHTS.categoryScholarshipBoost
+  }
+
+  if (/(转专业|补退选|课程认定|学分认定|成绩认定|选课|课表|教务)/.test(q) && category === 'teaching') {
+    baseScore += RAG_WEIGHTS.categoryTeachingBoost
+  }
+
+  if (/(考试|补考|重修)/.test(q) && /^(exam|teaching)$/.test(category)) {
+    baseScore += RAG_WEIGHTS.categoryExamBoost
+  }
+
+  if (COMMUNITY_SOURCE_TYPES.has(String(entry.sourceType || ''))) {
+    baseScore *= entry.sourceStatus === 'approved' ? 0.72 : 0.58
+  }
+
+  const decayFactor = computeTimeDecayFactor(entry.updatedAt)
+  const score = baseScore * decayFactor
+
+  return {
+    score,
+    baseScore,
+    decayFactor,
+    matchedTerms: Array.from(matchedTerms),
+  }
 }
 
-const snippetFromContent = (content, query, maxLen = 72) => {
+const snippetFromContent = (content, query, maxLen = 96) => {
   const text = String(content || '').replace(/\s+/g, ' ').trim()
   if (!text) return ''
 
   const terms = extractQueryTerms(query)
-  const hit = terms.find((t) => t && t.length >= 2 && text.includes(t))
+  const hit = terms.find((term) => term.length >= 2 && text.includes(term))
   if (!hit) return `${text.slice(0, maxLen)}${text.length > maxLen ? '...' : ''}`
 
   const idx = text.indexOf(hit)
-  const start = Math.max(0, idx - 16)
-  const end = Math.min(text.length, idx + maxLen - 16)
+  const start = Math.max(0, idx - 24)
+  const end = Math.min(text.length, idx + maxLen - 24)
   const piece = text.slice(start, end)
   return `${start > 0 ? '...' : ''}${piece}${end < text.length ? '...' : ''}`
 }
 
-const applyThemeFilter = (results, query) => {
-  const q = normalize(query)
-  if (!q) return results
+const logSearch = (query, options, hits, meta = {}) => {
+  if (!RAG_LOG_ENABLED) return
 
-  const byText = (item) => entrySearchText(item)
+  try {
+    if (!existsSync(LOG_DIR)) mkdirSync(LOG_DIR, { recursive: true })
 
-  if (/竞赛.*奖学金|奖学金.*竞赛/.test(q)) {
-    const narrowed = results.filter((item) => /竞赛/.test(byText(item)))
-    return narrowed.length > 0 ? narrowed : results
+    const item = {
+      ts: new Date().toISOString(),
+      query,
+      limit: options.limit,
+      minScore: options.minScore,
+      preferredCategories: meta.preferredCategories || [],
+      routeMode: meta.routeMode || 'global_only',
+      hits: hits.map((hit) => ({
+        id: hit.id,
+        title: hit.title,
+        category: hit.category,
+        sourceType: hit.sourceType || 'official_notice',
+        score: Number((hit.score || 0).toFixed(4)),
+        baseScore: Number((hit.baseScore || 0).toFixed(4)),
+        decayFactor: Number((hit.decayFactor || 1).toFixed(4)),
+        updatedAt: hit.updatedAt || '',
+        matchedTerms: hit.matchedTerms || [],
+      })),
+    }
+
+    appendFileSync(LOG_PATH, `${JSON.stringify(item)}\n`, 'utf8')
+  } catch {
+    // 日志失败不影响主流程。
   }
-
-  if (/国家励志奖学金/.test(q)) {
-    const narrowed = results.filter((item) => /国家励志奖学金/.test(byText(item)))
-    return narrowed.length > 0 ? narrowed : results
-  }
-
-  if (/国家奖学金/.test(q) && !/国家励志奖学金/.test(q)) {
-    const narrowed = results.filter((item) => /国家奖学金/.test(byText(item)) && !/竞赛奖学金/.test(byText(item)))
-    return narrowed.length > 0 ? narrowed : results
-  }
-
-  return results
 }
 
-export const getKnowledgeBaseEntryById = (id) => {
-  const kb = loadKnowledgeBase()
-  return kb.find((item) => item.id === id) || null
-}
-
-export const searchKnowledgeBase = (query, options = {}) => {
-  const limit = options.limit ?? 3
-  const minScore = options.minScore ?? 3
-  const kb = loadKnowledgeBase()
-  if (!normalize(query)) return []
-
-  const terms = extractQueryTerms(query)
-
-  const ranked = kb
+const rankEntries = (entries, query, terms, preferredCategories, options) =>
+  entries
     .map((entry) => {
-      const { score, matchedTerms } = scoreEntry(entry, query, terms)
+      const { score, baseScore, decayFactor, matchedTerms } = scoreEntry(
+        entry,
+        query,
+        terms,
+        preferredCategories,
+      )
+
       return {
         ...entry,
         score,
+        baseScore,
+        decayFactor,
         matchedTerms,
         snippet: snippetFromContent(entry.content, query),
       }
     })
-    .filter((item) => item.score >= minScore)
+    .filter((item) => item.score >= options.minScore)
     .sort((a, b) => b.score - a.score)
 
-  return applyThemeFilter(ranked, query).slice(0, limit)
+const dedupeRankedHits = (hits) => {
+  const seen = new Set()
+
+  return hits.filter((hit) => {
+    const titleKey = String(hit.title || '').trim()
+    const key = titleKey || String(hit.id || '') || String(hit.url || '')
+    if (!key || seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
+export const getKnowledgeBaseEntryById = (id) => {
+  const kb = loadKnowledgeBase()
+  return kb.find((item) => String(item.id) === String(id)) || null
+}
+
+export const searchKnowledgeBase = async (query, options = {}) => {
+  const limit = options.limit ?? 3
+  const minScore = options.minScore ?? 3
+  const q = normalize(query)
+  if (!q) return []
+
+  const officialKnowledge = loadKnowledgeBase()
+  const communityKnowledge = options.includeCommunity === false ? [] : await loadCommunityKnowledge()
+  const allEntries = [...officialKnowledge, ...communityKnowledge]
+  const terms = extractQueryTerms(q)
+  const preferredCategories = inferQueryCategories(query)
+
+  let ranked = []
+  let routeMode = 'global_only'
+
+  if (preferredCategories.length > 0) {
+    const routedEntries = allEntries.filter((entry) =>
+      preferredCategories.includes(String(entry.category || '')),
+    )
+    const routedRanked = rankEntries(routedEntries, q, terms, preferredCategories, { minScore })
+
+    if (routedRanked.length >= ROUTE_MIN_HITS) {
+      ranked = dedupeRankedHits(routedRanked)
+      routeMode = 'category_only'
+    } else {
+      const globalRanked = rankEntries(allEntries, q, terms, preferredCategories, { minScore })
+      ranked = dedupeRankedHits(globalRanked)
+      routeMode = routedRanked.length > 0 ? 'category_then_global' : 'global_fallback'
+    }
+  } else {
+    ranked = dedupeRankedHits(rankEntries(allEntries, q, terms, [], { minScore }))
+  }
+
+  const finalHits = ranked.slice(0, limit)
+  logSearch(query, { limit, minScore }, finalHits, { preferredCategories, routeMode })
+  return finalHits
 }
 
 export const buildRagContext = (hits) => {
@@ -228,47 +471,54 @@ export const buildRagContext = (hits) => {
   const blocks = hits.map((hit, index) =>
     [
       `[参考资料 ${index + 1}]`,
-      `标题：${hit.title}`,
+      `标题：${hit.title || '未知'}`,
       `分类：${hit.category || 'unknown'}`,
+      `来源类型：${COMMUNITY_SOURCE_TYPES.has(String(hit.sourceType || '')) ? '学生社区经验' : '官方资料'}`,
       `更新时间：${hit.updatedAt || '未知'}`,
       `内容摘要：${hit.content || ''}`,
     ].join('\n'),
   )
 
   return [
-    '以下是与当前问题相关的校园知识库资料（优先参考；若与通用知识冲突，请以资料内容和学校最新通知为准）：',
+    '以下是与当前问题相关的校园知识资料。请优先参考官方通知；若使用学生社区经验，请明确它仅作辅助参考，不可替代学校正式通知。',
     ...blocks,
-    '请基于以上资料直接回答用户问题，不要先输出空泛说明。',
+    '请直接给出结论，不要先输出空泛说明。',
     '输出格式要求：',
-    '1. 使用“**结论总结**”标题，先给1-3句直接结论。',
-    '2. 使用“**关键信息/办理步骤**”标题，按条目列出条件、材料、时间、步骤。',
-    '3. 使用“**核实渠道**”标题，给出官网/部门/老师等核实路径。',
-    '4. 如资料不足或信息有时效性，明确写出“以学校最新通知为准”。',
-    '5. 不要大段复述原文；优先总结、归纳、可执行建议。',
+    '1. 使用“**结论总结**”先给 1-3 句明确结论；',
+    '2. 使用“**关键信息/办理步骤**”按条列出条件、材料、时间或办理步骤；',
+    '3. 如果引用学生社区经验，请明确写出“仅供参考，请以学校最新官方通知为准”。',
   ].join('\n\n')
 }
 
 export const ragHitsToSources = (hits) => {
   if (!Array.isArray(hits)) return []
 
-  return hits.map((hit) => ({
-    attachments: Array.isArray(hit.attachments)
-      ? hit.attachments
-          .map((a) => ({
-            name: typeof a?.name === 'string' ? a.name : '',
-            url: typeof a?.url === 'string' ? a.url : '',
-          }))
-          .filter((a) => a.name || a.url)
-      : [],
-    type: hit.sourceType || 'knowledge_base',
-    confidence: Math.min(0.95, 0.55 + Math.min(0.35, (hit.score || 0) * 0.03)),
-    title: hit.title,
-    url: hit.url || (hit.id ? `/kb/download?id=${encodeURIComponent(hit.id)}` : undefined),
-    loginRequiredHint:
-      typeof hit.url === 'string' &&
-      /https?:\/\/(?:www\.)?gdei\.edu\.cn\/nw\//i.test(hit.url) &&
-      hit.sourceType === 'official_notice',
-    snippet: hit.snippet || undefined,
-  }))
-}
+  return hits.map((hit) => {
+    const isCommunity = COMMUNITY_SOURCE_TYPES.has(String(hit.sourceType || ''))
+    const communityConfidence = Math.min(
+      0.6,
+      Math.max(0.35, Number(hit.confidenceBase || 0.45) - (hit.sourceStatus === 'approved' ? 0 : 0.05)),
+    )
 
+    return {
+      attachments: Array.isArray(hit.attachments)
+        ? hit.attachments
+            .map((attachment) => ({
+              name: typeof attachment?.name === 'string' ? attachment.name : '',
+              url: typeof attachment?.url === 'string' ? attachment.url : '',
+            }))
+            .filter((attachment) => attachment.name || attachment.url)
+        : [],
+      type: hit.sourceType || 'knowledge_base',
+      confidence: isCommunity
+        ? communityConfidence
+        : Math.min(0.95, 0.55 + Math.min(0.35, (hit.score || 0) * 0.03)),
+      title: hit.title || '知识库来源',
+      postId: isCommunity && hit.postId ? hit.postId : undefined,
+      url: isCommunity ? undefined : hit.url || (hit.id ? `/kb/download?id=${encodeURIComponent(hit.id)}` : undefined),
+      loginRequiredHint: false,
+      snippet: hit.snippet || undefined,
+      note: isCommunity ? COMMUNITY_SOURCE_NOTE : undefined,
+    }
+  })
+}

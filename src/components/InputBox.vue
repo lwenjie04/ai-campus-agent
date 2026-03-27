@@ -1,4 +1,5 @@
 <template>
+  <!-- 输入区只负责收集文本并向父组件发出 send 事件，不直接处理请求。 -->
   <div class="input-box">
     <el-input
       v-model="text"
@@ -23,12 +24,17 @@ const emit = defineEmits<{
   send: [content: string]
 }>()
 
+// 用本地 ref 保存输入框内容，发送成功后立即清空。
 const text = ref('')
 
+// 发送前做两层保护：
+// 1. 去掉首尾空白，避免空消息进入会话
+// 2. loading 时禁止重复发送，避免并发请求打乱消息顺序
 const send = () => {
   const content = text.value.trim()
   if (!content || props.loading) return
 
+  // 发送逻辑交给父组件，这里只负责把用户输入抛出去。
   emit('send', content)
   text.value = ''
 }

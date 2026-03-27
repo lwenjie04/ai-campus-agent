@@ -16,6 +16,7 @@ export interface StreamChatHandlers {
   onMeta?: (payload: ChatApiResponse) => void
 }
 
+// Mock 回复用于后端未启动或演示模式下的前端联调。
 const mockReply = (messages: Message[]): ChatApiResponse => {
   const lastUser = [...messages].reverse().find((msg) => msg.role === 'user')?.content ?? ''
 
@@ -71,6 +72,7 @@ export const sendChat = async (messages: Message[]): Promise<ChatApiResponse> =>
     return mockReply(messages)
   }
 
+  // 非流式接口适合简单请求，直接等待后端一次性返回完整结果。
   const res = await axios.post<ChatApiResponse>(`${appConfig.apiBaseUrl}/chat`, {
     messages,
   })
@@ -83,6 +85,7 @@ export const streamChat = async (
   handlers: StreamChatHandlers = {},
 ): Promise<ChatApiResponse> => {
   if (appConfig.useMockChat) {
+    // Mock 模式也模拟字符级流式输出，方便前端调试打字机效果。
     const reply = mockReply(messages)
     handlers.onStart?.({ requestId: `mock-${Date.now()}` })
     for (const ch of reply.content) {
@@ -118,6 +121,7 @@ export const streamChat = async (
   let buffer = ''
   let finalMeta: ChatApiResponse | null = null
 
+  // 后端按 NDJSON 一行一个事件返回，这里负责逐行解析并分发给回调。
   const processLine = (lineRaw: string) => {
     const line = lineRaw.trim()
     if (!line) return
@@ -158,6 +162,7 @@ export const streamChat = async (
   while (true) {
     const { done, value } = await reader.read()
     if (done) break
+    // 分块读取后先拼接到 buffer，再按换行切出完整事件。
     buffer += decoder.decode(value, { stream: true })
 
     let newlineIdx = buffer.indexOf('\n')

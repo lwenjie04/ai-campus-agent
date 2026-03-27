@@ -1,13 +1,13 @@
 {
-  "runAt": "2026-03-04T16:58:36.362Z",
+  "runAt": "2026-03-27T03:18:00.798Z",
   "input": "server/data/knowledge-base.json",
   "output": "server/data/knowledge-base.json",
-  "dryRun": true,
-  "scanned": 177,
-  "kept": 177,
+  "dryRun": false,
+  "scanned": 396,
+  "kept": 396,
   "removedByDedupe": 0,
   "quality": {
-    "total": 177,
+    "total": 396,
     "errors": 0,
     "warnings": 0,
     "byCode": {}

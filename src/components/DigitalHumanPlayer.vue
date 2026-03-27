@@ -64,6 +64,7 @@ const emit = defineEmits<{
   (e: 'narration-ended'): void
 }>()
 
+// 视频和语音分开管理：mp4 负责画面，TTS 负责朗读文本。
 const videoRef = ref<HTMLVideoElement | null>(null)
 const showPlaceholder = ref(false)
 const videoVisible = ref(false)
@@ -113,6 +114,7 @@ const syncVideoDebugState = () => {
   debugState.value.error = codeMap[el.error.code] || `UNKNOWN(${el.error.code})`
 }
 
+// 先探测视频资源是否存在，避免缺文件时页面只表现为“黑屏”。
 const probeVideoByMetadata = (src: string, timeoutMs = 4000) =>
   new Promise<boolean>((resolve) => {
     const v = document.createElement('video')
@@ -155,6 +157,7 @@ const checkRequiredVideos = async () => {
   }
 }
 
+// 同时停止后端 TTS 音频和浏览器语音合成兜底播放。
 const stopNarration = () => {
   narrationToken.value += 1
   const audioEl = narrationAudioRef.value
@@ -172,6 +175,7 @@ const stopNarration = () => {
   }
 }
 
+// 清理 markdown 痕迹，避免 TTS 把符号也读出来。
 const normalizeNarrationText = (raw: string) =>
   raw
     .replace(/[`*_#>-]/g, ' ')
@@ -179,6 +183,7 @@ const normalizeNarrationText = (raw: string) =>
     .replace(/\s+/g, ' ')
     .trim()
 
+// 浏览器 TTS 只是兜底方案，只有后端 TTS 不可用时才启用。
 const startNarrationWithBrowser = (text: string, token: number) => {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
     emit('narration-ended')
@@ -199,6 +204,7 @@ const startNarrationWithBrowser = (text: string, token: number) => {
   window.speechSynthesis.speak(utter)
 }
 
+// 优先请求后端 TTS，失败后再回退到浏览器自带语音。
 const startNarration = async (text: string) => {
   stopNarration()
   const token = narrationToken.value
@@ -231,6 +237,7 @@ const startNarration = async (text: string) => {
   startNarrationWithBrowser(content, token)
 }
 
+// 每次切换 cue 都重新加载对应视频，并配合样式类做淡入效果。
 const playCurrentVideo = async () => {
   showPlaceholder.value = false
   const nextSrc = currentVideoSrc.value
@@ -290,6 +297,7 @@ const stopVideo = () => {
   syncVideoDebugState()
 }
 
+// 等视频数据真正加载完成后再显示，减少闪白或空帧。
 const onLoadedData = () => {
   setDebugAction('loadeddata')
   showPlaceholder.value = false
@@ -302,6 +310,7 @@ const onLoadedData = () => {
   syncVideoDebugState()
 }
 
+// 欢迎视频只播放一次；待机和讲解状态需要持续可用。
 const onEnded = async () => {
   setDebugAction('ended')
   if (normalizedCue.value === 'greeting') {
@@ -335,6 +344,7 @@ const onError = () => {
 watch(
   () => props.playSignal,
   () => {
+    // 父组件通过递增 playSignal 的方式，强制重播同一个 cue 视频。
     void playCurrentVideo()
   },
   { immediate: true },
@@ -350,6 +360,7 @@ watch(
 watch(
   () => normalizedCue.value,
   (cue) => {
+    // 一旦离开 teaching 状态，就立即停止当前讲解语音。
     if (cue !== 'teaching') stopNarration()
   },
 )
@@ -363,6 +374,7 @@ watch(
 )
 
 onMounted(() => {
+  // 资源检测放在挂载后异步执行，避免阻塞首屏渲染。
   void checkRequiredVideos()
 })
 
