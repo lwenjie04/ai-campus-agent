@@ -1,0 +1,30 @@
+{
+  "name": "ai-campus-agent-mobile",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:h5": "uni",
+    "build:h5": "uni build -p h5",
+    "type-check": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "@dcloudio/uni-app": "2.0.2-5000520260324002",
+    "@dcloudio/uni-cli-shared": "2.0.2-5000520260324002",
+    "@dcloudio/uni-cli-i18n": "2.0.2-5000520260324002",
+    "@dcloudio/uni-components": "3.0.0-alpha-3000020210521001",
+    "@dcloudio/uni-h5": "2.0.2-5000520260324002",
+    "pinia": "^3.0.4",
+    "vue": "^3.5.28"
+  },
+  "devDependencies": {
+    "@dcloudio/vite-plugin-uni": "3.0.0-alpha-3000020210521001",
+    "@dcloudio/types": "^3.4.18",
+    "@vue/tsconfig": "^0.8.1",
+    "@types/node": "^24.10.13",
+    "typescript": "~5.9.3",
+    "vite": "^7.3.1",
+    "vue-tsc": "^3.2.4",
+    "webpack": "^5.102.1"
+  }
+}

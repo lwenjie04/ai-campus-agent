@@ -7,7 +7,7 @@
       <!-- 用户消息和助手消息复用同一个气泡结构，通过 role 决定额外装饰。 -->
       <div class="bubble">
         <span v-if="message.role === 'assistant'" class="bubble-icon">✨</span>
-        <span class="content">{{ message.content }}</span>
+        <span class="content">{{ formatMessageContent(message.content) }}</span>
         <span v-if="message.role === 'assistant' && message.status === 'pending'" class="typing-cursor" />
       </div>
 
@@ -102,6 +102,15 @@
 <script setup lang="ts">
 import { appConfig } from '@/config/app'
 import type { Message } from '@/types/agent'
+
+// 聊天区目前按纯文本展示，不渲染 Markdown。
+// 这里把模型偶尔输出的强调符号做一次轻量清洗，避免页面出现 **标题** 这类星号噪声。
+const formatMessageContent = (content: string) =>
+  String(content || '')
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/\*(.*?)\*/g, '$1')
+    .replace(/__(.*?)__/g, '$1')
+    .replace(/_(.*?)_/g, '$1')
 
 // 把后端返回的来源地址统一转换成浏览器可直接访问的链接。
 // 这里要兼容完整链接、后端相对路径以及原样透传三种情况。

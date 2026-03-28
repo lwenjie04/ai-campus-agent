@@ -1,0 +1,14 @@
+{
+  "name": "校园智能问答移动端",
+  "appid": "__UNI__AICAMPUSAGENT",
+  "description": "广东第二师范学院校园智能问答移动端",
+  "versionName": "1.0.0",
+  "versionCode": "100",
+  "transformPx": false,
+  "app-plus": {
+    "usingComponents": true
+  },
+  "h5": {
+    "title": "校园智能问答"
+  }
+}

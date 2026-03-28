@@ -1,4 +1,4 @@
-import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
+﻿import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { isMySqlConfigured, query } from './mysql.mjs'
 
@@ -482,11 +482,13 @@ export const buildRagContext = (hits) => {
   return [
     '以下是与当前问题相关的校园知识资料。请优先参考官方通知；若使用学生社区经验，请明确它仅作辅助参考，不可替代学校正式通知。',
     ...blocks,
-    '请直接给出结论，不要先输出空泛说明。',
+    '请直接回答，不要写空泛开场白，也不要重复用户问题。',
     '输出格式要求：',
-    '1. 使用“**结论总结**”先给 1-3 句明确结论；',
-    '2. 使用“**关键信息/办理步骤**”按条列出条件、材料、时间或办理步骤；',
-    '3. 如果引用学生社区经验，请明确写出“仅供参考，请以学校最新官方通知为准”。',
+    '1. 先用“结论”给出 1 到 2 句直接答案；',
+    '2. 再用“办理步骤/关键信息”列出 3 到 5 条最关键的信息；',
+    '3. 如有时间、材料、适用对象或风险提示，再用“提醒”补充；',
+    '4. 语言简洁，像办事指引，不要写成长篇宣传文；',
+    '5. 如果引用学生社区经验，请明确写出“仅供参考，请以学校最新官方通知为准”；如果信息不足，请明确说“目前无法确认”或“请以学校最新官方通知为准”。',
   ].join('\n\n')
 }
 

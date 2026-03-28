@@ -1,9 +1,9 @@
-<template>
-  <div class="app-layout">
-    <!--
-      顶部导航固定保留：
-      后续无论切到首页还是学生社区，导航本身都不需要重新创建。
-    -->
+﻿<template>
+  <div v-if="!authStore.loggedIn" class="app-auth-shell">
+    <LoginView @login-success="handleLoginSuccess" />
+  </div>
+
+  <div v-else class="app-layout">
     <header class="top-nav">
       <div class="top-nav__inner">
         <div class="top-nav__brand">
@@ -32,6 +32,7 @@
             学生社区
           </button>
           <button
+            v-if="authStore.isAdmin"
             type="button"
             class="top-nav__tab"
             :class="{ 'top-nav__tab--active': activeSection === 'admin' }"
@@ -42,19 +43,9 @@
         </nav>
 
         <div class="top-nav__auth">
-          <template v-if="authStore.loggedIn">
-            <span class="top-nav__auth-text">{{ authStore.displayName || '已登录' }}</span>
-            <button type="button" class="top-nav__tab" @click="logout">退出</button>
-          </template>
-          <button
-            v-else
-            type="button"
-            class="top-nav__tab"
-            :class="{ 'top-nav__tab--active': activeSection === 'login' }"
-            @click="goLogin"
-          >
-            登录
-          </button>
+          <span class="top-nav__auth-role">{{ authStore.isAdmin ? '管理员' : '普通用户' }}</span>
+          <span class="top-nav__auth-text">{{ authStore.displayName || authStore.username }}</span>
+          <button type="button" class="top-nav__tab" @click="logout">退出</button>
         </div>
       </div>
     </header>
@@ -64,14 +55,8 @@
 
       <AdminReviewView
         v-else-if="activeSection === 'admin' && authStore.isAdmin"
-        @go-login="goLogin"
+        @go-login="goHome"
         @logout="logout"
-      />
-
-      <LoginView
-        v-else-if="activeSection === 'login' || (activeSection === 'admin' && !authStore.isAdmin)"
-        @login-success="goAdmin"
-        @go-home="goHome"
       />
 
       <CommunityView
@@ -97,8 +82,9 @@ import AdminReviewView from './views/AdminReviewView.vue'
 import LoginView from './views/LoginView.vue'
 import { useAuthStore } from './store/auth'
 
-type MainSection = 'home' | 'community' | 'admin' | 'login'
+type MainSection = 'home' | 'community' | 'admin'
 type CommunityViewState = 'list' | 'detail'
+type LoginRole = 'user' | 'admin'
 
 const authStore = useAuthStore()
 const activeSection = ref<MainSection>('home')
@@ -114,12 +100,12 @@ const goCommunity = () => {
   communityView.value = 'list'
 }
 
-const goLogin = () => {
-  activeSection.value = 'login'
-}
-
 const goAdmin = () => {
-  activeSection.value = authStore.isAdmin ? 'admin' : 'login'
+  if (!authStore.isAdmin) {
+    activeSection.value = 'home'
+    return
+  }
+  activeSection.value = 'admin'
 }
 
 const openPostDetail = (postId: string) => {
@@ -136,17 +122,30 @@ const backToCommunityList = () => {
   communityView.value = 'list'
 }
 
+const handleLoginSuccess = (role: LoginRole) => {
+  activeSection.value = role === 'admin' ? 'admin' : 'home'
+}
+
 const logout = () => {
   authStore.logout()
   activeSection.value = 'home'
+  communityView.value = 'list'
+  currentPostId.value = ''
 }
 
 onMounted(() => {
   authStore.hydrate()
+  if (authStore.loggedIn) {
+    activeSection.value = authStore.isAdmin ? 'admin' : 'home'
+  }
 })
 </script>
 
 <style scoped>
+.app-auth-shell {
+  min-height: 100vh;
+}
+
 .app-layout {
   min-height: 100vh;
   background:
@@ -222,6 +221,18 @@ onMounted(() => {
   gap: 10px;
 }
 
+.top-nav__auth-role {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(97, 167, 92, 0.14);
+  color: #2a6b3f;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .top-nav__auth-text {
   color: rgba(24, 78, 48, 0.74);
   font-size: 14px;
@@ -273,6 +284,7 @@ onMounted(() => {
   .top-nav__auth {
     width: 100%;
     justify-content: space-between;
+    flex-wrap: wrap;
   }
 
   .top-nav__tab {

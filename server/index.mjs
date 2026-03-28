@@ -2,9 +2,11 @@ import { createServer } from 'node:http'
 import { randomUUID } from 'node:crypto'
 import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs'
 import { extname, resolve } from 'node:path'
+import { handleAuthRoute } from './auth.mjs'
 import { handleCommunityRoute } from './community.mjs'
 import { buildRuleBasedSources } from './sources-rules.mjs'
 import { buildRagContext, getKnowledgeBaseEntryById, ragHitsToSources, searchKnowledgeBase } from './rag.mjs'
+import { handleTtsRoute } from './tts.mjs'
 
 // 读取 .env 文件并注入到 process.env。
 // 这里没有依赖 dotenv，而是自己做了一个极简解析器，便于保持后端零额外依赖。
@@ -127,11 +129,13 @@ const ensureSystemPrompt = (messages) => {
     {
       role: 'system',
       content: [
-        '???????????????????',
-        '??????????????????????????',
-        '?????????????????? + ????/???? + ?????????',
-        '????????????????????????????',
-        '??????????????????????????????????????',
+        '你是广东第二师范学院校园智能问答助手。',
+        '请基于学校真实信息回答，语言简洁、准确、易懂。',
+        '如果用户只是打招呼，请用 1 到 2 句话简短回应，不要输出冗长欢迎词。',
+        '如果用户询问具体事务，请优先给结论，再补充办理步骤、关键信息和提醒。',
+        '如果信息不足，请明确说明无法确认，并提醒用户以学校最新官方通知为准。',
+        '不要编造不存在的流程，也不要写空泛套话。',
+        '不要使用 Markdown 粗体、斜体或星号强调，例如不要输出 **标题**、*重点* 这类格式。',
       ].join(''),
     },
     ...messages,
@@ -774,6 +778,14 @@ const server = createServer(async (req, res) => {
     })
   }
 
+  const authHandled = await handleAuthRoute(req, res, requestUrl, {
+    json,
+    parseJsonBody,
+  })
+  if (authHandled !== false) {
+    return authHandled
+  }
+
   // 学生社区模块接口。
   // 当前先接入“可联调骨架”，后续再逐步替换为 MySQL 实现。
   const communityHandled = await handleCommunityRoute(req, res, requestUrl, {
@@ -782,6 +794,15 @@ const server = createServer(async (req, res) => {
   })
   if (communityHandled !== false) {
     return communityHandled
+  }
+
+  const ttsHandled = await handleTtsRoute(req, res, {
+    json,
+    parseJsonBody,
+    allowOrigin: ALLOW_ORIGIN,
+  })
+  if (ttsHandled !== false) {
+    return ttsHandled
   }
 
   // 非流式聊天接口。

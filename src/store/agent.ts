@@ -3,7 +3,7 @@ import type { Message, MessageSource } from '@/types/agent'
 import { streamChat } from '@/api/llm'
 import { appConfig } from '@/config/app'
 
-const STORAGE_KEY = 'ai-campus-agent.session.v1'
+const STORAGE_KEY = 'ai-campus-agent.session.v2'
 
 type PersistedAgentSession = {
   userProfile?: {
@@ -25,8 +25,39 @@ const createMessage = (role: Message['role'], content: string, extra?: Partial<M
   ...extra,
 })
 
+// 固定欢迎词：页面首次打开或重置会话时直接显示。
+// 这条消息不走大模型，也不参与讲解 TTS。
+const WELCOME_MESSAGE =
+  '你好，我是广东第二师范学院校园智能问答助手。你可以直接告诉我想查询的事项，例如奖学金、选课、转专业、宿舍服务等。'
+
 // 访问 localStorage 前先做环境判断，避免测试环境或非浏览器环境报错。
 const canUseStorage = () => typeof window !== 'undefined' && !!window.localStorage
+
+const looksGarbledText = (value: string) => {
+  const text = String(value || '')
+  return text.includes('���') || (text.includes('?') && text.replace(/\?/g, '').trim().length <= 4)
+}
+
+// 把流式回复按“适合朗读的完整句子”切出来，便于边生成边播报。
+const splitSpeakableChunks = (raw: string) => {
+  const text = String(raw || '')
+  const result: string[] = []
+  let rest = text
+
+  while (rest.length > 0) {
+    const match = rest.match(/^([\s\S]*?[。！？；!?;]\s*)/)
+    if (!match) break
+    const matchedText = String(match[1] || '')
+    const chunk = matchedText.trim()
+    if (chunk) result.push(chunk)
+    rest = rest.slice(matchedText.length)
+  }
+
+  return {
+    chunks: result,
+    rest,
+  }
+}
 
 export const useAgentStore = defineStore('agent', {
   state: () => ({
@@ -80,7 +111,8 @@ export const useAgentStore = defineStore('agent', {
               msg &&
               typeof msg === 'object' &&
               typeof msg.content === 'string' &&
-              ['system', 'user', 'assistant'].includes(msg.role),
+              ['system', 'user', 'assistant'].includes(msg.role) &&
+              !looksGarbledText(msg.content),
           )
         }
 
@@ -107,23 +139,29 @@ export const useAgentStore = defineStore('agent', {
     },
 
     buildSystemPrompt() {
-      // 把用户画像信息注入 system prompt，让模型按当前用户背景回答。
+      // 用户画像会被拼进 system prompt，帮助模型生成更贴合当前用户身份的表达。
       const roleLabelMap: Record<string, string> = {
         student: '学生',
         teacher: '教师',
         guest: '访客',
       }
 
-      return `你是广东第二师范学院校园智能问答助手。
+      return `你是广东第二师范学院校园智能问答助手。请基于学校真实信息进行回答，语言简洁、直接、易懂。
+
 当前用户信息：
 - 身份：${roleLabelMap[this.userProfile.role] || this.userProfile.role}
 - 专业：${this.userProfile.major || '未填写'}
 - 年级：${this.userProfile.grade || '未填写'}
 
 回答要求：
-1. 优先提供准确、清晰、步骤化的校园服务信息。
-2. 信息不确定时明确说明，并提示用户去官方渠道核实。
-3. 不编造校内政策、流程或时间安排。`
+1. 如果用户只是打招呼，请用 1 到 2 句话简短回应，不要输出冗长欢迎词或大段示例说明。
+2. 如果用户在询问具体事务，请优先按以下结构回答：
+   - 先给出明确结论或办理建议。
+   - 再补充办理步骤、关键信息或注意事项。
+3. 如果信息来自学校通知或规则，请尽量保持表达准确，不要编造不存在的流程。
+4. 如果目前无法确认细节，请明确说明，并提醒用户以学校最新官方通知为准。
+5. 语言尽量自然，不重复用户问题，不写空泛套话。
+6. 不要使用 Markdown 粗体、斜体或星号强调，例如不要输出 **标题**、*重点* 这类格式。`
     },
 
     refreshSystemPrompt() {
@@ -166,6 +204,18 @@ export const useAgentStore = defineStore('agent', {
       this.narrationTick += 1
     },
 
+    ensureWelcomeMessage() {
+      const visibleMessages = this.messages.filter((msg) => msg.role !== 'system')
+      if (visibleMessages.length > 0) return
+
+      this.messages.push(
+        createMessage('assistant', WELCOME_MESSAGE, {
+          videoCue: 'greeting',
+          sources: [],
+        }),
+      )
+    },
+
     stopNarrationPlayback() {
       this.clearNarration()
       this.triggerVideoCue('idle')
@@ -187,12 +237,13 @@ export const useAgentStore = defineStore('agent', {
     },
 
     initAgent() {
-      // 初始化时补齐 system prompt，并把数字人切到欢迎开场状态。
+      // 初始化时确保 system prompt 存在，并在首次进入页面时自动补一条欢迎词。
       if (this.messages.length > 0) {
         this.refreshSystemPrompt()
       } else {
         this.messages = [createMessage('system', this.buildSystemPrompt())]
       }
+      this.ensureWelcomeMessage()
       this.clearNarration()
       this.triggerVideoCue('greeting')
       this.persistSession()
@@ -200,6 +251,7 @@ export const useAgentStore = defineStore('agent', {
 
     resetSession() {
       this.messages = [createMessage('system', this.buildSystemPrompt())]
+      this.ensureWelcomeMessage()
       this.clearNarration()
       this.triggerVideoCue('greeting')
       this.persistSession()
@@ -224,6 +276,8 @@ export const useAgentStore = defineStore('agent', {
       let finalContent = ''
       let finalSources: MessageSource[] = []
       let finalRequestId: string | undefined
+      let narrationBuffer = ''
+      let narrationStarted = false
 
       try {
         await streamChat(this.messages.filter((msg) => msg.id !== assistantPlaceholder.id), {
@@ -237,6 +291,18 @@ export const useAgentStore = defineStore('agent', {
             const target = this.messages.find((msg) => msg.id === assistantPlaceholder.id)
             if (!target) return
             target.content += delta
+
+            // 同时把文本累计成完整句子，一旦成句就立即送给数字人播报。
+            narrationBuffer += delta
+            const { chunks, rest } = splitSpeakableChunks(narrationBuffer)
+            narrationBuffer = rest
+            if (chunks.length > 0) {
+              if (!narrationStarted) {
+                this.triggerVideoCue('teaching')
+                narrationStarted = true
+              }
+              chunks.forEach((chunk) => this.triggerNarration(chunk))
+            }
           },
           onMeta: (meta) => {
             finalContent = meta.content || finalContent
@@ -253,13 +319,28 @@ export const useAgentStore = defineStore('agent', {
           target.status = 'sent'
         }
 
-        // 只有最终回复文本稳定后，才开始讲解视频和语音播报。
+        // 流式结束后，把最后一个没凑成完整句号的尾句补进播报队列。
+        const tailNarration = narrationBuffer.trim()
+        if (tailNarration) {
+          if (!narrationStarted) {
+            this.triggerVideoCue('teaching')
+            narrationStarted = true
+          }
+          this.triggerNarration(tailNarration)
+        }
+
         const narration = (finalContent || target?.content || '').trim()
-        if (narration) {
+        if (!narrationStarted && narration) {
+          // 兜底：如果本次回复没有形成任何流式句子，仍然按完整文本播一次。
           this.triggerVideoCue('teaching')
           this.triggerNarration(narration)
-        } else {
+          narrationStarted = true
+        }
+
+        if (!narrationStarted) {
           this.triggerVideoCue('idle')
+        } else {
+          target && (target.videoCue = 'teaching')
         }
         this.persistSession()
       } catch (error: any) {

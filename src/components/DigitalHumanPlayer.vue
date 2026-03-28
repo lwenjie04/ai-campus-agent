@@ -71,6 +71,8 @@ const videoVisible = ref(false)
 const narrationAudioRef = ref<HTMLAudioElement | null>(null)
 const narrationToken = ref(0)
 const activeAudioUrl = ref('')
+const narrationQueue = ref<string[]>([])
+const narrationProcessing = ref(false)
 const lastVideoSrc = ref('')
 const videoSwitching = ref(false)
 
@@ -84,6 +86,11 @@ const debugState = ref({
   missingVideos: [] as string[],
 })
 
+const TTS_SEGMENT_MAX_LENGTH = 140
+
+// 腾讯云 TextToVoice 基础语音合成接口对中文长度限制较严，
+// 官方文档给出的上限是 150 个汉字左右。这里保守收紧到 140，
+// 避免长回答第一段就因为超限失败，导致讲解视频瞬间回到待机状态。
 const normalizedCue = computed(() => (props.cueKey || 'idle').trim() || 'idle')
 const isIdleLoop = computed(() => normalizedCue.value === 'idle')
 const currentVideoSrc = computed(
@@ -160,6 +167,8 @@ const checkRequiredVideos = async () => {
 // 同时停止后端 TTS 音频和浏览器语音合成兜底播放。
 const stopNarration = () => {
   narrationToken.value += 1
+  narrationQueue.value = []
+  narrationProcessing.value = false
   const audioEl = narrationAudioRef.value
   if (audioEl) {
     audioEl.pause()
@@ -169,9 +178,6 @@ const stopNarration = () => {
   if (activeAudioUrl.value) {
     URL.revokeObjectURL(activeAudioUrl.value)
     activeAudioUrl.value = ''
-  }
-  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-    window.speechSynthesis.cancel()
   }
 }
 
@@ -183,58 +189,137 @@ const normalizeNarrationText = (raw: string) =>
     .replace(/\s+/g, ' ')
     .trim()
 
-// 浏览器 TTS 只是兜底方案，只有后端 TTS 不可用时才启用。
-const startNarrationWithBrowser = (text: string, token: number) => {
-  if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-    emit('narration-ended')
-    return
+// 当前端一次请求整段长文本失败时，退回到按句子分段的保守策略。
+// 这样可以兼容腾讯云长文本任务超时、资源包限制或偶发失败等场景。
+const splitNarrationText = (raw: string, maxLength = TTS_SEGMENT_MAX_LENGTH) => {
+  const normalized = normalizeNarrationText(raw)
+  if (!normalized) return []
+  if (normalized.length <= maxLength) return [normalized]
+
+  const coarseParts = normalized
+    .split(/(?<=[。！？；;.!?\n])/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+
+  const result: string[] = []
+  let buffer = ''
+
+  const flushBuffer = () => {
+    const text = buffer.trim()
+    if (text) result.push(text)
+    buffer = ''
   }
-  const utter = new SpeechSynthesisUtterance(text)
-  utter.lang = 'zh-CN'
-  utter.rate = 0.95
-  utter.pitch = 1
-  utter.volume = 1
-  utter.onend = () => {
-    if (token === narrationToken.value) emit('narration-ended')
+
+  for (const part of coarseParts) {
+    if (!part) continue
+
+    if (part.length > maxLength) {
+      flushBuffer()
+      let start = 0
+      while (start < part.length) {
+        result.push(part.slice(start, start + maxLength).trim())
+        start += maxLength
+      }
+      continue
+    }
+
+    const next = buffer ? `${buffer} ${part}`.trim() : part
+    if (next.length > maxLength) {
+      flushBuffer()
+      buffer = part
+    } else {
+      buffer = next
+    }
   }
-  utter.onerror = () => {
-    if (token === narrationToken.value) emit('narration-ended')
-  }
-  window.speechSynthesis.cancel()
-  window.speechSynthesis.speak(utter)
+
+  flushBuffer()
+  return result
 }
 
-// 优先请求后端 TTS，失败后再回退到浏览器自带语音。
+const playAudioBlob = async (blob: Blob, token: number) => {
+  if (token !== narrationToken.value) return
+
+  const audioUrl = URL.createObjectURL(blob)
+  const audioEl = narrationAudioRef.value || new Audio()
+  narrationAudioRef.value = audioEl
+
+  if (activeAudioUrl.value) {
+    URL.revokeObjectURL(activeAudioUrl.value)
+  }
+  activeAudioUrl.value = audioUrl
+
+  await new Promise<void>(async (resolve) => {
+    const finish = () => {
+      audioEl.onended = null
+      audioEl.onerror = null
+      resolve()
+    }
+
+    audioEl.onended = finish
+    audioEl.onerror = finish
+    audioEl.src = audioUrl
+
+    try {
+      await audioEl.play()
+    } catch {
+      finish()
+    }
+  })
+}
+
+const playNarrationBySegments = async (content: string, token: number) => {
+  const segments = splitNarrationText(content)
+  if (segments.length === 0) return false
+
+  let playedAtLeastOneSegment = false
+  for (const segment of segments) {
+    if (token !== narrationToken.value) return playedAtLeastOneSegment
+    const blob = await requestBackendTts({ text: segment })
+    if (token !== narrationToken.value) return playedAtLeastOneSegment
+    await playAudioBlob(blob, token)
+    playedAtLeastOneSegment = true
+  }
+
+  return playedAtLeastOneSegment
+}
+
+const drainNarrationQueue = async (token: number) => {
+  if (narrationProcessing.value) return
+  narrationProcessing.value = true
+
+  try {
+    while (token === narrationToken.value && narrationQueue.value.length > 0) {
+      const nextText = narrationQueue.value.shift() || ''
+      const content = normalizeNarrationText(nextText)
+      if (!content) continue
+
+      try {
+        const blob = await requestBackendTts({ text: content })
+        if (token !== narrationToken.value) return
+        await playAudioBlob(blob, token)
+      } catch {
+        await playNarrationBySegments(content, token).catch(() => false)
+      }
+    }
+  } finally {
+    narrationProcessing.value = false
+    if (token === narrationToken.value && narrationQueue.value.length === 0) {
+      emit('narration-ended')
+    }
+  }
+}
+
+// 讲解文本统一通过后端 TTS 合成。
+// 前端会把多次传入的讲解片段排队顺序播放，从而实现“边生成边讲解”。
 const startNarration = async (text: string) => {
-  stopNarration()
   const token = narrationToken.value
   const content = normalizeNarrationText(text || '')
   if (!content) {
-    emit('narration-ended')
     return
   }
 
-  try {
-    const blob = await requestBackendTts({ text: content })
-    if (token !== narrationToken.value) return
-    const audioUrl = URL.createObjectURL(blob)
-    const audioEl = narrationAudioRef.value || new Audio()
-    narrationAudioRef.value = audioEl
-    if (activeAudioUrl.value) URL.revokeObjectURL(activeAudioUrl.value)
-    activeAudioUrl.value = audioUrl
-    audioEl.onended = () => {
-      if (token === narrationToken.value) emit('narration-ended')
-    }
-    audioEl.onerror = () => {
-      if (token === narrationToken.value) emit('narration-ended')
-    }
-    audioEl.src = audioUrl
-    await audioEl.play()
-    return
-  } catch {
-    // fallback to browser tts
-  }
-  startNarrationWithBrowser(content, token)
+  narrationQueue.value.push(content)
+  void drainNarrationQueue(token)
 }
 
 // 每次切换 cue 都重新加载对应视频，并配合样式类做淡入效果。
@@ -258,19 +343,6 @@ const playCurrentVideo = async () => {
     // ignore
   }
   el.load()
-
-  if (normalizedCue.value === 'greeting') {
-    try {
-      el.muted = false
-      el.volume = 1
-      await el.play()
-      lastVideoSrc.value = nextSrc
-      syncVideoDebugState()
-      return
-    } catch {
-      setDebugAction('greeting-play-failed-fallback-muted')
-    }
-  }
 
   try {
     el.muted = true

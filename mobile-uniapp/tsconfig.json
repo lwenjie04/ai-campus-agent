@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "es2019",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "strict": true,
+    "jsx": "preserve",
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "lib": ["es2019", "dom"],
+    "types": ["@dcloudio/types"]
+  },
+  "include": [
+    "main.ts",
+    "main.js",
+    "App.vue",
+    "env.d.ts",
+    "api/**/*.ts",
+    "pages/**/*.vue",
+    "stores/**/*.ts",
+    "types/**/*.ts",
+    "utils/**/*.ts"
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationBarTitleText": "校园智能问答"
+      }
+    },
+    {
+      "path": "pages/community/index",
+      "style": {
+        "navigationBarTitleText": "学生社区"
+      }
+    },
+    {
+      "path": "pages/community/detail",
+      "style": {
+        "navigationBarTitleText": "帖子详情"
+      }
+    },
+    {
+      "path": "pages/profile/index",
+      "style": {
+        "navigationBarTitleText": "我的设置"
+      }
+    }
+  ],
+  "tabBar": {
+    "color": "#5b7a5f",
+    "selectedColor": "#1d6b31",
+    "backgroundColor": "#f7fff6",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "问答"
+      },
+      {
+        "pagePath": "pages/community/index",
+        "text": "社区"
+      },
+      {
+        "pagePath": "pages/profile/index",
+        "text": "设置"
+      }
+    ]
+  }
+}

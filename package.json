@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "server": "node server/index.mjs",
+    "mail:test": "node server/scripts/test-auth-mail.mjs",
     "ingest:local": "node server/scripts/batch-ingest-local.mjs",
     "ingest:browser-json": "node server/scripts/import-browser-export-json.mjs",
     "kb:repair": "node server/scripts/kb-clean-tag-qc.mjs",
@@ -24,7 +25,9 @@
     "axios": "^1.13.5",
     "element-plus": "^2.13.2",
     "mysql2": "^3.20.0",
+    "nodemailer": "^8.0.4",
     "pinia": "^3.0.4",
+    "tencentcloud-sdk-nodejs-tts": "^4.1.182",
     "vue": "^3.5.28"
   },
   "devDependencies": {
