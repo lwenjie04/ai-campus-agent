@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   CommunityKnowledge,
   CommunityKnowledgeGenerateResult,
   CommunityMeta,
@@ -8,8 +8,9 @@ import type {
   CommunityReply,
   CommunityReviewListResponse,
 } from '@/types/community'
+import { appConfig } from '@/config/app'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
+const API_BASE = appConfig.apiBaseUrl
 
 type ApiEnvelope<T> = {
   code: number

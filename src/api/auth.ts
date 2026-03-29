@@ -1,6 +1,7 @@
 ﻿import axios from 'axios'
+import { appConfig } from '@/config/app'
 
-const AUTH_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
+const AUTH_BASE_URL = appConfig.apiBaseUrl
 
 export type AuthUser = {
   id: string
