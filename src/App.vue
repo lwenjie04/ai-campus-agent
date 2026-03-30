@@ -7,9 +7,8 @@
     <header class="top-nav">
       <div class="top-nav__inner">
         <div class="top-nav__brand">
-          <span class="top-nav__brand-badge">AI</span>
           <div>
-            <strong>广东第二师范学院</strong>
+            <strong>数智校答</strong>
             <span>校园智能服务平台</span>
           </div>
         </div>
@@ -194,19 +193,6 @@ onMounted(() => {
   margin-top: 2px;
   color: rgba(24, 78, 48, 0.72);
   font-size: 13px;
-}
-
-.top-nav__brand-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, rgba(73, 165, 86, 0.18), rgba(173, 241, 145, 0.42));
-  color: #2f7b40;
-  font-size: 18px;
-  font-weight: 800;
 }
 
 .top-nav__tabs {

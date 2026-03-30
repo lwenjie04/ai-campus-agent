@@ -3,7 +3,7 @@
     <div class="login-card">
       <div class="login-card__head">
         <div class="login-kicker">账号入口</div>
-        <h1>校园智能问答平台</h1>
+        <h1>数智校答</h1>
         <p>
           管理员使用账号密码直接登录；普通用户使用邮箱验证码完成注册后，再通过邮箱和密码进入系统。
         </p>

@@ -2,8 +2,8 @@
   <view class="page">
     <view class="hero-card">
       <view class="hero-badge">AI</view>
-      <view class="hero-title">广东第二师范学院</view>
-      <view class="hero-subtitle">移动端校园智能问答</view>
+      <view class="hero-title">数智校答</view>
+      <view class="hero-subtitle">移动端智能问答</view>
     </view>
 
     <view class="assistant-card">
@@ -48,7 +48,7 @@ const draft = ref('')
 const messages = ref<MobileChatMessage[]>([
   {
     role: 'assistant',
-    content: '你好，我是广东第二师范学院校园智能问答助手。你可以直接输入想咨询的事项。',
+    content: '你好，我是数智校答助手。你可以直接输入想咨询的事项。',
   },
 ])
 

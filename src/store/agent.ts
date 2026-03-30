@@ -28,7 +28,7 @@ const createMessage = (role: Message['role'], content: string, extra?: Partial<M
 // 固定欢迎词：页面首次打开或重置会话时直接显示。
 // 这条消息不走大模型，也不参与讲解 TTS。
 const WELCOME_MESSAGE =
-  '你好，我是广东第二师范学院校园智能问答助手。你可以直接告诉我想查询的事项，例如奖学金、选课、转专业、宿舍服务等。'
+  '你好，我是数智校答助手。你可以直接告诉我想查询的事项，例如奖学金、选课、转专业、宿舍服务等。'
 
 // 访问 localStorage 前先做环境判断，避免测试环境或非浏览器环境报错。
 const canUseStorage = () => typeof window !== 'undefined' && !!window.localStorage
@@ -146,7 +146,7 @@ export const useAgentStore = defineStore('agent', {
         guest: '访客',
       }
 
-      return `你是广东第二师范学院校园智能问答助手。请基于学校真实信息进行回答，语言简洁、直接、易懂。
+      return `你是数智校答助手。请基于校内真实信息进行回答，语言简洁、直接、易懂。
 
 当前用户信息：
 - 身份：${roleLabelMap[this.userProfile.role] || this.userProfile.role}

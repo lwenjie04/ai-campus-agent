@@ -16,24 +16,9 @@
         <!-- 顶部品牌栏：校徽、学校名称、装饰图标 -->
         <header class="brand-bar">
           <div class="brand-left">
-            <!-- 校徽容器：图片加载失败时显示文字兜底 -->
-            <div class="school-badge">
-              <img
-                v-if="!logoLoadFailed"
-                :src="schoolLogoSrc"
-                alt="广东第二师范学院校徽"
-                class="school-logo"
-                @error="logoLoadFailed = true"
-              />
-              <span v-else class="school-badge-fallback">广二师</span>
-            </div>
-
             <!-- 学校标题 -->
-            <div class="brand-title">广东第二师范学院</div>
+            <div class="brand-title">数智校答</div>
           </div>
-
-          <!-- 右上角装饰图标，仅用于视觉点缀 -->
-          <div class="brand-icon" aria-hidden="true">🤖</div>
         </header>
 
         <!-- 数字人舞台区域 -->
@@ -65,7 +50,7 @@
             <div class="header-main">
               <!-- 标题区 -->
               <div class="header-title-wrap">
-                <h2>校园智能问答</h2>
+                <h2>数智校答</h2>
                 <span class="mode-tag">数字人对话</span>
               </div>
 
@@ -240,11 +225,9 @@ const store = useAgentStore()
 
 // 校徽是否加载失败。
 // 如果失败，模板里会从图片切换为“广二师”文字兜底。
-const logoLoadFailed = ref(false)
 
 // 校徽路径。
 // 后续如果替换校徽资源，只需要改这一处。
-const schoolLogoSrc = '/branding/gdei-logo.png'
 
 // 用户设置弹窗是否打开。
 // 这是纯页面 UI 状态，不需要持久化。
@@ -473,7 +456,6 @@ onMounted(() => {
 .brand-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 10px;
   padding: 2px 4px;
 }
@@ -482,35 +464,7 @@ onMounted(() => {
 .brand-left {
   display: flex;
   align-items: center;
-  gap: 10px;
   min-width: 0;
-}
-
-/* 校徽容器 */
-.school-badge {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: radial-gradient(circle at 30% 30%, #fff 0%, #effff0 44%, #d5f8d6 100%);
-  border: 2px solid #69cb73;
-  box-shadow: 0 4px 14px rgba(37, 113, 53, 0.16);
-  overflow: hidden;
-}
-
-/* 校徽图片填满容器 */
-.school-logo {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* 校徽加载失败时的兜底文字 */
-.school-badge-fallback {
-  color: #15934b;
-  font-size: 10px;
-  font-weight: 800;
 }
 
 /* 学校标题 */
@@ -521,13 +475,6 @@ onMounted(() => {
   letter-spacing: 0.5px;
   white-space: nowrap;
   text-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
-}
-
-/* 右上角机器人图标 */
-.brand-icon {
-  font-size: 30px;
-  line-height: 1;
-  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.1));
 }
 
 /* 数字人舞台区域撑满剩余空间 */
