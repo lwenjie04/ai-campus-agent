@@ -1,126 +1,108 @@
 <template>
-  <!--
-    page-bg：
-    整个页面最外层背景容器。
-    负责铺满视口，并提供绿色渐变的大背景。
-  -->
   <div class="page-bg">
-    <!--
-      app-shell：
-      页面主体区域，采用左右两栏布局。
-      左边放学校品牌和数字人，右边放聊天相关区域。
-    -->
-    <main class="app-shell">
-      <!-- 左侧区域：学校品牌 + 数字人舞台 -->
-      <section class="left-stage">
-        <!-- 顶部品牌栏：校徽、学校名称、装饰图标 -->
+    <main class="command-shell">
+      <section class="human-rail" aria-label="校园事务快捷入口">
         <header class="brand-bar">
-          <div class="brand-left">
-            <!-- 校徽容器：图片加载失败时显示文字兜底 -->
-            <div class="school-badge">
-              <img
-                v-if="!logoLoadFailed"
-                :src="schoolLogoSrc"
-                alt="广东第二师范学院校徽"
-                class="school-logo"
-                @error="logoLoadFailed = true"
-              />
-              <span v-else class="school-badge-fallback">广二师</span>
-            </div>
-
-            <!-- 学校标题 -->
-            <div class="brand-title">广东第二师范学院</div>
+          <div class="school-badge">
+            <img
+              v-if="!logoLoadFailed"
+              :src="schoolLogoSrc"
+              alt="广东第二师范学院校徽"
+              class="school-logo"
+              @error="logoLoadFailed = true"
+            />
+            <span v-else class="school-badge-fallback">广二师</span>
           </div>
-
-          <!-- 右上角装饰图标，仅用于视觉点缀 -->
-          <div class="brand-icon" aria-hidden="true">🤖</div>
+          <div class="brand-copy">
+            <span class="brand-kicker">GDEI AI CAMPUS</span>
+            <h1>校园智能服务</h1>
+          </div>
         </header>
 
-        <!-- 数字人舞台区域 -->
-        <div class="stage-wrap">
-          <!--
-            DigitalHumanPlayer 是左侧舞台的核心组件。
-            它根据 store 提供的 cue / narration / signal 来决定：
-            1. 当前播放欢迎视频、待机视频还是讲解视频
-            2. 是否触发语音播报
-            3. 是否响应“停止播放”
-          -->
-          <DigitalHumanPlayer
-            :cue-key="store.videoCueKey"
-            :play-signal="store.videoPlayTick"
-            :narration-text="store.narrationText"
-            :narration-signal="store.narrationTick"
-            :stop-signal="stopPlaySignal"
-            @request-idle="onGreetingEnded"
-            @narration-ended="onNarrationEnded"
-          />
+        <div class="quick-command">
+          <span class="quick-command__label">常用事务</span>
+          <button type="button" @click="store.sendMessage('转专业需要什么条件')">转专业条件</button>
+          <button type="button" @click="store.sendMessage('考试违规会怎么处理')">考试违规处理</button>
+          <button type="button" @click="store.sendMessage('奖学金评定一般看哪些条件')">奖学金评定</button>
+          <button type="button" @click="store.sendMessage('宿舍调换需要走什么流程')">宿舍调换流程</button>
         </div>
-      </section>
 
-      <!-- 右侧区域：用户信息、聊天记录、输入区 -->
-      <section class="right-chat">
-        <div class="chat-card">
-          <!-- 聊天头部 -->
-          <header class="chat-header">
-            <div class="header-main">
-              <!-- 标题区 -->
-              <div class="header-title-wrap">
-                <h2>校园智能问答</h2>
-                <span class="mode-tag">数字人对话</span>
-              </div>
-
-              <!-- 右上角操作区：用户摘要 + 设置按钮 -->
-              <div class="header-actions">
-                <!--
-                  profile-summary：
-                  把当前选中的身份、年级、专业直接展示出来。
-                  这样用户不用展开设置区，也能知道当前上下文是什么。
-                -->
-                <div class="profile-summary" :title="summaryTitle">
-                  <span>{{ roleLabel }}</span>
-                  <span>{{ selectedGrade || '未填年级' }}</span>
-                  <span>{{ selectedMajor || '未填专业' }}</span>
-                </div>
-
-                <!-- 点击后打开用户设置弹窗 -->
-                <el-button class="settings-btn" size="small" @click="settingsDialogVisible = true">
-                  用户设置
-                </el-button>
-              </div>
-            </div>
-          </header>
-
-          <!--
-            聊天主体区：
-            这里不自己渲染每一条消息，而是把消息数组传给 ChatWindow。
-          -->
-          <div class="chat-body">
-            <ChatWindow
-              :messages="visibleMessages"
-              :loading="store.loading"
-              @open-community-post="emit('openCommunityPost', $event)"
+        <div class="human-status-card">
+          <div class="status-line">
+            <span class="status-dot" :class="{ 'status-dot--active': store.loading }" />
+            <span>{{ store.loading ? '讲解同步中' : '数字人待机' }}</span>
+          </div>
+          <div class="stage-wrap">
+            <DigitalHumanPlayer
+              :cue-key="store.videoCueKey"
+              :play-signal="store.videoPlayTick"
+              :narration-text="store.narrationText"
+              :narration-signal="store.narrationTick"
+              :stop-signal="stopPlaySignal"
+              @request-idle="onGreetingEnded"
+              @narration-ended="onNarrationEnded"
             />
           </div>
+        </div>
 
-          <!--
-            停止播放按钮：
-            用来中断当前讲解视频和语音播报。
-          -->
-          <div class="chat-actions-bar">
-            <el-button class="stop-btn" size="small" @click="onStopPlayback">停止播放</el-button>
-          </div>
+        <div class="rail-actions">
+          <button type="button" class="rail-action" @click="onStopPlayback">停止讲解</button>
+          <button type="button" class="rail-action rail-action--primary" @click="settingsDialogVisible = true">
+            用户设置
+          </button>
+        </div>
 
-          <!-- 输入区 -->
-          <footer class="input-area">
-            <!--
-              InputBox 发出 send 事件后，直接调用 store.sendMessage。
-              也就是说：
-              页面本身不处理发消息细节，真正的发送逻辑统一放在 store 中。
-            -->
-            <InputBox :loading="store.loading" @send="store.sendMessage" />
-          </footer>
+        <div class="rail-context" :title="summaryTitle">
+          <span>{{ roleLabel }}</span>
+          <span>{{ selectedGrade || '未填年级' }}</span>
+          <span>{{ selectedMajor || '未填专业' }}</span>
         </div>
       </section>
+
+      <section class="chat-workspace" aria-label="校园智能问答">
+        <header class="workspace-header">
+          <div>
+            <span class="workspace-kicker">AI CAMPUS COMMAND</span>
+            <h2>直接问，先给结论，再展开依据</h2>
+            <p>面向学生日常查询：学籍、选课、考试、奖助、宿舍与校园流程。</p>
+          </div>
+        </header>
+
+        <div class="chat-body">
+          <ChatWindow
+            :messages="visibleMessages"
+            :loading="store.loading"
+            @open-community-post="emit('openCommunityPost', $event)"
+          />
+        </div>
+
+        <footer class="input-area">
+          <InputBox :loading="store.loading" @send="store.sendMessage" />
+        </footer>
+      </section>
+
+      <aside class="source-desk" aria-label="知识来源与上下文">
+        <section class="source-panel source-panel--active">
+          <span>LightRAG</span>
+          <strong>Ready</strong>
+          <p>学生手册与社区知识将作为主要检索来源。</p>
+        </section>
+
+        <section class="source-panel">
+          <span>当前身份</span>
+          <strong>{{ roleLabel }}</strong>
+          <p>{{ selectedGrade || '未填年级' }} · {{ selectedMajor || '未填专业' }}</p>
+        </section>
+
+        <section class="source-panel source-panel--list">
+          <span>回答策略</span>
+          <ul>
+            <li>先输出可执行结论</li>
+            <li>只显示来源数量</li>
+            <li>需要时展开详细依据</li>
+          </ul>
+        </section>
+      </aside>
     </main>
 
     <!-- 用户设置改为弹窗形式，避免直接挤占右侧聊天区的高度 -->
@@ -427,239 +409,294 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* 页面大背景：负责铺满整个视口，并给出整体绿色渐变氛围 */
 .page-bg {
+  --ink: #f7fbff;
+  --muted: rgba(217, 227, 255, 0.72);
+  --panel: rgba(18, 24, 55, 0.72);
+  --panel-soft: rgba(255, 255, 255, 0.08);
+  --line: rgba(188, 205, 255, 0.18);
+  --primary: #8f9cff;
+  --cyan: #67e8f9;
+  --green: #54d68a;
   min-height: 100vh;
-  display: grid;
-  place-items: center;
-  padding: 14px;
+  padding: 18px;
   box-sizing: border-box;
+  color: var(--ink);
   background:
-    radial-gradient(circle at 15% 10%, rgba(255, 255, 255, 0.78), transparent 28%),
-    radial-gradient(circle at 82% 12%, rgba(255, 255, 255, 0.5), transparent 24%),
-    linear-gradient(180deg, #eef6ec 0%, #d6f0ce 38%, #95e27d 70%, #55d944 100%);
-}
-
-/* 主体两栏布局：左边数字人，右边聊天 */
-.app-shell {
-  width: min(1200px, 100%);
-  height: calc(100vh - 28px);
-  display: grid;
-  grid-template-columns: minmax(360px, 44%) minmax(0, 56%);
-  gap: 14px;
-}
-
-/* 防止左右两栏在 flex/grid 中因为内容过长被撑破 */
-.left-stage,
-.right-chat {
-  min-width: 0;
-}
-
-/* 左侧舞台卡片 */
-.left-stage {
-  display: grid;
-  grid-template-rows: auto 1fr;
-  gap: 10px;
-  padding: 10px;
-  border-radius: 22px;
-  background:
-    radial-gradient(circle at 50% 6%, rgba(240, 251, 240, 0.5), transparent 40%),
-    linear-gradient(180deg, #d9edd9 0%, #c1e4c2 58%, #a9dbab 100%);
-  border: 1px solid rgba(181, 219, 182, 0.88);
-  backdrop-filter: blur(8px);
-}
-
-/* 品牌栏 */
-.brand-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 2px 4px;
-}
-
-/* 左侧品牌部分：校徽 + 标题 */
-.brand-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-
-/* 校徽容器 */
-.school-badge {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: radial-gradient(circle at 30% 30%, #fff 0%, #effff0 44%, #d5f8d6 100%);
-  border: 2px solid #69cb73;
-  box-shadow: 0 4px 14px rgba(37, 113, 53, 0.16);
+    radial-gradient(circle at 18% 16%, rgba(103, 232, 249, 0.2), transparent 28%),
+    radial-gradient(circle at 74% 10%, rgba(143, 156, 255, 0.26), transparent 30%),
+    radial-gradient(circle at 52% 88%, rgba(84, 214, 138, 0.12), transparent 32%),
+    linear-gradient(135deg, #070b18 0%, #101633 45%, #192052 100%);
   overflow: hidden;
 }
 
-/* 校徽图片填满容器 */
+.page-bg::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(circle at 52% 42%, black, transparent 72%);
+}
+
+.command-shell {
+  position: relative;
+  z-index: 1;
+  width: min(1500px, 100%);
+  height: calc(100vh - 36px);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  gap: 18px;
+}
+
+.human-rail,
+.chat-workspace {
+  min-width: 0;
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04)),
+    var(--panel);
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(22px);
+}
+
+.human-rail {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 30px;
+  overflow: hidden;
+}
+
+.brand-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.school-badge {
+  width: 50px;
+  height: 50px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(203, 216, 255, 0.72));
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  box-shadow: 0 14px 34px rgba(105, 123, 255, 0.22);
+}
+
 .school-logo {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-/* 校徽加载失败时的兜底文字 */
 .school-badge-fallback {
-  color: #15934b;
-  font-size: 10px;
-  font-weight: 800;
-}
-
-/* 学校标题 */
-.brand-title {
-  font-size: clamp(18px, 1.8vw, 24px);
+  color: #172047;
+  font-size: 11px;
   font-weight: 900;
-  color: #0f0f0f;
-  letter-spacing: 0.5px;
-  white-space: nowrap;
-  text-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
 }
 
-/* 右上角机器人图标 */
-.brand-icon {
-  font-size: 30px;
-  line-height: 1;
-  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.1));
-}
-
-/* 数字人舞台区域撑满剩余空间 */
-.stage-wrap {
-  height: 100%;
-  min-height: 0;
-}
-
-/* 右侧聊天栏本身用 flex，方便子卡片填满宽度 */
-.right-chat {
-  display: flex;
-}
-
-/* 聊天卡片外壳 */
-.chat-card {
-  width: 100%;
-  display: grid;
-  grid-template-rows: auto auto;
-  gap: 10px;
-  padding: 12px;
-  border-radius: 22px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.28) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  backdrop-filter: blur(8px);
-  align-content: start;
-}
-
-/* 聊天头部 */
-.chat-header {
-  display: grid;
-  gap: 10px;
-  padding: 2px 2px 0;
-}
-
-/* 头部主内容：标题和右侧操作区并排 */
-.header-main {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  align-items: flex-start;
-}
-
-/* 标题和模式标签 */
-.header-title-wrap {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.brand-copy {
   min-width: 0;
 }
 
-/* 主标题 */
-.chat-header h2 {
-  margin: 0;
-  font-size: 18px;
-  color: #16351b;
+.brand-kicker,
+.workspace-kicker {
+  display: block;
+  color: var(--cyan);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.brand-copy h1,
+.workspace-header h2 {
+  margin: 3px 0 0;
+  color: var(--ink);
+  font-weight: 900;
+  letter-spacing: 0;
+  text-wrap: balance;
+}
+
+.brand-copy h1 {
+  font-size: 20px;
+}
+
+.human-status-card {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 50% 8%, rgba(103, 232, 249, 0.18), transparent 38%),
+    rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(188, 205, 255, 0.16);
+}
+
+.status-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--green);
+  box-shadow: 0 0 18px rgba(84, 214, 138, 0.85);
+}
+
+.status-dot--active {
+  background: var(--cyan);
+  animation: status-pulse 1.4s ease-out infinite;
+}
+
+.stage-wrap {
+  min-height: 0;
+  height: 100%;
+}
+
+.rail-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 9px;
+}
+
+.rail-action,
+.prompt-strip button {
+  border: 1px solid rgba(188, 205, 255, 0.18);
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.075);
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease;
+}
+
+.rail-action {
+  min-height: 42px;
+  border-radius: 16px;
   font-weight: 800;
 }
 
-/* 右上角摘要和设置按钮区域 */
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
+.rail-action:hover,
+.prompt-strip button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(103, 232, 249, 0.42);
+  background: rgba(103, 232, 249, 0.12);
 }
 
-/* 用户摘要胶囊 */
-.profile-summary {
+.rail-action--primary {
+  border-color: rgba(143, 156, 255, 0.48);
+  background: linear-gradient(135deg, rgba(143, 156, 255, 0.38), rgba(103, 232, 249, 0.16));
+}
+
+.rail-context {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
   gap: 6px;
   min-width: 0;
-  max-width: 360px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.62);
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  color: #255c31;
-  font-size: 12px;
-  white-space: nowrap;
-  overflow: hidden;
 }
 
-/* 单个摘要字段超出时显示省略号 */
-.profile-summary span {
+.rail-context span {
+  max-width: 100%;
+  padding: 6px 9px;
+  border-radius: 999px;
+  color: rgba(236, 242, 255, 0.86);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(188, 205, 255, 0.13);
+  font-size: 12px;
+  font-weight: 800;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* 摘要字段之间插入 / 分隔符 */
-.profile-summary span + span::before {
-  content: '/';
-  margin-right: 6px;
-  color: rgba(37, 92, 49, 0.55);
+.chat-workspace {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 34px;
+  overflow: hidden;
 }
 
-/* 设置按钮和停止播放按钮共用胶囊样式 */
-.settings-btn,
-.stop-btn {
-  border-radius: 999px;
-  border-color: rgba(46, 113, 53, 0.18);
-  color: #1f6a39;
-  background: rgba(255, 255, 255, 0.7);
-}
-
-/* 停止播放按钮所在区域 */
-.chat-actions-bar {
+.workspace-header {
   display: flex;
-  justify-content: flex-start;
-  padding: 0 4px;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
 }
 
-/* 设置面板 */
-.settings-panel {
-  border-radius: 14px;
-  padding: 8px;
-  background: rgba(255, 255, 255, 0.22);
-  border: 1px solid rgba(255, 255, 255, 0.35);
+.workspace-header h2 {
+  font-size: clamp(24px, 3vw, 38px);
+}
+
+.workspace-badges,
+.prompt-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.workspace-badges {
+  justify-content: flex-end;
+}
+
+.workspace-badges span {
+  padding: 7px 10px;
+  border-radius: 999px;
+  color: rgba(236, 242, 255, 0.76);
+  background: rgba(255, 255, 255, 0.075);
+  border: 1px solid rgba(188, 205, 255, 0.14);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.prompt-strip button {
+  min-height: 36px;
+  border-radius: 999px;
+  padding: 0 13px;
+  color: rgba(247, 251, 255, 0.86);
+  font-weight: 800;
+}
+
+.chat-body {
+  min-height: 0;
+  border-radius: 24px;
+  padding: 10px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(143, 156, 255, 0.13), transparent 42%),
+    rgba(5, 9, 24, 0.5);
+  border: 1px solid rgba(188, 205, 255, 0.12);
+  overflow: hidden;
+}
+
+.input-area {
+  padding: 0 2px 2px;
 }
 
 .settings-panel--dialog {
   padding: 0;
   background: transparent;
   border: none;
-}
-
-/* 设置项容器 */
-.profile-controls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
 }
 
 .profile-controls--dialog {
@@ -679,92 +716,31 @@ onMounted(() => {
 .setting-label {
   margin-bottom: 6px;
   font-size: 13px;
-  font-weight: 700;
-  color: #1f6a39;
-}
-
-/* select 统一宽度 */
-.ctrl-select {
-  width: 110px;
+  font-weight: 800;
+  color: #24305f;
 }
 
 .ctrl-select--dialog {
   width: 100%;
 }
 
-/* 覆盖 Element Plus 下拉框外观 */
-:deep(.ctrl-select .el-select__wrapper) {
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.8);
-  box-shadow: inset 0 0 0 1px rgba(46, 113, 53, 0.14) !important;
-}
-
-/* 专业输入框 */
 .major-input {
-  min-width: 220px;
-  flex: 1 1 240px;
-}
-
-/* 覆盖 Element Plus 输入框外观 */
-:deep(.major-input .el-input__wrapper) {
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.8);
-  box-shadow: inset 0 0 0 1px rgba(46, 113, 53, 0.14) !important;
-}
-
-/* 演示模式开关外壳 */
-.demo-switch {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.7);
+  width: 100%;
 }
 
 .demo-switch--dialog {
-  width: 100%;
+  display: flex;
+  align-items: center;
   justify-content: space-between;
   padding: 10px 12px;
-  box-sizing: border-box;
+  border-radius: 16px;
+  background: rgba(75, 92, 185, 0.08);
 }
 
-/* 演示模式文字 */
 .demo-switch-label {
-  font-size: 12px;
-  color: #1f6a39;
-  font-weight: 600;
-}
-
-/* 重置按钮 */
-.reset-btn {
-  color: #1f6a39;
-  font-weight: 600;
-}
-
-/* “数字人对话”模式标签 */
-.mode-tag {
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  color: #255c31;
-  background: rgba(255, 255, 255, 0.65);
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  white-space: nowrap;
-}
-
-/* 聊天消息区域，固定高度，内部滚动 */
-.chat-body {
-  height: 740px;
-  border-radius: 18px;
-  padding: 6px;
-  background: rgba(255, 255, 255, 0.12);
-  overflow: hidden;
-}
-
-/* 输入区顶部留一点呼吸感 */
-.input-area {
-  padding-top: 2px;
+  font-size: 13px;
+  color: #24305f;
+  font-weight: 800;
 }
 
 .dialog-footer {
@@ -773,100 +749,405 @@ onMounted(() => {
   gap: 8px;
 }
 
-:deep(.settings-dialog .el-dialog) {
-  border-radius: 20px;
-  overflow: hidden;
-  background: linear-gradient(180deg, rgba(248, 252, 246, 0.98) 0%, rgba(233, 247, 228, 0.96) 100%);
-}
-
-:deep(.settings-dialog .el-dialog__header) {
-  margin-right: 0;
-  padding: 18px 20px 10px;
-}
-
-:deep(.settings-dialog .el-dialog__title) {
-  color: #184425;
-  font-size: 18px;
+.reset-btn {
+  color: #5360c9;
   font-weight: 800;
 }
 
-:deep(.settings-dialog .el-dialog__body) {
-  padding: 8px 20px 12px;
+:deep(.ctrl-select .el-select__wrapper),
+:deep(.major-input .el-input__wrapper) {
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: inset 0 0 0 1px rgba(83, 96, 201, 0.16) !important;
 }
 
-:deep(.settings-dialog .el-dialog__footer) {
-  padding: 0 20px 18px;
+:deep(.settings-dialog .el-dialog) {
+  border-radius: 24px;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(249, 251, 255, 0.98), rgba(232, 237, 255, 0.96));
 }
 
-/* 中屏以下：两栏改为上下布局 */
-@media (max-width: 980px) {
-  .app-shell {
-    grid-template-columns: 1fr;
+:deep(.settings-dialog .el-dialog__title) {
+  color: #172047;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+@keyframes status-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(103, 232, 249, 0.52);
+  }
+  100% {
+    box-shadow: 0 0 0 14px rgba(103, 232, 249, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+@media (max-width: 1040px) {
+  .page-bg {
+    overflow: auto;
+  }
+
+  .command-shell {
     height: auto;
+    min-height: calc(100vh - 36px);
+    grid-template-columns: 1fr;
   }
 
-  .left-stage {
-    min-height: 360px;
+  .human-rail {
+    grid-template-columns: minmax(0, 1fr) minmax(180px, 240px);
+    grid-template-rows: auto auto;
   }
 
-  .stage-wrap {
-    min-height: 300px;
+  .human-status-card {
+    grid-row: 1 / 3;
+    grid-column: 2;
+    min-height: 260px;
   }
 
-  .chat-body {
-    height: 320px;
+  .rail-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .header-main {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .header-actions {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .profile-summary {
-    max-width: calc(100% - 110px);
+  .chat-workspace {
+    min-height: 680px;
   }
 }
 
-/* 小屏设备进一步压缩布局 */
-@media (max-width: 640px) {
-  .header-title-wrap {
-    flex-wrap: wrap;
+@media (max-width: 720px) {
+  .page-bg {
+    padding: 10px;
   }
 
-  .header-actions {
+  .command-shell {
+    min-height: calc(100vh - 20px);
+    gap: 10px;
+  }
+
+  .human-rail,
+  .chat-workspace {
+    border-radius: 22px;
+    padding: 12px;
+  }
+
+  .human-rail {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .human-status-card {
+    grid-row: auto;
+    grid-column: auto;
+    min-height: 220px;
+  }
+
+  .workspace-header {
     flex-direction: column;
-    align-items: stretch;
   }
 
-  .profile-summary {
-    max-width: 100%;
+  .workspace-badges {
+    justify-content: flex-start;
   }
 
-  .profile-controls {
-    width: 100%;
-    gap: 6px;
+  .chat-workspace {
+    min-height: 620px;
   }
 
   .profile-controls--dialog {
     grid-template-columns: 1fr;
   }
+}
 
-  .ctrl-select {
-    width: calc(50% - 3px);
+/* Raycast / Linear inspired command desk refresh. Placed last to intentionally supersede
+   the previous dashboard styling while preserving the existing component logic. */
+.page-bg {
+  --desk-bg: #06070b;
+  --desk-panel: rgba(13, 15, 22, 0.92);
+  --desk-panel-soft: rgba(255, 255, 255, 0.055);
+  --desk-card: rgba(255, 255, 255, 0.08);
+  --desk-line: rgba(255, 255, 255, 0.12);
+  --desk-text: #f4f7fb;
+  --desk-muted: rgba(226, 232, 240, 0.62);
+  --desk-accent: #7dd3fc;
+  --desk-violet: #a5b4fc;
+  min-height: 100vh;
+  padding: 1rem;
+  color: var(--desk-text);
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    radial-gradient(circle at 16% 0%, rgba(125, 211, 252, 0.16), transparent 22rem),
+    radial-gradient(circle at 86% 8%, rgba(165, 180, 252, 0.2), transparent 26rem),
+    var(--desk-bg);
+  background-size: 2.75rem 2.75rem, 2.75rem 2.75rem, auto, auto, auto;
+  overflow: auto;
+}
+
+.page-bg::before {
+  display: none;
+}
+
+.command-shell {
+  width: min(88rem, 100%);
+  min-height: calc(100vh - 2rem);
+  height: auto;
+  display: grid;
+  grid-template-columns: minmax(15rem, 18rem) minmax(0, 50rem) minmax(15rem, 19rem);
+  align-items: stretch;
+  gap: 0.75rem;
+}
+
+.human-rail,
+.chat-workspace,
+.source-desk {
+  min-width: 0;
+  border: 1px solid var(--desk-line);
+  border-radius: 0.5rem;
+  background: var(--desk-panel);
+  box-shadow: 0 1.5rem 4.5rem rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(1.5rem);
+}
+
+.human-rail {
+  position: sticky;
+  top: 1rem;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: calc(100vh - 2rem);
+  padding: 0.75rem;
+  overflow: auto;
+}
+
+.brand-bar {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  background: var(--desk-panel-soft);
+}
+
+.school-badge {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.5rem;
+}
+
+.brand-kicker,
+.workspace-kicker {
+  color: var(--desk-accent);
+  font-size: 0.6875rem;
+}
+
+.brand-copy h1 {
+  font-size: 1rem;
+}
+
+.quick-command {
+  display: grid;
+  gap: 0.375rem;
+}
+
+.quick-command__label {
+  padding: 0.25rem 0.375rem;
+  color: var(--desk-muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.quick-command button {
+  min-height: 2.75rem;
+  padding: 0 0.75rem;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: rgba(244, 247, 251, 0.82);
+  font-size: 0.9375rem;
+  font-weight: 750;
+  text-align: left;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.quick-command button:hover {
+  transform: translateX(0.125rem);
+  border-color: rgba(125, 211, 252, 0.22);
+  background: rgba(125, 211, 252, 0.1);
+}
+
+.human-status-card {
+  min-height: auto;
+  gap: 0.5rem;
+  padding: 0.625rem;
+  border-radius: 0.5rem;
+  background: var(--desk-panel-soft);
+  border-color: var(--desk-line);
+}
+
+.stage-wrap {
+  height: 11rem;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  background: #070914;
+}
+
+.rail-action {
+  min-height: 2.75rem;
+  border-radius: 0.5rem;
+}
+
+.rail-context span {
+  border-radius: 0.375rem;
+}
+
+.chat-workspace {
+  display: grid;
+  grid-template-rows: auto minmax(28rem, 1fr) auto;
+  gap: 0.875rem;
+  padding: 1rem;
+}
+
+.workspace-header {
+  display: block;
+  max-width: 48rem;
+}
+
+.workspace-header h2 {
+  margin-top: 0.375rem;
+  font-size: clamp(1.75rem, 3vw, 2.75rem);
+  line-height: 1.05;
+  letter-spacing: 0;
+}
+
+.workspace-header p {
+  max-width: 44rem;
+  margin: 0.625rem 0 0;
+  color: var(--desk-muted);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.chat-body {
+  border-radius: 0.5rem;
+  padding: 0.625rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 13rem),
+    rgba(5, 7, 13, 0.72);
+  border-color: var(--desk-line);
+}
+
+.input-area {
+  padding: 0;
+}
+
+.source-desk {
+  position: sticky;
+  top: 1rem;
+  align-self: start;
+  display: grid;
+  gap: 0.75rem;
+  max-height: calc(100vh - 2rem);
+  padding: 0.75rem;
+  overflow: auto;
+}
+
+.source-panel {
+  padding: 0.875rem;
+  border: 1px solid var(--desk-line);
+  border-radius: 0.5rem;
+  background: var(--desk-panel-soft);
+}
+
+.source-panel span {
+  display: block;
+  color: var(--desk-muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.source-panel strong {
+  display: block;
+  margin-top: 0.375rem;
+  color: var(--desk-text);
+  font-size: 1.375rem;
+  line-height: 1.1;
+}
+
+.source-panel p,
+.source-panel li {
+  color: var(--desk-muted);
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.source-panel p {
+  margin: 0.5rem 0 0;
+}
+
+.source-panel ul {
+  margin: 0.625rem 0 0;
+  padding-left: 1.125rem;
+}
+
+.source-panel--active {
+  background:
+    linear-gradient(135deg, rgba(125, 211, 252, 0.12), rgba(165, 180, 252, 0.08)),
+    var(--desk-panel-soft);
+}
+
+.source-panel--active strong {
+  color: var(--desk-accent);
+}
+
+@media (max-width: 1024px) {
+  .command-shell {
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  .major-input {
-    min-width: 100%;
-    flex-basis: 100%;
+  .human-rail,
+  .source-desk {
+    position: static;
+    max-height: none;
   }
 
-  .chat-body {
-    height: 260px;
+  .human-rail {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .stage-wrap {
+    height: 12rem;
+  }
+
+  .source-desk {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .page-bg {
+    padding: 0.625rem;
+  }
+
+  .command-shell {
+    min-height: calc(100vh - 1.25rem);
+  }
+
+  .chat-workspace {
+    min-height: 38rem;
+    padding: 0.75rem;
+  }
+
+  .source-desk {
+    grid-template-columns: 1fr;
   }
 }
 </style>

@@ -88,6 +88,15 @@ export const useAuthStore = defineStore('auth', {
       this.email = ''
     },
 
+    enterGuestUser() {
+      this.loggedIn = true
+      this.role = 'user'
+      this.displayName = '学生用户'
+      this.username = 'student.preview'
+      this.userId = 'guest-preview'
+      this.email = ''
+    },
+
     applyUser(user: AuthUser) {
       this.loggedIn = true
       this.role = user.role === 'admin' ? 'admin' : 'user'

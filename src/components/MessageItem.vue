@@ -1,26 +1,29 @@
 ﻿<template>
   <!-- 单条消息由头像、消息气泡和可选的来源信息组成。 -->
   <div class="message-row" :class="`is-${message.role}`">
-    <div v-if="message.role === 'assistant'" class="avatar">👩‍🏫</div>
+    <div v-if="message.role === 'assistant'" class="avatar">AI</div>
 
     <div class="bubble-wrap">
       <!-- 用户消息和助手消息复用同一个气泡结构，通过 role 决定额外装饰。 -->
       <div class="bubble">
-        <span v-if="message.role === 'assistant'" class="bubble-icon">✨</span>
         <span class="content">{{ formatMessageContent(message.content) }}</span>
         <span v-if="message.role === 'assistant' && message.status === 'pending'" class="typing-cursor" />
       </div>
 
       <!-- 只有 assistant 消息才会展示来源，因为来源来自后端 RAG 检索结果。 -->
-      <div
+      <details
         v-if="message.role === 'assistant' && Array.isArray(message.sources) && message.sources.length > 0"
         class="sources"
       >
-        <div class="sources-title">信息依据</div>
+        <summary class="sources-summary">
+          <span>已参考 {{ message.sources.length }} 个来源</span>
+          <span class="sources-summary-hint">展开详情</span>
+        </summary>
         <div
           v-for="(source, index) in message.sources"
           :key="`${source.title || 'src'}-${index}`"
           class="source-item"
+          :class="`source-item--${getSourceTone(source.type)}`"
         >
           <!-- 标题行展示来源名称，以及类型/可信度这些摘要标签。 -->
           <div class="source-head">
@@ -36,7 +39,7 @@
             <span v-else class="source-link">{{ source.title || `来源 ${index + 1}` }}</span>
 
             <div class="source-meta">
-              <span v-if="source.type" class="meta-chip type-chip">{{ source.type }}</span>
+              <span v-if="source.type" class="meta-chip type-chip">{{ getSourceTypeLabel(source.type) }}</span>
               <span v-if="typeof source.confidence === 'number'" class="meta-chip confidence-chip">
                 可信度 {{ Math.round(source.confidence * 100) }}%
               </span>
@@ -83,7 +86,7 @@
 
           <div v-if="source.snippet" class="source-snippet">{{ source.snippet }}</div>
         </div>
-      </div>
+      </details>
 
       <div v-if="message.role === 'assistant' && message.status === 'pending'" class="pending-tip">
         正在生成回复...
@@ -95,7 +98,7 @@
       </div>
     </div>
 
-    <div v-if="message.role === 'user'" class="avatar user-avatar">🧑‍🎓</div>
+    <div v-if="message.role === 'user'" class="avatar user-avatar">我</div>
   </div>
 </template>
 
@@ -135,6 +138,21 @@ const getPrimaryLinkKindLabel = (url?: string) => (isFileLikeLink(url) ? '来源
 const getPrimaryLinkActionLabel = (url?: string) =>
   isFileLikeLink(url) ? '下载/打开文件' : '打开通知页面'
 
+const getSourceTypeLabel = (type?: string) => {
+  const value = String(type || '')
+  if (/community/i.test(value)) return '社区经验'
+  if (/handbook|student/i.test(value)) return '学生手册'
+  if (/official|notice|attachment|rule/i.test(value)) return '官方资料'
+  return value.replace(/_/g, ' ')
+}
+
+const getSourceTone = (type?: string) => {
+  const value = String(type || '')
+  if (/community/i.test(value)) return 'community'
+  if (/official|notice|attachment|rule|handbook|student/i.test(value)) return 'official'
+  return 'neutral'
+}
+
 // 当前组件只关心“如何展示一条消息”，消息列表的遍历由父组件负责。
 defineProps<{
   message: Message
@@ -148,10 +166,10 @@ const emit = defineEmits<{
 <style scoped>
 .message-row {
   display: grid;
-  grid-template-columns: 42px 1fr 42px;
-  gap: 10px;
+  grid-template-columns: 36px 1fr 36px;
+  gap: 12px;
   align-items: center;
-  margin: 8px 0;
+  margin: 12px 0;
 }
 
 .message-row.is-user .bubble-wrap {
@@ -168,18 +186,20 @@ const emit = defineEmits<{
 }
 
 .avatar {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
   display: grid;
   place-items: center;
-  font-size: 22px;
-  background: rgba(255, 255, 255, 0.84);
-  box-shadow: 0 6px 12px rgba(28, 91, 40, 0.08);
+  font-size: 12px;
+  color: #eef4ff;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(188, 205, 255, 0.2);
+  box-shadow: 0 10px 24px rgba(30, 42, 110, 0.28);
 }
 
 .user-avatar {
-  background: rgba(255, 255, 255, 0.88);
+  background: linear-gradient(135deg, rgba(84, 214, 138, 0.26), rgba(143, 156, 255, 0.16));
 }
 
 .bubble-wrap {
@@ -188,27 +208,22 @@ const emit = defineEmits<{
 
 .bubble {
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
-  max-width: min(100%, 440px);
-  min-height: 46px;
-  padding: 0 16px;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.9);
-  color: #101410;
-  box-shadow: 0 8px 18px rgba(24, 86, 37, 0.08);
-  font-weight: 700;
+  max-width: min(100%, 760px);
+  min-height: 44px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(247, 251, 255, 0.94);
+  border: 1px solid rgba(188, 205, 255, 0.16);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.2);
+  font-weight: 650;
 }
 
 .message-row.is-user .bubble {
-  background: rgba(255, 255, 255, 0.93);
-}
-
-.bubble-icon {
-  color: #54d85c;
-  font-size: 18px;
-  line-height: 1;
-  flex: 0 0 auto;
+  background: linear-gradient(135deg, rgba(143, 156, 255, 0.3), rgba(103, 232, 249, 0.14));
+  border-color: rgba(143, 156, 255, 0.36);
 }
 
 .content {
@@ -221,32 +236,73 @@ const emit = defineEmits<{
   width: 8px;
   height: 1.1em;
   border-radius: 4px;
-  background: #54d85c;
+  background: #67e8f9;
   display: inline-block;
   align-self: center;
   animation: typing-blink 0.9s steps(1, end) infinite;
 }
 
 .sources {
-  margin-top: 6px;
-  max-width: min(100%, 440px);
-  border-radius: 14px;
-  padding: 8px 10px;
-  background: rgba(255, 255, 255, 0.66);
-  border: 1px solid rgba(46, 113, 53, 0.12);
-  max-height: 180px;
-  overflow: auto;
-}
-
-.sources-title {
-  font-size: 12px;
-  color: #235c31;
-  font-weight: 700;
-  margin-bottom: 4px;
-}
-
-.source-item + .source-item {
   margin-top: 8px;
+  max-width: min(100%, 760px);
+  border-radius: 8px;
+  padding: 0;
+  background: rgba(7, 12, 31, 0.52);
+  border: 1px solid rgba(188, 205, 255, 0.16);
+  overflow: hidden;
+}
+
+.sources-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 40px;
+  padding: 0 12px;
+  color: rgba(238, 244, 255, 0.9);
+  cursor: pointer;
+  font-weight: 700;
+  list-style: none;
+}
+
+.sources-summary::-webkit-details-marker {
+  display: none;
+}
+
+.sources-summary::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid rgba(103, 232, 249, 0.86);
+  border-bottom: 2px solid rgba(103, 232, 249, 0.86);
+  transform: rotate(45deg);
+  transition: transform 180ms ease;
+}
+
+.sources[open] .sources-summary::after {
+  transform: rotate(225deg);
+}
+
+.sources-summary-hint {
+  margin-left: auto;
+  color: rgba(103, 232, 249, 0.78);
+  font-size: 12px;
+}
+
+.source-item {
+  margin: 0 10px 10px;
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.065);
+  border: 1px solid rgba(188, 205, 255, 0.12);
+}
+
+.source-item--official {
+  border-color: rgba(84, 214, 138, 0.28);
+}
+
+.source-item--community {
+  border-color: rgba(245, 191, 117, 0.28);
 }
 
 .source-head {
@@ -257,9 +313,9 @@ const emit = defineEmits<{
 }
 
 .source-link {
-  color: #146c43;
+  color: #dfe8ff;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 800;
   text-decoration: none;
 }
 
@@ -282,19 +338,19 @@ const emit = defineEmits<{
   border-radius: 999px;
   font-size: 11px;
   line-height: 1.2;
-  border: 1px solid rgba(46, 113, 53, 0.14);
-  background: rgba(255, 255, 255, 0.75);
-  color: #2c5f38;
+  border: 1px solid rgba(188, 205, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(238, 244, 255, 0.8);
   white-space: nowrap;
 }
 
 .confidence-chip {
-  color: #1e6f47;
+  color: #67e8f9;
 }
 
 .source-snippet {
   font-size: 12px;
-  color: #35533c;
+  color: rgba(217, 227, 255, 0.72);
   line-height: 1.35;
   margin-top: 4px;
   display: -webkit-box;
@@ -315,24 +371,24 @@ const emit = defineEmits<{
   margin-top: 4px;
   padding: 6px 8px;
   border-radius: 10px;
-  background: rgba(255, 244, 214, 0.8);
+  background: rgba(255, 244, 214, 0.12);
   border: 1px solid rgba(214, 171, 58, 0.2);
-  color: #8a5a08;
+  color: #f6bf75;
   font-size: 11px;
   line-height: 1.4;
 }
 
 .source-label {
   font-size: 11px;
-  color: #54715b;
+  color: rgba(217, 227, 255, 0.62);
   font-weight: 600;
 }
 
 .inline-link,
 .attachment-link {
-  color: #0f6e44;
+  color: #67e8f9;
   text-decoration: none;
-  border-bottom: 1px dashed rgba(15, 110, 68, 0.35);
+  border-bottom: 1px dashed rgba(103, 232, 249, 0.35);
 }
 
 .inline-link--button {
@@ -373,13 +429,13 @@ const emit = defineEmits<{
 .error-tip {
   margin-top: 4px;
   font-size: 12px;
-  color: #bb2f2f;
+  color: #ff9f9f;
 }
 
 .pending-tip {
   margin-top: 4px;
   font-size: 12px;
-  color: #2f6b3c;
+  color: #67e8f9;
 }
 
 .error-code {
@@ -408,7 +464,7 @@ const emit = defineEmits<{
   .avatar {
     width: 36px;
     height: 36px;
-    font-size: 19px;
+    font-size: 17px;
   }
 
   .bubble,
@@ -419,7 +475,7 @@ const emit = defineEmits<{
   .bubble {
     min-height: 42px;
     padding: 0 14px;
-    border-radius: 22px;
+    border-radius: 8px;
     font-size: 13px;
   }
 

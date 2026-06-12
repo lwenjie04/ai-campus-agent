@@ -47,7 +47,7 @@ const PROVIDER_MODE = 'deepseek'
 const LLM_API_BASE_URL = process.env.LLM_API_BASE_URL || 'https://api.deepseek.com'
 const LLM_API_KEY = process.env.LLM_API_KEY || ''
 const LLM_MODEL = process.env.LLM_MODEL || 'deepseek-chat'
-const ALLOW_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:5173'
+const ALLOW_ORIGIN = process.env.CORS_ORIGIN || '*'
 
 const MIME_BY_EXT = {
   '.pdf': 'application/pdf',
@@ -65,7 +65,7 @@ const json = (res, statusCode, data, headers = {}) => {
     'Content-Type': 'application/json; charset=utf-8',
     'Access-Control-Allow-Origin': ALLOW_ORIGIN,
     'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-User-Id',
     ...headers,
   })
   res.end(JSON.stringify(data))
@@ -762,7 +762,7 @@ const server = createServer(async (req, res) => {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': ALLOW_ORIGIN,
       'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-User-Id',
     })
     return res.end()
   }

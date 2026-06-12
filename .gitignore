@@ -8,6 +8,7 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+.venv-lightrag/
 .DS_Store
 dist
 dist-ssr
@@ -39,3 +40,10 @@ __screenshots__/
 *.timestamp-*-*.mjs
 server/.env
 .env.server
+
+# CodeGraph local index
+.codegraph/
+
+# LightRAG local runtime
+rag_storage/
+inputs/

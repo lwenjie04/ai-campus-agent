@@ -2,7 +2,7 @@
   <!-- 该组件只负责聊天窗口滚动和列表组织，单条消息由 MessageItem 渲染。 -->
   <div ref="containerRef" class="chat-window">
     <div v-if="messages.length === 0 && !loading" class="empty-state">
-      你好，我是广二师数字人助手，请输入你想咨询的问题。
+      等待输入校园事务
     </div>
 
     <MessageItem
@@ -13,9 +13,8 @@
     />
 
     <div v-if="loading" class="typing-row">
-      <div class="typing-avatar">👩‍🏫</div>
+      <div class="typing-avatar">AI</div>
       <div class="typing-bubble">
-        <span class="spark">✨</span>
         <span>正在为您生成回复...</span>
       </div>
     </div>
@@ -56,8 +55,9 @@ watch(
 .chat-window {
   height: 100%;
   overflow: auto;
-  padding: 4px 2px 8px;
+  padding: 8px 6px 12px;
   background: transparent;
+  scroll-behavior: smooth;
 }
 
 .chat-window::-webkit-scrollbar {
@@ -65,18 +65,22 @@ watch(
 }
 
 .chat-window::-webkit-scrollbar-thumb {
-  background: rgba(46, 113, 53, 0.18);
+  background: rgba(143, 156, 255, 0.34);
   border-radius: 999px;
 }
 
 .empty-state {
-  margin: 8px auto 12px;
-  max-width: 92%;
-  padding: 12px 14px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.78);
-  color: #24432a;
-  font-size: 13px;
+  margin: 18px auto 20px;
+  max-width: min(620px, 92%);
+  padding: 18px 20px;
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(143, 156, 255, 0.16), rgba(103, 232, 249, 0.08)),
+    rgba(255, 255, 255, 0.06);
+  color: rgba(238, 244, 255, 0.86);
+  border: 1px solid rgba(188, 205, 255, 0.16);
+  font-size: 15px;
+  font-weight: 750;
   text-align: center;
 }
 
@@ -89,14 +93,15 @@ watch(
 }
 
 .typing-avatar {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
   display: grid;
   place-items: center;
-  font-size: 22px;
-  background: rgba(255, 255, 255, 0.8);
-  box-shadow: 0 6px 12px rgba(29, 92, 42, 0.08);
+  font-size: 12px;
+  background: linear-gradient(135deg, rgba(143, 156, 255, 0.32), rgba(103, 232, 249, 0.14));
+  border: 1px solid rgba(188, 205, 255, 0.2);
+  box-shadow: 0 10px 24px rgba(30, 42, 110, 0.28);
 }
 
 .typing-bubble {
@@ -105,15 +110,17 @@ watch(
   gap: 8px;
   min-height: 44px;
   padding: 0 16px;
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.9);
-  color: #172a1b;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.09);
+  color: rgba(247, 251, 255, 0.9);
+  border: 1px solid rgba(188, 205, 255, 0.16);
   font-weight: 700;
-  box-shadow: 0 6px 14px rgba(28, 91, 40, 0.06);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.2);
 }
 
-.spark {
-  color: #48cf52;
-  font-size: 18px;
+@media (prefers-reduced-motion: reduce) {
+  .chat-window {
+    scroll-behavior: auto;
+  }
 }
 </style>

@@ -467,13 +467,27 @@ onBeforeUnmount(() => {
   border-radius: 20px;
   overflow: hidden;
   background:
-    radial-gradient(circle at 50% 6%, rgba(240, 251, 240, 0.55), transparent 40%),
+    radial-gradient(circle at 50% 6%, rgba(103, 232, 249, 0.18), transparent 42%),
+    radial-gradient(circle at 50% 78%, rgba(143, 156, 255, 0.18), transparent 48%),
     linear-gradient(
       180deg,
-      rgba(206, 228, 206, 0.92) 0%,
-      rgba(184, 227, 185, 0.94) 58%,
-      rgba(146, 211, 148, 0.95) 100%
+      rgba(14, 20, 48, 0.94) 0%,
+      rgba(8, 13, 33, 0.96) 58%,
+      rgba(16, 22, 52, 0.98) 100%
     );
+  border: 1px solid rgba(188, 205, 255, 0.16);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 18px 42px rgba(0, 0, 0, 0.24);
+}
+
+.stage-shell::before {
+  content: '';
+  position: absolute;
+  inset: 12px;
+  border-radius: 18px;
+  border: 1px solid rgba(103, 232, 249, 0.12);
+  pointer-events: none;
 }
 
 .video {
@@ -499,6 +513,7 @@ onBeforeUnmount(() => {
 .video.is-visible {
   opacity: 1;
   transform: scale(1);
+  filter: drop-shadow(0 24px 42px rgba(103, 232, 249, 0.16));
 }
 
 .placeholder-stage {
@@ -514,8 +529,8 @@ onBeforeUnmount(() => {
   width: min(92%, 420px);
   height: min(78%, 520px);
   border-radius: 22px;
-  border: 2px dashed rgba(39, 121, 46, 0.35);
-  background: rgba(255, 255, 255, 0.25);
+  border: 2px dashed rgba(103, 232, 249, 0.3);
+  background: rgba(255, 255, 255, 0.07);
   backdrop-filter: blur(4px);
   display: grid;
   align-content: center;
@@ -533,18 +548,18 @@ onBeforeUnmount(() => {
 }
 
 .reserve-title {
-  color: #14371b;
+  color: #eef4ff;
   font-size: 18px;
   font-weight: 800;
 }
 
 .reserve-hint {
-  color: #285533;
+  color: rgba(217, 227, 255, 0.72);
   font-size: 13px;
 }
 
 .reserve-path {
-  color: #2f6d3d;
+  color: #67e8f9;
   font-size: 12px;
   padding: 4px 10px;
   border-radius: 999px;
@@ -561,7 +576,7 @@ onBeforeUnmount(() => {
 
 .reserve-list span {
   font-size: 11px;
-  color: #285c34;
+  color: rgba(238, 244, 255, 0.82);
   padding: 2px 7px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.45);
@@ -578,9 +593,9 @@ onBeforeUnmount(() => {
   border-radius: 10px;
   font-size: 11px;
   line-height: 1.35;
-  color: #15321a;
-  background: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(21, 50, 26, 0.2);
+  color: #eef4ff;
+  background: rgba(7, 12, 31, 0.82);
+  border: 1px solid rgba(188, 205, 255, 0.18);
   backdrop-filter: blur(4px);
 }
 </style>

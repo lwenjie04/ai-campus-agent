@@ -3,9 +3,9 @@
     <header class="admin-hero">
       <div class="admin-hero__content">
         <div class="admin-kicker">管理员工作台</div>
-        <h1>学生社区审核中心</h1>
+        <h1>社区知识审核中控</h1>
         <p>
-          这里负责处理帖子、回复和社区知识条目。我们把“候选筛选、知识沉淀、内容审核”拆开，方便你快速定位当前该处理的工作。
+          处理帖子、回复和社区知识条目，把可复用的学生经验沉淀进问答系统。
         </p>
       </div>
 
@@ -526,8 +526,10 @@ onMounted(async () => {
   min-height: 100vh;
   padding: 24px;
   background:
-    radial-gradient(circle at top center, rgba(245, 255, 242, 0.97), rgba(223, 250, 214, 0.92) 40%, rgba(139, 224, 101, 0.96) 100%);
-  color: #174d2e;
+    radial-gradient(circle at 18% 0%, rgba(103, 232, 249, 0.18), transparent 28%),
+    radial-gradient(circle at 86% 6%, rgba(143, 156, 255, 0.22), transparent 32%),
+    linear-gradient(135deg, #f7fbff 0%, #edf4ff 48%, #fbfdff 100%);
+  color: #172033;
 }
 
 .admin-hero,
@@ -543,10 +545,10 @@ onMounted(async () => {
   justify-content: space-between;
   gap: 20px;
   padding: 26px 28px;
-  border: 1px solid rgba(83, 156, 89, 0.18);
-  border-radius: 28px;
-  background: linear-gradient(135deg, rgba(251, 255, 248, 0.9), rgba(240, 255, 235, 0.82));
-  box-shadow: 0 18px 38px rgba(52, 118, 66, 0.12);
+  border: 1px solid rgba(94, 116, 160, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 18px 48px rgba(35, 50, 92, 0.08);
   backdrop-filter: blur(18px);
 }
 
@@ -558,8 +560,8 @@ onMounted(async () => {
   display: inline-flex;
   padding: 6px 12px;
   border-radius: 999px;
-  background: rgba(122, 202, 117, 0.14);
-  color: #2f7b40;
+  background: rgba(82, 116, 255, 0.1);
+  color: #4157d8;
   font-size: 13px;
   font-weight: 800;
 }
@@ -569,6 +571,7 @@ onMounted(async () => {
 .panel-card__header h3,
 .item-card__head h4 {
   margin: 10px 0 0;
+  color: #111827;
 }
 
 .admin-hero p,
@@ -578,7 +581,7 @@ onMounted(async () => {
 .item-card__foot span,
 .stat-card__hint {
   margin: 0;
-  color: rgba(23, 77, 46, 0.72);
+  color: rgba(32, 43, 68, 0.66);
 }
 
 .admin-actions,
@@ -608,17 +611,17 @@ onMounted(async () => {
 
 .stat-card {
   padding: 18px 20px;
-  border-radius: 24px;
-  border: 1px solid rgba(83, 156, 89, 0.16);
+  border-radius: 8px;
+  border: 1px solid rgba(94, 116, 160, 0.12);
   background: rgba(252, 255, 250, 0.82);
-  box-shadow: 0 14px 28px rgba(52, 118, 66, 0.08);
+  box-shadow: 0 14px 34px rgba(35, 50, 92, 0.07);
 }
 
 .stat-card__label {
   display: block;
   font-size: 13px;
   font-weight: 700;
-  color: #317541;
+  color: #586783;
 }
 
 .stat-card__value {
@@ -626,7 +629,7 @@ onMounted(async () => {
   margin-top: 8px;
   font-size: 34px;
   line-height: 1;
-  color: #1c5c36;
+  color: #172033;
 }
 
 .stat-card__hint {
@@ -637,19 +640,19 @@ onMounted(async () => {
 }
 
 .stat-card--candidate {
-  background: linear-gradient(135deg, rgba(248, 255, 245, 0.96), rgba(226, 250, 213, 0.88));
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(232, 251, 255, 0.88));
 }
 
 .stat-card--knowledge {
-  background: linear-gradient(135deg, rgba(255, 252, 244, 0.96), rgba(250, 242, 213, 0.88));
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(238, 241, 255, 0.9));
 }
 
 .stat-card--post {
-  background: linear-gradient(135deg, rgba(248, 251, 255, 0.96), rgba(225, 241, 255, 0.88));
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(234, 244, 255, 0.9));
 }
 
 .stat-card--reply {
-  background: linear-gradient(135deg, rgba(255, 248, 251, 0.96), rgba(252, 228, 236, 0.88));
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(244, 239, 255, 0.9));
 }
 
 .page-alert {
@@ -659,10 +662,10 @@ onMounted(async () => {
 
 .board-section {
   padding: 22px 24px 24px;
-  border: 1px solid rgba(83, 156, 89, 0.18);
-  border-radius: 28px;
-  background: rgba(251, 255, 248, 0.82);
-  box-shadow: 0 18px 38px rgba(52, 118, 66, 0.12);
+  border: 1px solid rgba(94, 116, 160, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 18px 48px rgba(35, 50, 92, 0.08);
   backdrop-filter: blur(18px);
 }
 
@@ -679,8 +682,8 @@ onMounted(async () => {
   margin-bottom: 8px;
   padding: 5px 10px;
   border-radius: 999px;
-  background: rgba(114, 193, 109, 0.14);
-  color: #357743;
+  background: rgba(82, 116, 255, 0.1);
+  color: #4157d8;
   font-size: 12px;
   font-weight: 800;
 }
@@ -701,9 +704,9 @@ onMounted(async () => {
 .panel-card {
   min-width: 0;
   padding: 18px;
-  border-radius: 24px;
-  border: 1px solid rgba(108, 180, 102, 0.16);
-  background: rgba(255, 255, 255, 0.72);
+  border-radius: 8px;
+  border: 1px solid rgba(94, 116, 160, 0.12);
+  background: rgba(248, 251, 255, 0.78);
 }
 
 .item-list {
@@ -713,16 +716,16 @@ onMounted(async () => {
 
 .item-card {
   padding: 16px;
-  border-radius: 20px;
-  border: 1px solid rgba(108, 180, 102, 0.18);
-  background: rgba(248, 255, 245, 0.74);
+  border-radius: 8px;
+  border: 1px solid rgba(94, 116, 160, 0.12);
+  background: rgba(255, 255, 255, 0.88);
 }
 
 .item-card__content {
   margin: 10px 0 0;
   white-space: pre-wrap;
   line-height: 1.75;
-  color: #214f31;
+  color: #202b44;
 }
 
 .reason-list {
@@ -734,7 +737,7 @@ onMounted(async () => {
 }
 
 .reason-list__label {
-  color: rgba(23, 77, 46, 0.72);
+  color: rgba(32, 43, 68, 0.66);
   font-size: 13px;
   font-weight: 700;
 }
@@ -750,9 +753,9 @@ onMounted(async () => {
 
 .detail-block {
   padding: 18px;
-  border-radius: 22px;
-  border: 1px solid rgba(108, 180, 102, 0.18);
-  background: rgba(248, 255, 245, 0.78);
+  border-radius: 8px;
+  border: 1px solid rgba(94, 116, 160, 0.12);
+  background: rgba(248, 251, 255, 0.78);
 }
 
 .detail-block__head {
@@ -768,7 +771,7 @@ onMounted(async () => {
 
 .detail-block__head p {
   margin: 6px 0 0;
-  color: rgba(23, 77, 46, 0.72);
+  color: rgba(32, 43, 68, 0.66);
 }
 
 .detail-metrics {
@@ -776,7 +779,7 @@ onMounted(async () => {
   flex-wrap: wrap;
   gap: 10px 16px;
   margin-top: 12px;
-  color: rgba(23, 77, 46, 0.72);
+  color: rgba(32, 43, 68, 0.66);
   font-size: 13px;
 }
 
@@ -791,7 +794,7 @@ onMounted(async () => {
   margin: 14px 0 0;
   white-space: pre-wrap;
   line-height: 1.85;
-  color: #214f31;
+  color: #202b44;
 }
 
 .reply-timeline {
@@ -802,9 +805,9 @@ onMounted(async () => {
 
 .reply-timeline__item {
   padding: 14px 16px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(108, 180, 102, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(94, 116, 160, 0.12);
 }
 
 .reply-timeline__head {
@@ -815,7 +818,7 @@ onMounted(async () => {
 }
 
 .reply-timeline__head span {
-  color: rgba(23, 77, 46, 0.72);
+  color: rgba(32, 43, 68, 0.66);
   font-size: 13px;
 }
 
@@ -823,7 +826,7 @@ onMounted(async () => {
   margin: 10px 0 0;
   white-space: pre-wrap;
   line-height: 1.75;
-  color: #214f31;
+  color: #202b44;
 }
 
 @media (max-width: 1180px) {

@@ -11,6 +11,8 @@
       </div>
     </header>
 
+    <section class="detail-layout">
+      <main class="detail-main">
     <section class="detail-card">
       <el-skeleton :loading="store.loadingDetail" animated :rows="6">
         <template #default>
@@ -33,11 +35,6 @@
               </el-tag>
             </div>
 
-            <div class="knowledge-actions">
-              <el-button type="success" plain :loading="store.submitting" @click="onGenerateKnowledge">
-                生成社区知识摘要
-              </el-button>
-            </div>
           </template>
 
           <el-empty v-else description="帖子不存在或加载失败" />
@@ -88,6 +85,24 @@
           <el-button type="primary" :loading="store.submitting" @click="submitReply">提交回复</el-button>
         </div>
       </div>
+    </section>
+      </main>
+
+      <aside class="detail-side">
+        <section class="side-panel">
+          <span class="side-label">知识沉淀</span>
+          <strong>把有效经验变成问答来源</strong>
+          <p>管理员审核后，优质帖子会进入社区知识库，成为 LightRAG 检索的补充来源。</p>
+          <el-button type="primary" plain :loading="store.submitting" @click="onGenerateKnowledge">
+            生成社区知识摘要
+          </el-button>
+        </section>
+        <section class="side-panel">
+          <span class="side-label">回复概览</span>
+          <strong>{{ store.currentReplies.length }} 条</strong>
+          <p>仅展示已通过审核的回复。</p>
+        </section>
+      </aside>
     </section>
   </div>
 </template>
@@ -166,25 +181,32 @@ onMounted(async () => {
   min-height: 100vh;
   padding: 24px;
   background:
-    radial-gradient(circle at top right, rgba(246, 255, 243, 0.96), rgba(217, 249, 208, 0.9) 38%, rgba(134, 223, 97, 0.94) 100%);
-  color: #174d2e;
+    radial-gradient(circle at 88% 4%, rgba(143, 156, 255, 0.2), transparent 30%),
+    radial-gradient(circle at 14% 10%, rgba(103, 232, 249, 0.18), transparent 28%),
+    linear-gradient(135deg, #f7fbff 0%, #eef5ff 52%, #fbfdff 100%);
+  color: #172033;
 }
 
 .detail-header,
 .detail-card,
-.reply-card {
-  max-width: 1080px;
-  margin: 0 auto 18px;
-  border: 1px solid rgba(83, 156, 89, 0.18);
-  border-radius: 28px;
-  background: rgba(251, 255, 248, 0.78);
-  box-shadow: 0 18px 38px rgba(52, 118, 66, 0.12);
+.reply-card,
+.side-panel {
+  border: 1px solid rgba(94, 116, 160, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 18px 48px rgba(35, 50, 92, 0.08);
   backdrop-filter: blur(18px);
 }
 
+.detail-header {
+  max-width: 1380px;
+  margin: 0 auto 18px;
+}
+
 .detail-header,
 .detail-card,
-.reply-card {
+.reply-card,
+.side-panel {
   padding: 24px 28px;
 }
 
@@ -204,8 +226,8 @@ onMounted(async () => {
   display: inline-flex;
   padding: 6px 12px;
   border-radius: 999px;
-  background: rgba(122, 202, 117, 0.14);
-  color: #2f7b40;
+  background: rgba(82, 116, 255, 0.1);
+  color: #4157d8;
   font-size: 13px;
   font-weight: 700;
 }
@@ -214,11 +236,52 @@ onMounted(async () => {
 .reply-header h2,
 .reply-editor h3 {
   margin: 10px 0 0;
+  color: #111827;
+}
+
+.detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 18px;
+  max-width: 1380px;
+  margin: 0 auto;
+}
+
+.detail-main {
+  min-width: 0;
+}
+
+.detail-side {
+  align-self: start;
+  position: sticky;
+  top: 118px;
+  display: grid;
+  gap: 14px;
+}
+
+.side-label {
+  color: #5f6d8a;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.side-panel strong {
+  display: block;
+  margin-top: 10px;
+  color: #111827;
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.side-panel p {
+  margin: 10px 0 16px;
+  color: rgba(32, 43, 68, 0.66);
+  line-height: 1.65;
 }
 
 .detail-meta {
   margin-bottom: 18px;
-  color: rgba(23, 77, 46, 0.72);
+  color: rgba(32, 43, 68, 0.66);
   font-size: 14px;
 }
 
@@ -234,6 +297,7 @@ onMounted(async () => {
 .reply-item-content {
   white-space: pre-wrap;
   line-height: 1.85;
+  color: #202b44;
 }
 
 .detail-tags,
@@ -250,13 +314,13 @@ onMounted(async () => {
 
 .reply-item {
   padding: 16px;
-  border: 1px solid rgba(108, 180, 102, 0.18);
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(94, 116, 160, 0.12);
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(246, 249, 255, 0.9));
 }
 
 .reply-item-head {
-  color: rgba(23, 77, 46, 0.7);
+  color: rgba(32, 43, 68, 0.66);
   font-size: 14px;
   margin-bottom: 8px;
 }
@@ -264,6 +328,14 @@ onMounted(async () => {
 @media (max-width: 900px) {
   .detail-page {
     padding: 16px;
+  }
+
+  .detail-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-side {
+    position: static;
   }
 
   .detail-header,

@@ -1,5 +1,5 @@
 ﻿<template>
-  <div v-if="!authStore.loggedIn" class="app-auth-shell">
+  <div v-if="!bypassLogin && !authStore.loggedIn" class="app-auth-shell">
     <LoginView @login-success="handleLoginSuccess" />
   </div>
 
@@ -45,7 +45,7 @@
         <div class="top-nav__auth">
           <span class="top-nav__auth-role">{{ authStore.isAdmin ? '管理员' : '普通用户' }}</span>
           <span class="top-nav__auth-text">{{ authStore.displayName || authStore.username }}</span>
-          <button type="button" class="top-nav__tab" @click="logout">退出</button>
+          <button v-if="!bypassLogin" type="button" class="top-nav__tab" @click="logout">退出</button>
         </div>
       </div>
     </header>
@@ -90,6 +90,7 @@ const authStore = useAuthStore()
 const activeSection = ref<MainSection>('home')
 const communityView = ref<CommunityViewState>('list')
 const currentPostId = ref('')
+const bypassLogin = import.meta.env.VITE_BYPASS_LOGIN !== 'false'
 
 const goHome = () => {
   activeSection.value = 'home'
@@ -128,6 +129,9 @@ const handleLoginSuccess = (role: LoginRole) => {
 
 const logout = () => {
   authStore.logout()
+  if (bypassLogin) {
+    authStore.enterGuestUser()
+  }
   activeSection.value = 'home'
   communityView.value = 'list'
   currentPostId.value = ''
@@ -135,6 +139,9 @@ const logout = () => {
 
 onMounted(() => {
   authStore.hydrate()
+  if (bypassLogin && !authStore.loggedIn) {
+    authStore.enterGuestUser()
+  }
   if (authStore.loggedIn) {
     activeSection.value = authStore.isAdmin ? 'admin' : 'home'
   }
@@ -149,7 +156,9 @@ onMounted(() => {
 .app-layout {
   min-height: 100vh;
   background:
-    radial-gradient(circle at top left, rgba(241, 255, 238, 0.98), rgba(216, 248, 206, 0.92) 42%, rgba(137, 223, 98, 0.95) 100%);
+    radial-gradient(circle at 18% 8%, rgba(103, 232, 249, 0.18), transparent 26%),
+    radial-gradient(circle at 78% 0%, rgba(143, 156, 255, 0.24), transparent 32%),
+    linear-gradient(135deg, #070b18 0%, #101633 52%, #192052 100%);
 }
 
 .top-nav {
@@ -168,17 +177,20 @@ onMounted(() => {
   max-width: 1680px;
   margin: 0 auto;
   padding: 14px 20px;
-  border: 1px solid rgba(103, 167, 94, 0.2);
+  border: 1px solid rgba(188, 205, 255, 0.16);
   border-radius: 24px;
-  background: rgba(251, 255, 248, 0.82);
-  box-shadow: 0 14px 36px rgba(55, 116, 63, 0.12);
+  background: rgba(10, 15, 35, 0.72);
+  box-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(18px);
 }
 
 .top-nav__brand {
   display: flex;
   align-items: center;
   gap: 12px;
-  color: #184e30;
+  color: #f7fbff;
 }
 
 .top-nav__brand strong,
@@ -192,7 +204,7 @@ onMounted(() => {
 
 .top-nav__brand span {
   margin-top: 2px;
-  color: rgba(24, 78, 48, 0.72);
+  color: rgba(217, 227, 255, 0.72);
   font-size: 13px;
 }
 
@@ -203,10 +215,11 @@ onMounted(() => {
   width: 44px;
   height: 44px;
   border-radius: 16px;
-  background: linear-gradient(135deg, rgba(73, 165, 86, 0.18), rgba(173, 241, 145, 0.42));
-  color: #2f7b40;
+  background: linear-gradient(135deg, rgba(143, 156, 255, 0.32), rgba(103, 232, 249, 0.18));
+  color: #eef4ff;
   font-size: 18px;
   font-weight: 800;
+  border: 1px solid rgba(188, 205, 255, 0.18);
 }
 
 .top-nav__tabs {
@@ -227,24 +240,24 @@ onMounted(() => {
   justify-content: center;
   padding: 8px 12px;
   border-radius: 999px;
-  background: rgba(97, 167, 92, 0.14);
-  color: #2a6b3f;
+  background: rgba(103, 232, 249, 0.12);
+  color: #bff7ff;
   font-size: 13px;
   font-weight: 700;
 }
 
 .top-nav__auth-text {
-  color: rgba(24, 78, 48, 0.74);
+  color: rgba(217, 227, 255, 0.76);
   font-size: 14px;
   font-weight: 700;
 }
 
 .top-nav__tab {
-  border: 1px solid rgba(86, 157, 90, 0.18);
+  border: 1px solid rgba(188, 205, 255, 0.16);
   border-radius: 999px;
   padding: 10px 18px;
-  background: rgba(255, 255, 255, 0.74);
-  color: rgba(23, 77, 46, 0.72);
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(238, 244, 255, 0.78);
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
@@ -253,14 +266,15 @@ onMounted(() => {
 
 .top-nav__tab:hover {
   transform: translateY(-1px);
-  color: #1b5a37;
-  box-shadow: 0 10px 22px rgba(55, 116, 63, 0.1);
+  color: #f7fbff;
+  border-color: rgba(103, 232, 249, 0.36);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
 }
 
 .top-nav__tab--active {
-  border-color: rgba(85, 169, 86, 0.32);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(223, 250, 214, 0.92));
-  color: #20653d;
+  border-color: rgba(143, 156, 255, 0.46);
+  background: linear-gradient(135deg, rgba(143, 156, 255, 0.3), rgba(103, 232, 249, 0.13));
+  color: #ffffff;
 }
 
 .page-content {

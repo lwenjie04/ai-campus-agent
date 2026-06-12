@@ -3,15 +3,44 @@
     <header class="community-hero">
       <div>
         <div class="hero-kicker">学生社区</div>
-        <h1>校园互助交流区</h1>
-        <p>同学们可以在这里提问、分享经验，后续高质量内容会经过审核沉淀为社区知识来源。</p>
+        <h1>校园问题流转中心</h1>
+        <p>把高频问题、办理经验和同学补充沉淀到社区，后续可进入问答来源。</p>
       </div>
 
       <div class="hero-actions">
+        <div class="hero-stat">
+          <strong>{{ store.total }}</strong>
+          <span>公开讨论</span>
+        </div>
         <el-button type="primary" round @click="editorVisible = true">发布帖子</el-button>
       </div>
     </header>
 
+    <section class="community-shell">
+      <aside class="community-aside">
+        <div class="aside-block">
+          <span class="aside-label">当前视图</span>
+          <strong>学生日常查询</strong>
+          <p>聚合选课、奖学金、宿舍、考试等常见事务。</p>
+        </div>
+        <div class="aside-block">
+          <span class="aside-label">热门标签</span>
+          <div class="tag-row">
+            <el-tag
+              v-for="tag in store.meta.hotTags"
+              :key="tag"
+              class="hot-tag"
+              effect="plain"
+              round
+              @click="useTag(tag)"
+            >
+              {{ tag }}
+            </el-tag>
+          </div>
+        </div>
+      </aside>
+
+      <main class="community-main">
     <section class="toolbar-card">
       <div class="toolbar-row">
         <el-input
@@ -38,20 +67,6 @@
           @change="applyFilters"
         />
       </div>
-
-      <div class="tag-row">
-        <span class="tag-row-label">热门标签</span>
-        <el-tag
-          v-for="tag in store.meta.hotTags"
-          :key="tag"
-          class="hot-tag"
-          effect="plain"
-          round
-          @click="useTag(tag)"
-        >
-          {{ tag }}
-        </el-tag>
-      </div>
     </section>
 
     <section class="list-card">
@@ -75,12 +90,16 @@
             >
               <div class="post-card-top">
                 <div>
+                  <span class="post-category">{{ categoryLabelMap[post.category] || post.category }}</span>
                   <h3>{{ post.title }}</h3>
                   <p class="post-meta">
-                    {{ categoryLabelMap[post.category] || post.category }} · {{ formatDate(post.createdAt) }}
+                    {{ formatDate(post.createdAt) }} · {{ post.authorName }}
                   </p>
                 </div>
-                <el-tag round type="success">{{ post.replyCount }} 条回复</el-tag>
+                <div class="post-count">
+                  <strong>{{ post.replyCount }}</strong>
+                  <span>回复</span>
+                </div>
               </div>
 
               <p class="post-preview">{{ post.contentPreview || post.content }}</p>
@@ -97,7 +116,7 @@
                     {{ tag }}
                   </el-tag>
                 </div>
-                <span class="post-author">发布者：{{ post.authorName }}</span>
+                <span class="post-author">查看详情</span>
               </div>
             </article>
           </div>
@@ -105,6 +124,8 @@
           <el-empty v-else description="当前还没有匹配的帖子，欢迎发布第一条讨论" />
         </template>
       </el-skeleton>
+    </section>
+      </main>
     </section>
 
     <el-dialog
@@ -260,19 +281,19 @@ onMounted(async () => {
   min-height: 100vh;
   padding: 24px;
   background:
-    radial-gradient(circle at top left, rgba(239, 255, 245, 0.95), rgba(214, 251, 210, 0.88) 42%, rgba(132, 224, 101, 0.92) 100%);
-  color: #174d2e;
+    radial-gradient(circle at 14% 0%, rgba(113, 230, 255, 0.2), transparent 28%),
+    radial-gradient(circle at 86% 10%, rgba(143, 156, 255, 0.22), transparent 30%),
+    linear-gradient(135deg, #f7fbff 0%, #eef5ff 48%, #f8fbff 100%);
+  color: #172033;
 }
 
 .community-hero,
 .toolbar-card,
 .list-card {
-  max-width: 1180px;
-  margin: 0 auto 18px;
-  border: 1px solid rgba(83, 156, 89, 0.18);
-  border-radius: 28px;
-  background: rgba(251, 255, 248, 0.78);
-  box-shadow: 0 18px 38px rgba(52, 118, 66, 0.12);
+  border: 1px solid rgba(94, 116, 160, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 18px 48px rgba(35, 50, 92, 0.08);
   backdrop-filter: blur(18px);
 }
 
@@ -281,6 +302,8 @@ onMounted(async () => {
   align-items: center;
   justify-content: space-between;
   gap: 18px;
+  max-width: 1380px;
+  margin: 0 auto 18px;
   padding: 24px 28px;
 }
 
@@ -288,8 +311,8 @@ onMounted(async () => {
   display: inline-flex;
   padding: 6px 12px;
   border-radius: 999px;
-  background: rgba(122, 202, 117, 0.14);
-  color: #2f7b40;
+  background: rgba(82, 116, 255, 0.1);
+  color: #4157d8;
   font-size: 13px;
   font-weight: 700;
 }
@@ -299,6 +322,7 @@ onMounted(async () => {
   margin: 10px 0 6px;
   font-size: 34px;
   line-height: 1.1;
+  color: #111827;
 }
 
 .community-hero p,
@@ -307,7 +331,7 @@ onMounted(async () => {
 .post-preview,
 .post-author {
   margin: 0;
-  color: rgba(23, 77, 46, 0.72);
+  color: rgba(32, 43, 68, 0.68);
 }
 
 .hero-actions,
@@ -318,9 +342,78 @@ onMounted(async () => {
   gap: 12px;
 }
 
+.hero-stat {
+  display: grid;
+  min-width: 104px;
+  padding: 10px 14px;
+  border: 1px solid rgba(86, 111, 197, 0.14);
+  border-radius: 8px;
+  background: rgba(242, 247, 255, 0.88);
+}
+
+.hero-stat strong {
+  color: #15213a;
+  font-size: 26px;
+  line-height: 1;
+}
+
+.hero-stat span {
+  color: rgba(32, 43, 68, 0.62);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.community-shell {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 18px;
+  max-width: 1380px;
+  margin: 0 auto;
+}
+
+.community-aside {
+  align-self: start;
+  display: grid;
+  gap: 14px;
+  position: sticky;
+  top: 118px;
+}
+
+.aside-block {
+  padding: 20px;
+  border: 1px solid rgba(94, 116, 160, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 18px 48px rgba(35, 50, 92, 0.07);
+}
+
+.aside-label {
+  color: #5f6d8a;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.aside-block strong {
+  display: block;
+  margin-top: 10px;
+  color: #111827;
+  font-size: 22px;
+}
+
+.aside-block p {
+  margin: 8px 0 0;
+  color: rgba(32, 43, 68, 0.66);
+  line-height: 1.6;
+}
+
+.community-main {
+  min-width: 0;
+}
+
 .toolbar-card,
 .list-card {
   padding: 22px 24px;
+  margin-bottom: 18px;
 }
 
 .toolbar-row {
@@ -340,17 +433,13 @@ onMounted(async () => {
   flex-wrap: wrap;
   gap: 10px;
   align-items: center;
-  margin-top: 16px;
-}
-
-.tag-row-label {
-  font-size: 14px;
-  font-weight: 700;
-  color: #2f7b40;
 }
 
 .hot-tag {
   cursor: pointer;
+  border-color: rgba(82, 116, 255, 0.2);
+  color: #4250b8;
+  background: rgba(245, 248, 255, 0.84);
 }
 
 .list-header {
@@ -367,16 +456,17 @@ onMounted(async () => {
 
 .post-card {
   padding: 18px 18px 16px;
-  border: 1px solid rgba(108, 180, 102, 0.18);
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid rgba(94, 116, 160, 0.12);
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(246, 249, 255, 0.9));
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
 }
 
 .post-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 14px 30px rgba(60, 133, 72, 0.12);
+  border-color: rgba(82, 116, 255, 0.24);
+  box-shadow: 0 16px 34px rgba(45, 66, 120, 0.12);
 }
 
 .post-card-top,
@@ -391,9 +481,35 @@ onMounted(async () => {
 }
 
 .post-card h3 {
-  margin: 0 0 6px;
+  margin: 6px 0;
+  font-size: 21px;
+  color: #111827;
+}
+
+.post-category {
+  color: #5267df;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.post-count {
+  display: grid;
+  min-width: 64px;
+  justify-items: center;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(82, 116, 255, 0.08);
+  color: #4355ce;
+}
+
+.post-count strong {
   font-size: 22px;
-  color: #174d2e;
+  line-height: 1;
+}
+
+.post-count span {
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .post-preview {
@@ -419,6 +535,14 @@ onMounted(async () => {
 @media (max-width: 900px) {
   .community-page {
     padding: 16px;
+  }
+
+  .community-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .community-aside {
+    position: static;
   }
 
   .community-hero,

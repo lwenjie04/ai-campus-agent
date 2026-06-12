@@ -8,7 +8,7 @@
       @keyup.enter="send"
     />
     <el-button class="send-btn" :loading="loading" :disabled="loading" @click="send">
-      ✨
+      发送
     </el-button>
   </div>
 </template>
@@ -43,8 +43,8 @@ const send = () => {
 <style scoped>
 .input-box {
   display: grid;
-  grid-template-columns: 1fr 54px;
-  gap: 10px;
+  grid-template-columns: 1fr 4.5rem;
+  gap: 0.625rem;
   align-items: center;
 }
 
@@ -53,41 +53,53 @@ const send = () => {
 }
 
 :deep(.el-input__wrapper) {
-  border-radius: 999px;
-  min-height: 52px;
-  padding: 0 16px;
-  background: rgba(243, 243, 243, 0.95);
+  border-radius: 8px;
+  min-height: 3.5rem;
+  padding: 0 1rem;
+  background: rgba(255, 255, 255, 0.08);
   box-shadow:
-    inset 0 0 0 1px rgba(50, 110, 51, 0.12),
-    0 8px 14px rgba(33, 95, 40, 0.06) !important;
+    inset 0 0 0 1px rgba(188, 205, 255, 0.17),
+    0 18px 34px rgba(0, 0, 0, 0.18) !important;
+  backdrop-filter: blur(14px);
 }
 
 :deep(.el-input__wrapper.is-focus) {
   box-shadow:
-    inset 0 0 0 1px rgba(47, 137, 66, 0.28),
-    0 0 0 4px rgba(98, 219, 93, 0.13),
-    0 8px 14px rgba(33, 95, 40, 0.07) !important;
+    inset 0 0 0 1px rgba(103, 232, 249, 0.48),
+    0 0 0 5px rgba(103, 232, 249, 0.12),
+    0 18px 34px rgba(0, 0, 0, 0.2) !important;
 }
 
 :deep(.el-input__inner) {
-  color: #152218;
+  color: #f7fbff;
   font-size: 16px;
+  font-weight: 650;
+}
+
+:deep(.el-input__inner::placeholder) {
+  color: rgba(217, 227, 255, 0.62);
 }
 
 .send-btn {
-  width: 54px;
-  height: 54px;
-  border-radius: 50%;
+  width: 4.5rem;
+  height: 3.5rem;
+  border-radius: 8px;
   border: none;
-  font-size: 22px;
-  color: #35c648;
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 10px 16px rgba(26, 85, 35, 0.12);
+  font-size: 0.9375rem;
+  font-weight: 800;
+  color: #f7fbff;
+  background: linear-gradient(135deg, rgba(143, 156, 255, 0.9), rgba(103, 232, 249, 0.74));
+  box-shadow:
+    0 18px 34px rgba(87, 105, 255, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.36);
 }
 
 .send-btn:hover {
-  background: #fff;
-  color: #24b238;
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow:
+    0 22px 38px rgba(87, 105, 255, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.42);
 }
 
 .send-btn.is-disabled {
@@ -96,14 +108,14 @@ const send = () => {
 
 @media (max-width: 680px) {
   .input-box {
-    grid-template-columns: 1fr 50px;
+    grid-template-columns: 1fr 3.75rem;
     gap: 8px;
   }
 
   .send-btn {
-    width: 50px;
-    height: 50px;
-    font-size: 20px;
+    width: 3.75rem;
+    height: 3.25rem;
+    font-size: 0.875rem;
   }
 }
 </style>

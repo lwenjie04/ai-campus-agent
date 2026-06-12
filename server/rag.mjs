@@ -1,6 +1,7 @@
 ﻿import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { isMySqlConfigured, query } from './mysql.mjs'
+import { searchVectorIndex } from './vector-index.mjs'
 
 const KB_PATH = resolve(process.cwd(), 'server/data/knowledge-base.json')
 const LOG_DIR = resolve(process.cwd(), 'server/logs')
@@ -36,6 +37,10 @@ const TIME_DECAY = {
 
 const RAG_LOG_ENABLED = (process.env.RAG_LOG_ENABLED ?? 'true') === 'true'
 const ROUTE_MIN_HITS = toNumber(process.env.RAG_ROUTE_MIN_HITS, 2)
+const VECTOR_SEARCH_ENABLED = (process.env.RAG_VECTOR_ENABLED ?? 'true') === 'true'
+const VECTOR_SEARCH_LIMIT = toNumber(process.env.RAG_VECTOR_TOPK, 8)
+const KEYWORD_SEARCH_MULTIPLIER = toNumber(process.env.RAG_KEYWORD_LIMIT_MULTIPLIER, 3)
+const FINAL_VECTOR_WEIGHT = toNumber(process.env.RAG_WEIGHT_VECTOR_SCORE, 6)
 
 const COMMUNITY_SOURCE_TYPES = new Set(['community_post', 'community_summary'])
 const COMMUNITY_SOURCE_NOTE = '以下内容来自学生社区经验总结，仅供参考，请以学校最新官方通知为准。'
@@ -422,6 +427,82 @@ const dedupeRankedHits = (hits) => {
   })
 }
 
+const createHitMergeKey = (hit) => {
+  const sourceType = String(hit.sourceType || 'official_notice')
+  const docId = String(hit.docId || hit.id || '')
+  const postId = String(hit.postId || '')
+  const url = String(hit.url || '')
+  return [sourceType, docId, postId, url].filter(Boolean).join('::')
+}
+
+const mergeHybridHits = (keywordHits, vectorHits) => {
+  const merged = new Map()
+
+  for (const hit of keywordHits) {
+    const key = createHitMergeKey(hit)
+    merged.set(key, {
+      ...hit,
+      keywordScore: hit.score || 0,
+      vectorScore: 0,
+      score: hit.score || 0,
+    })
+  }
+
+  for (const hit of vectorHits) {
+    const key = createHitMergeKey(hit)
+    const existing = merged.get(key)
+
+    if (existing) {
+      merged.set(key, {
+        ...existing,
+        docId: existing.docId || hit.docId || hit.id,
+        postId: existing.postId || hit.postId || '',
+        title: existing.title || hit.title,
+        content: existing.content || hit.content,
+        snippet: existing.snippet || hit.contentPreview || '',
+        contentPreview: existing.contentPreview || hit.contentPreview || '',
+        sourceType: existing.sourceType || hit.sourceType,
+        sourceStatus: existing.sourceStatus || hit.sourceStatus,
+        updatedAt: existing.updatedAt || hit.updatedAt,
+        isOfficial: typeof existing.isOfficial === 'boolean' ? existing.isOfficial : hit.isOfficial,
+        priority: Number(existing.priority ?? hit.priority ?? 0),
+        vectorScore: Math.max(existing.vectorScore || 0, hit.vectorScore || 0),
+      })
+      continue
+    }
+
+    merged.set(key, {
+      ...hit,
+      docId: hit.docId || hit.id,
+      keywordScore: 0,
+      vectorScore: hit.vectorScore || 0,
+      baseScore: 0,
+      decayFactor: 1,
+      matchedTerms: [],
+      snippet: hit.contentPreview || '',
+      score: 0,
+    })
+  }
+
+  return Array.from(merged.values())
+}
+
+const rerankHybridHits = (hits) =>
+  hits
+    .map((hit) => {
+      const vectorScore = Math.max(0, Number(hit.vectorScore) || 0)
+      const keywordScore = Number(hit.keywordScore ?? hit.score ?? 0) || 0
+      const finalScore = keywordScore + vectorScore * FINAL_VECTOR_WEIGHT
+
+      return {
+        ...hit,
+        vectorScore,
+        keywordScore,
+        score: finalScore,
+      }
+    })
+    .sort((a, b) => b.score - a.score)
+
 export const getKnowledgeBaseEntryById = (id) => {
   const kb = loadKnowledgeBase()
   return kb.find((item) => String(item.id) === String(id)) || null
@@ -441,6 +522,7 @@ export const searchKnowledgeBase = async (query, options = {}) => {
 
   let ranked = []
   let routeMode = 'global_only'
+  const keywordLimit = Math.max(limit, limit * Math.max(1, KEYWORD_SEARCH_MULTIPLIER))
 
   if (preferredCategories.length > 0) {
     const routedEntries = allEntries.filter((entry) =>
@@ -460,8 +542,26 @@ export const searchKnowledgeBase = async (query, options = {}) => {
     ranked = dedupeRankedHits(rankEntries(allEntries, q, terms, [], { minScore }))
   }
 
-  const finalHits = ranked.slice(0, limit)
-  logSearch(query, { limit, minScore }, finalHits, { preferredCategories, routeMode })
+  const keywordHits = ranked.slice(0, keywordLimit)
+
+  let vectorHits = []
+  if (VECTOR_SEARCH_ENABLED) {
+    try {
+      vectorHits = await searchVectorIndex(query, {
+        limit: Math.max(limit, VECTOR_SEARCH_LIMIT),
+      })
+    } catch {
+      vectorHits = []
+    }
+  }
+
+  const finalHits = rerankHybridHits(mergeHybridHits(keywordHits, vectorHits)).slice(0, limit)
+  logSearch(query, { limit, minScore }, finalHits, {
+    preferredCategories,
+    routeMode,
+    keywordHits: keywordHits.length,
+    vectorHits: vectorHits.length,
+  })
   return finalHits
 }
 
