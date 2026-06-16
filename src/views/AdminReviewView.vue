@@ -1,5 +1,5 @@
 <template>
-  <div class="admin-page">
+  <div class="admin-page light-surface">
     <header class="admin-hero">
       <div class="admin-hero__content">
         <div class="admin-kicker">管理员工作台</div>
@@ -524,32 +524,30 @@ onMounted(async () => {
 <style scoped>
 .admin-page {
   min-height: 100vh;
-  padding: 24px;
-  background:
-    radial-gradient(circle at 18% 0%, rgba(103, 232, 249, 0.18), transparent 28%),
-    radial-gradient(circle at 86% 6%, rgba(143, 156, 255, 0.22), transparent 32%),
-    linear-gradient(135deg, #f7fbff 0%, #edf4ff 48%, #fbfdff 100%);
-  color: #172033;
+  padding: var(--space-8);
+  background: var(--light-bg);
+  color: var(--light-ink);
+  font-family: var(--font-sans);
 }
 
 .admin-hero,
 .stats-grid,
 .board-section {
-  max-width: 1380px;
-  margin: 0 auto 18px;
+  max-width: 86rem;
+  margin: 0 auto 1.125rem;
 }
 
 .admin-hero {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 20px;
-  padding: 26px 28px;
-  border: 1px solid rgba(94, 116, 160, 0.14);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.84);
-  box-shadow: 0 18px 48px rgba(35, 50, 92, 0.08);
-  backdrop-filter: blur(18px);
+  gap: var(--space-5);
+  padding: 1.125rem 1.375rem;
+  border: 1px solid var(--light-line);
+  border-radius: var(--radius-md);
+  background: var(--light-surface);
+  box-shadow: var(--shadow-light-sm);
+  backdrop-filter: var(--glass-blur);
 }
 
 .admin-hero__content {
@@ -558,20 +556,20 @@ onMounted(async () => {
 
 .admin-kicker {
   display: inline-flex;
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: rgba(82, 116, 255, 0.1);
-  color: #4157d8;
-  font-size: 13px;
-  font-weight: 800;
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--radius-pill);
+  background: rgba(35, 104, 255, 0.1);
+  color: var(--primary-500);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-black);
 }
 
 .admin-hero h1,
 .board-section__header h2,
 .panel-card__header h3,
 .item-card__head h4 {
-  margin: 10px 0 0;
-  color: #111827;
+  margin: 0.625rem 0 0;
+  color: var(--light-ink);
 }
 
 .admin-hero p,
@@ -581,7 +579,7 @@ onMounted(async () => {
 .item-card__foot span,
 .stat-card__hint {
   margin: 0;
-  color: rgba(32, 43, 68, 0.66);
+  color: var(--light-muted);
 }
 
 .admin-actions,
@@ -610,50 +608,40 @@ onMounted(async () => {
 }
 
 .stat-card {
-  padding: 18px 20px;
-  border-radius: 8px;
-  border: 1px solid rgba(94, 116, 160, 0.12);
-  background: rgba(252, 255, 250, 0.82);
-  box-shadow: 0 14px 34px rgba(35, 50, 92, 0.07);
+  padding: 0.875rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--light-line);
+  border-left: 3px solid var(--primary-500);
+  background: var(--light-surface);
+  box-shadow: var(--shadow-light-sm);
 }
 
 .stat-card__label {
   display: block;
-  font-size: 13px;
-  font-weight: 700;
-  color: #586783;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--light-muted);
 }
 
 .stat-card__value {
   display: block;
-  margin-top: 8px;
-  font-size: 34px;
+  margin-top: var(--space-2);
+  font-size: 1.875rem;
   line-height: 1;
-  color: #172033;
+  color: var(--light-ink);
 }
 
 .stat-card__hint {
   display: block;
-  margin-top: 8px;
-  font-size: 12px;
-  line-height: 1.5;
+  margin-top: var(--space-2);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-normal);
 }
 
-.stat-card--candidate {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(232, 251, 255, 0.88));
-}
-
-.stat-card--knowledge {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(238, 241, 255, 0.9));
-}
-
-.stat-card--post {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(234, 244, 255, 0.9));
-}
-
-.stat-card--reply {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(244, 239, 255, 0.9));
-}
+.stat-card--candidate { border-left-color: var(--primary-500); }
+.stat-card--knowledge { border-left-color: var(--accent-violet); }
+.stat-card--post { border-left-color: var(--warning-amber); }
+.stat-card--reply { border-left-color: var(--accent-cyan); }
 
 .page-alert {
   max-width: 1380px;
@@ -661,31 +649,31 @@ onMounted(async () => {
 }
 
 .board-section {
-  padding: 22px 24px 24px;
-  border: 1px solid rgba(94, 116, 160, 0.14);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.84);
-  box-shadow: 0 18px 48px rgba(35, 50, 92, 0.08);
-  backdrop-filter: blur(18px);
+  padding: var(--space-4);
+  border: 1px solid var(--light-line);
+  border-radius: var(--radius-md);
+  background: var(--light-surface);
+  box-shadow: var(--shadow-light-sm);
+  backdrop-filter: var(--glass-blur);
 }
 
 .board-section__header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 18px;
-  margin-bottom: 18px;
+  gap: 1.125rem;
+  margin-bottom: var(--space-3);
 }
 
 .board-section__eyebrow {
   display: inline-flex;
-  margin-bottom: 8px;
-  padding: 5px 10px;
-  border-radius: 999px;
-  background: rgba(82, 116, 255, 0.1);
-  color: #4157d8;
-  font-size: 12px;
-  font-weight: 800;
+  margin-bottom: var(--space-2);
+  padding: 0.3125rem 0.625rem;
+  border-radius: var(--radius-pill);
+  background: rgba(35, 104, 255, 0.1);
+  color: var(--primary-500);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-black);
 }
 
 .board-grid {
@@ -703,29 +691,30 @@ onMounted(async () => {
 
 .panel-card {
   min-width: 0;
-  padding: 18px;
-  border-radius: 8px;
-  border: 1px solid rgba(94, 116, 160, 0.12);
-  background: rgba(248, 251, 255, 0.78);
+  padding: 0.875rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--light-line);
+  background: var(--light-surface-soft);
 }
 
 .item-list {
   display: grid;
-  gap: 14px;
+  gap: 0.625rem;
 }
 
 .item-card {
-  padding: 16px;
-  border-radius: 8px;
-  border: 1px solid rgba(94, 116, 160, 0.12);
-  background: rgba(255, 255, 255, 0.88);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--light-line);
+  border-left: 3px solid var(--primary-500);
+  background: var(--light-surface);
 }
 
 .item-card__content {
-  margin: 10px 0 0;
+  margin: var(--space-2) 0 0;
   white-space: pre-wrap;
-  line-height: 1.75;
-  color: #202b44;
+  line-height: var(--line-height-relaxed);
+  color: var(--light-ink);
 }
 
 .reason-list {

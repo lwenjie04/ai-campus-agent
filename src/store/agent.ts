@@ -28,7 +28,7 @@ const createMessage = (role: Message['role'], content: string, extra?: Partial<M
 // 固定欢迎词：页面首次打开或重置会话时直接显示。
 // 这条消息不走大模型，也不参与讲解 TTS。
 const WELCOME_MESSAGE =
-  '你好，我是广东第二师范学院校园智能问答助手。你可以直接告诉我想查询的事项，例如奖学金、选课、转专业、宿舍服务等。'
+  '你好，我是 Prism 校园 AI 知识助手。你可以直接询问选课、奖学金、宿舍、考试等校园问题。'
 
 // 访问 localStorage 前先做环境判断，避免测试环境或非浏览器环境报错。
 const canUseStorage = () => typeof window !== 'undefined' && !!window.localStorage
@@ -146,7 +146,7 @@ export const useAgentStore = defineStore('agent', {
         guest: '访客',
       }
 
-      return `你是广东第二师范学院校园智能问答助手。请基于学校真实信息进行回答，语言简洁、直接、易懂。
+      return `你是 Prism 校园 AI 知识助手。请基于知识库、项目文档和已检索来源回答，语言简洁、直接、易懂。
 
 当前用户信息：
 - 身份：${roleLabelMap[this.userProfile.role] || this.userProfile.role}
@@ -158,8 +158,8 @@ export const useAgentStore = defineStore('agent', {
 2. 如果用户在询问具体事务，请优先按以下结构回答：
    - 先给出明确结论或办理建议。
    - 再补充办理步骤、关键信息或注意事项。
-3. 如果信息来自学校通知或规则，请尽量保持表达准确，不要编造不存在的流程。
-4. 如果目前无法确认细节，请明确说明，并提醒用户以学校最新官方通知为准。
+3. 如果信息来自知识库、文档或社区内容，请尽量保持表达准确，不要编造不存在的流程。
+4. 如果目前无法确认细节，请明确说明，并提醒用户查看原始来源或补充资料。
 5. 语言尽量自然，不重复用户问题，不写空泛套话。
 6. 不要使用 Markdown 粗体、斜体或星号强调，例如不要输出 **标题**、*重点* 这类格式。`
     },
@@ -292,7 +292,7 @@ export const useAgentStore = defineStore('agent', {
             if (!target) return
             target.content += delta
 
-            // 同时把文本累计成完整句子，一旦成句就立即送给数字人播报。
+            // 同时把文本累计成完整句子，一旦成句就立即送给 Prism Core 播报。
             narrationBuffer += delta
             const { chunks, rest } = splitSpeakableChunks(narrationBuffer)
             narrationBuffer = rest

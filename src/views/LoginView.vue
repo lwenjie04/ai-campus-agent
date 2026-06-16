@@ -11,7 +11,7 @@
 
       <div class="login-highlights">
         <div class="login-highlight">
-          <strong>数字人问答</strong>
+          <strong>Prism Core 问答</strong>
           <span>支持知识检索、来源追溯和语音讲解。</span>
         </div>
         <div class="login-highlight">
@@ -268,125 +268,136 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+/* Apple ID style — minimal, centered, glass card */
 .login-page {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
-  background:
-    radial-gradient(circle at top, rgba(243, 255, 240, 0.98), rgba(222, 249, 214, 0.92) 42%, rgba(135, 223, 99, 0.96) 100%);
+  padding: var(--space-8);
+  background: var(--dark-bg);
+  font-family: var(--font-sans);
 }
 
 .login-card {
-  width: min(680px, 100%);
-  padding: 30px;
-  border: 1px solid rgba(103, 167, 94, 0.2);
-  border-radius: 28px;
-  background: rgba(251, 255, 248, 0.88);
-  box-shadow: 0 20px 42px rgba(55, 116, 63, 0.14);
-  backdrop-filter: blur(18px);
+  width: min(28rem, 100%);
+  padding: var(--space-10) var(--space-8);
+  border-radius: var(--radius-2xl);
+  background: #1c1c1e;
+  border: 0.5px solid rgba(255,255,255,0.06);
+  box-shadow: var(--shadow-floating);
 }
 
 .login-kicker {
   display: inline-flex;
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: rgba(122, 202, 117, 0.14);
-  color: #2f7b40;
-  font-size: 13px;
-  font-weight: 700;
+  padding: 0.25rem 0.625rem;
+  border-radius: var(--radius-pill);
+  background: rgba(0,113,227,0.12);
+  color: var(--apple-blue);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--letter-spacing-wide);
+  text-transform: uppercase;
 }
 
 .login-card__head h1 {
-  margin: 12px 0 10px;
-  color: #184e30;
-  font-size: 34px;
+  margin: var(--space-4) 0 var(--space-3);
+  color: var(--dark-ink);
+  font-size: var(--font-size-large-title);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-tight);
+  line-height: var(--line-height-tight);
 }
 
 .login-card__head p {
   margin: 0;
-  color: rgba(24, 78, 48, 0.72);
-  line-height: 1.75;
+  color: var(--dark-muted);
+  font-size: var(--font-size-callout);
+  line-height: var(--line-height-relaxed);
 }
 
 .login-highlights {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin: 22px 0 18px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.625rem;
+  margin: var(--space-6) 0;
 }
-
 .login-highlight {
-  padding: 14px 16px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(96, 162, 90, 0.14);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: rgba(255,255,255,0.04);
+  border: 0.5px solid rgba(255,255,255,0.05);
 }
-
 .login-highlight strong {
   display: block;
-  margin-bottom: 6px;
-  color: #1f5e39;
-  font-size: 15px;
+  margin-bottom: 0.25rem;
+  color: var(--dark-ink);
+  font-size: var(--font-size-subhead);
+  font-weight: var(--font-weight-medium);
 }
-
 .login-highlight span {
-  color: rgba(24, 78, 48, 0.72);
-  line-height: 1.65;
-  font-size: 13px;
+  color: var(--dark-muted);
+  font-size: var(--font-size-caption);
+  line-height: var(--line-height-relaxed);
 }
 
-.login-tabs {
-  margin-top: 10px;
-}
+.login-tabs { margin-top: var(--space-2); }
 
-.login-form {
-  margin-top: 18px;
+.login-form { margin-top: var(--space-5); }
+
+:deep(.el-tabs__nav-wrap::after) { display: none; }
+:deep(.el-tabs__item) {
+  color: var(--dark-muted);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-regular);
+}
+:deep(.el-tabs__item.is-active) { color: var(--apple-blue); }
+:deep(.el-tabs__active-bar) { background: var(--apple-blue); }
+
+:deep(.el-form-item__label) {
+  color: var(--dark-muted);
+  font-size: var(--font-size-footnote);
+  font-weight: var(--font-weight-medium);
+}
+:deep(.el-input__wrapper) {
+  background: rgba(255,255,255,0.05);
+  border-radius: var(--radius-md);
+  border: 0.5px solid rgba(255,255,255,0.08);
+  box-shadow: none !important;
+}
+:deep(.el-input__inner) { color: var(--dark-ink); font-size: var(--font-size-body); }
+:deep(.el-input__inner::placeholder) { color: rgba(245,245,247,0.35); }
+:deep(.el-button--primary) {
+  --el-button-bg-color: var(--apple-blue);
+  --el-button-border-color: var(--apple-blue);
+  --el-button-hover-bg-color: var(--apple-blue-hover);
+  --el-button-hover-border-color: var(--apple-blue-hover);
+  border-radius: var(--radius-pill);
+  font-weight: var(--font-weight-medium);
+  height: 2.75rem;
+  width: 100%;
 }
 
 .verify-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 10px;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-2);
 }
-
-.verify-row__button {
-  min-width: 134px;
-}
+.verify-row__button { min-width: 8rem; border-radius: var(--radius-pill); }
 
 .login-actions {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
-  margin-top: 8px;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
 }
-
-.login-actions--single {
-  justify-content: flex-end;
-}
+.login-actions--single { justify-content: flex-end; }
 
 @media (max-width: 680px) {
-  .login-page {
-    padding: 16px;
-  }
-
-  .login-card {
-    padding: 22px;
-  }
-
-  .login-highlights {
-    grid-template-columns: 1fr;
-  }
-
-  .verify-row,
-  .login-actions {
-    grid-template-columns: 1fr;
-    flex-direction: column;
-  }
-
-  .verify-row__button {
-    width: 100%;
-  }
+  .login-page { padding: var(--space-4); }
+  .login-card { padding: var(--space-6) var(--space-5); }
+  .login-highlights { grid-template-columns: 1fr; }
+  .verify-row, .login-actions { grid-template-columns: 1fr; flex-direction: column; }
+  .verify-row__button { width: 100%; }
 }
 </style>

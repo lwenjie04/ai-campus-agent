@@ -1,5 +1,5 @@
 <template>
-  <div class="community-page">
+  <div class="community-page light-surface">
     <header class="community-hero">
       <div>
         <div class="hero-kicker">学生社区</div>
@@ -279,22 +279,20 @@ onMounted(async () => {
 <style scoped>
 .community-page {
   min-height: 100vh;
-  padding: 24px;
-  background:
-    radial-gradient(circle at 14% 0%, rgba(113, 230, 255, 0.2), transparent 28%),
-    radial-gradient(circle at 86% 10%, rgba(143, 156, 255, 0.22), transparent 30%),
-    linear-gradient(135deg, #f7fbff 0%, #eef5ff 48%, #f8fbff 100%);
-  color: #172033;
+  padding: var(--space-8);
+  background: var(--light-bg);
+  color: var(--light-ink);
+  font-family: var(--font-sans);
 }
 
 .community-hero,
 .toolbar-card,
 .list-card {
-  border: 1px solid rgba(94, 116, 160, 0.14);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.82);
-  box-shadow: 0 18px 48px rgba(35, 50, 92, 0.08);
-  backdrop-filter: blur(18px);
+  border: 1px solid var(--light-line);
+  border-radius: var(--radius-md);
+  background: var(--light-surface);
+  box-shadow: var(--shadow-light-sm);
+  backdrop-filter: var(--glass-blur);
 }
 
 .community-hero {
@@ -304,25 +302,25 @@ onMounted(async () => {
   gap: 18px;
   max-width: 1380px;
   margin: 0 auto 18px;
-  padding: 24px 28px;
+  padding: 18px 22px;
 }
 
 .hero-kicker {
   display: inline-flex;
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: rgba(82, 116, 255, 0.1);
-  color: #4157d8;
-  font-size: 13px;
-  font-weight: 700;
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--radius-pill);
+  background: rgba(35, 104, 255, 0.1);
+  color: var(--primary-500);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
 }
 
 .community-hero h1,
 .list-header h2 {
-  margin: 10px 0 6px;
-  font-size: 34px;
-  line-height: 1.1;
-  color: #111827;
+  margin: 0.625rem 0 0.375rem;
+  font-size: var(--font-size-2xl);
+  line-height: var(--line-height-tight);
+  color: var(--light-ink);
 }
 
 .community-hero p,
@@ -344,23 +342,23 @@ onMounted(async () => {
 
 .hero-stat {
   display: grid;
-  min-width: 104px;
-  padding: 10px 14px;
-  border: 1px solid rgba(86, 111, 197, 0.14);
-  border-radius: 8px;
-  background: rgba(242, 247, 255, 0.88);
+  min-width: 6.5rem;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid var(--light-line);
+  border-radius: var(--radius-md);
+  background: var(--light-surface-soft);
 }
 
 .hero-stat strong {
-  color: #15213a;
-  font-size: 26px;
+  color: var(--light-ink);
+  font-size: 1.625rem;
   line-height: 1;
 }
 
 .hero-stat span {
-  color: rgba(32, 43, 68, 0.62);
-  font-size: 12px;
-  font-weight: 700;
+  color: var(--light-muted);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
 }
 
 .community-shell {
@@ -380,30 +378,30 @@ onMounted(async () => {
 }
 
 .aside-block {
-  padding: 20px;
-  border: 1px solid rgba(94, 116, 160, 0.14);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.78);
-  box-shadow: 0 18px 48px rgba(35, 50, 92, 0.07);
+  padding: var(--space-5);
+  border: 1px solid var(--light-line);
+  border-radius: var(--radius-md);
+  background: var(--light-surface);
+  box-shadow: var(--shadow-light-sm);
 }
 
 .aside-label {
-  color: #5f6d8a;
-  font-size: 12px;
-  font-weight: 800;
+  color: var(--light-muted);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-black);
 }
 
 .aside-block strong {
   display: block;
-  margin-top: 10px;
-  color: #111827;
-  font-size: 22px;
+  margin-top: 0.625rem;
+  color: var(--light-ink);
+  font-size: var(--font-size-xl);
 }
 
 .aside-block p {
-  margin: 8px 0 0;
-  color: rgba(32, 43, 68, 0.66);
-  line-height: 1.6;
+  margin: var(--space-2) 0 0;
+  color: var(--light-muted);
+  line-height: var(--line-height-relaxed);
 }
 
 .community-main {
@@ -412,8 +410,8 @@ onMounted(async () => {
 
 .toolbar-card,
 .list-card {
-  padding: 22px 24px;
-  margin-bottom: 18px;
+  padding: 16px;
+  margin-bottom: 12px;
 }
 
 .toolbar-row {
@@ -437,9 +435,9 @@ onMounted(async () => {
 
 .hot-tag {
   cursor: pointer;
-  border-color: rgba(82, 116, 255, 0.2);
-  color: #4250b8;
-  background: rgba(245, 248, 255, 0.84);
+  border-color: rgba(35, 104, 255, 0.2);
+  color: var(--primary-500);
+  background: var(--light-surface-soft);
 }
 
 .list-header {
@@ -451,22 +449,22 @@ onMounted(async () => {
 
 .post-list {
   display: grid;
-  gap: 16px;
+  gap: 10px;
 }
 
 .post-card {
-  padding: 18px 18px 16px;
-  border: 1px solid rgba(94, 116, 160, 0.12);
-  border-radius: 8px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(246, 249, 255, 0.9));
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--light-line);
+  border-radius: var(--radius-md);
+  background: var(--light-surface);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
   cursor: pointer;
 }
 
 .post-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(82, 116, 255, 0.24);
-  box-shadow: 0 16px 34px rgba(45, 66, 120, 0.12);
+  transform: translateY(-1px);
+  border-color: rgba(35, 104, 255, 0.18);
+  box-shadow: var(--shadow-light-sm);
 }
 
 .post-card-top,
@@ -481,46 +479,49 @@ onMounted(async () => {
 }
 
 .post-card h3 {
-  margin: 6px 0;
-  font-size: 21px;
-  color: #111827;
+  margin: 0.375rem 0;
+  font-size: var(--font-size-lg);
+  color: var(--light-ink);
 }
 
 .post-category {
-  color: #5267df;
-  font-size: 12px;
-  font-weight: 800;
+  color: var(--primary-500);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-black);
 }
 
 .post-count {
   display: grid;
-  min-width: 64px;
+  min-width: 4rem;
   justify-items: center;
-  padding: 8px 10px;
-  border-radius: 8px;
-  background: rgba(82, 116, 255, 0.08);
-  color: #4355ce;
+  padding: var(--space-2) 0.625rem;
+  border-radius: var(--radius-md);
+  background: rgba(35, 104, 255, 0.08);
+  color: var(--primary-500);
 }
 
 .post-count strong {
-  font-size: 22px;
+  font-size: var(--font-size-xl);
   line-height: 1;
 }
 
 .post-count span {
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
 }
 
 .post-preview {
-  margin-top: 12px;
-  line-height: 1.75;
+  margin-top: var(--space-2);
+  line-height: var(--line-height-relaxed);
 }
 
 .post-footer {
   align-items: center;
-  margin-top: 14px;
+  margin-top: 10px;
 }
+
+
+/* Shadows are now handled via tokens on each panel class */
 
 .post-tags {
   display: flex;

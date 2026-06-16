@@ -16,6 +16,7 @@
     "kb:vector": "node server/scripts/build-vector-index.mjs",
     "handbook:import": "node server/scripts/import-student-handbook-docx.mjs",
     "rag:test": "node server/scripts/test-rag-retrieval.mjs",
+    "rag:test:fast": "node server/scripts/test-rag-retrieval.mjs --no-vector --no-community",
     "lightrag:health": "node server/scripts/check-lightrag.mjs",
     "lightrag:start": "node server/scripts/start-lightrag.mjs",
     "lightrag:import": "node server/scripts/import-kb-to-lightrag.mjs",
@@ -36,6 +37,7 @@
     "format": "prettier --write --experimental-cli src/"
   },
   "dependencies": {
+    "@pixiv/three-vrm": "^3.5.3",
     "axios": "^1.13.5",
     "element-plus": "^2.13.2",
     "jimp": "^1.6.1",
@@ -44,12 +46,14 @@
     "pinia": "^3.0.4",
     "tencentcloud-sdk-nodejs-tts": "^4.1.182",
     "tesseract.js": "^7.0.0",
+    "three": "^0.184.0",
     "vue": "^3.5.28"
   },
   "devDependencies": {
     "@colbymchenry/codegraph": "^0.9.9",
     "@tsconfig/node24": "^24.0.4",
     "@types/node": "^24.10.13",
+    "@types/three": "^0.184.1",
     "@vitejs/plugin-vue": "^6.0.4",
     "@vue/eslint-config-typescript": "^14.6.0",
     "@vue/tsconfig": "^0.8.1",

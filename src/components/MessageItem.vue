@@ -10,83 +10,12 @@
         <span v-if="message.role === 'assistant' && message.status === 'pending'" class="typing-cursor" />
       </div>
 
-      <!-- 只有 assistant 消息才会展示来源，因为来源来自后端 RAG 检索结果。 -->
-      <details
-        v-if="message.role === 'assistant' && Array.isArray(message.sources) && message.sources.length > 0"
-        class="sources"
-      >
-        <summary class="sources-summary">
-          <span>已参考 {{ message.sources.length }} 个来源</span>
-          <span class="sources-summary-hint">展开详情</span>
-        </summary>
-        <div
-          v-for="(source, index) in message.sources"
-          :key="`${source.title || 'src'}-${index}`"
-          class="source-item"
-          :class="`source-item--${getSourceTone(source.type)}`"
-        >
-          <!-- 标题行展示来源名称，以及类型/可信度这些摘要标签。 -->
-          <div class="source-head">
-            <a
-              v-if="source.url"
-              class="source-link"
-              :href="resolveSourceHref(source.url)"
-              target="_blank"
-              rel="noreferrer"
-            >
-              {{ source.title || `来源 ${index + 1}` }}
-            </a>
-            <span v-else class="source-link">{{ source.title || `来源 ${index + 1}` }}</span>
-
-            <div class="source-meta">
-              <span v-if="source.type" class="meta-chip type-chip">{{ getSourceTypeLabel(source.type) }}</span>
-              <span v-if="typeof source.confidence === 'number'" class="meta-chip confidence-chip">
-                可信度 {{ Math.round(source.confidence * 100) }}%
-              </span>
-            </div>
-          </div>
-
-          <!-- 主链接可能是正文链接，也可能直接是文件下载链接。 -->
-          <div v-if="source.url" class="source-link-row">
-            <span class="source-label">{{ getPrimaryLinkKindLabel(source.url) }}</span>
-            <a class="inline-link" :href="resolveSourceHref(source.url)" target="_blank" rel="noreferrer">
-              {{ getPrimaryLinkActionLabel(source.url) }}
-            </a>
-          </div>
-
-          <div v-else-if="source.postId" class="source-link-row">
-            <span class="source-label">来源帖子</span>
-            <button type="button" class="inline-link inline-link--button" @click="emit('openCommunityPost', source.postId)">
-              查看来源帖子
-            </button>
-          </div>
-
-          <!-- 社区来源需要显式提示“仅供参考”，避免和官方通知混淆。 -->
-          <div v-if="source.note" class="source-note">
-            {{ source.note }}
-          </div>
-
-          <!-- 附件列表单独列出，避免把多个下载链接挤在标题旁边。 -->
-          <div
-            v-if="Array.isArray(source.attachments) && source.attachments.length > 0"
-            class="source-attachments"
-          >
-            <div class="source-label">附件列表</div>
-            <a
-              v-for="(attachment, aIndex) in source.attachments"
-              :key="`${attachment.name || 'att'}-${aIndex}`"
-              class="attachment-link"
-              :href="resolveSourceHref(attachment.url)"
-              target="_blank"
-              rel="noreferrer"
-            >
-              {{ attachment.name || `附件 ${aIndex + 1}` }}
-            </a>
-          </div>
-
-          <div v-if="source.snippet" class="source-snippet">{{ source.snippet }}</div>
-        </div>
-      </details>
+      <!-- 只有 assistant 消息才会展示来源，来源展示由 SourcePanel 组件统一处理。 -->
+      <SourcePanel
+        v-if="message.role === 'assistant'"
+        :sources="message.sources || []"
+        @open-community-post="emit('openCommunityPost', $event)"
+      />
 
       <div v-if="message.role === 'assistant' && message.status === 'pending'" class="pending-tip">
         正在生成回复...
@@ -103,7 +32,7 @@
 </template>
 
 <script setup lang="ts">
-import { appConfig } from '@/config/app'
+import SourcePanel from './SourcePanel.vue'
 import type { Message } from '@/types/agent'
 
 // 聊天区目前按纯文本展示，不渲染 Markdown。
@@ -115,45 +44,9 @@ const formatMessageContent = (content: string) =>
     .replace(/__(.*?)__/g, '$1')
     .replace(/_(.*?)_/g, '$1')
 
-// 把后端返回的来源地址统一转换成浏览器可直接访问的链接。
-// 这里要兼容完整链接、后端相对路径以及原样透传三种情况。
-const resolveSourceHref = (url?: string) => {
-  if (!url) return ''
-  if (/^https?:\/\//i.test(url)) return url
-  if (url.startsWith('/')) return `${appConfig.apiBaseUrl}${url}`
-  return url
-}
-
-// 判断来源链接是否更像“文件”而不是“网页正文”，用于切换展示文案。
-const isFileLikeLink = (url?: string) => {
-  if (!url) return false
-  if (url.startsWith('/kb/download') || url.startsWith('/api/kb/download')) return true
-  return /\.(pdf|doc|docx|xls|xlsx|zip|rar|7z|ppt|pptx|txt)(?:$|\?)/i.test(url)
-}
-
-// 给来源主链接生成更直观的类别标签。
-const getPrimaryLinkKindLabel = (url?: string) => (isFileLikeLink(url) ? '来源文件' : '正文链接')
-
-// 根据链接类型返回更符合用户心理预期的操作提示。
-const getPrimaryLinkActionLabel = (url?: string) =>
-  isFileLikeLink(url) ? '下载/打开文件' : '打开通知页面'
-
-const getSourceTypeLabel = (type?: string) => {
-  const value = String(type || '')
-  if (/community/i.test(value)) return '社区经验'
-  if (/handbook|student/i.test(value)) return '学生手册'
-  if (/official|notice|attachment|rule/i.test(value)) return '官方资料'
-  return value.replace(/_/g, ' ')
-}
-
-const getSourceTone = (type?: string) => {
-  const value = String(type || '')
-  if (/community/i.test(value)) return 'community'
-  if (/official|notice|attachment|rule|handbook|student/i.test(value)) return 'official'
-  return 'neutral'
-}
-
-// 当前组件只关心“如何展示一条消息”，消息列表的遍历由父组件负责。
+// 当前组件：
+// - 使用 SourcePanel 处理来源展示
+// - MessageItem 只关心'如何展示一条消息'，消息列表的遍历由父组件负责。
 defineProps<{
   message: Message
 }>()
@@ -242,189 +135,8 @@ const emit = defineEmits<{
   animation: typing-blink 0.9s steps(1, end) infinite;
 }
 
-.sources {
-  margin-top: 8px;
-  max-width: min(100%, 760px);
-  border-radius: 8px;
-  padding: 0;
-  background: rgba(7, 12, 31, 0.52);
-  border: 1px solid rgba(188, 205, 255, 0.16);
-  overflow: hidden;
-}
 
-.sources-summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  min-height: 40px;
-  padding: 0 12px;
-  color: rgba(238, 244, 255, 0.9);
-  cursor: pointer;
-  font-weight: 700;
-  list-style: none;
-}
-
-.sources-summary::-webkit-details-marker {
-  display: none;
-}
-
-.sources-summary::after {
-  content: '';
-  width: 8px;
-  height: 8px;
-  border-right: 2px solid rgba(103, 232, 249, 0.86);
-  border-bottom: 2px solid rgba(103, 232, 249, 0.86);
-  transform: rotate(45deg);
-  transition: transform 180ms ease;
-}
-
-.sources[open] .sources-summary::after {
-  transform: rotate(225deg);
-}
-
-.sources-summary-hint {
-  margin-left: auto;
-  color: rgba(103, 232, 249, 0.78);
-  font-size: 12px;
-}
-
-.source-item {
-  margin: 0 10px 10px;
-  padding: 10px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.065);
-  border: 1px solid rgba(188, 205, 255, 0.12);
-}
-
-.source-item--official {
-  border-color: rgba(84, 214, 138, 0.28);
-}
-
-.source-item--community {
-  border-color: rgba(245, 191, 117, 0.28);
-}
-
-.source-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.source-link {
-  color: #dfe8ff;
-  font-size: 12px;
-  font-weight: 800;
-  text-decoration: none;
-}
-
-.source-link:hover {
-  text-decoration: underline;
-}
-
-.source-meta {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.meta-chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 6px;
-  border-radius: 999px;
-  font-size: 11px;
-  line-height: 1.2;
-  border: 1px solid rgba(188, 205, 255, 0.18);
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(238, 244, 255, 0.8);
-  white-space: nowrap;
-}
-
-.confidence-chip {
-  color: #67e8f9;
-}
-
-.source-snippet {
-  font-size: 12px;
-  color: rgba(217, 227, 255, 0.72);
-  line-height: 1.35;
-  margin-top: 4px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.source-link-row {
-  margin-top: 4px;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-}
-
-.source-note {
-  margin-top: 4px;
-  padding: 6px 8px;
-  border-radius: 10px;
-  background: rgba(255, 244, 214, 0.12);
-  border: 1px solid rgba(214, 171, 58, 0.2);
-  color: #f6bf75;
-  font-size: 11px;
-  line-height: 1.4;
-}
-
-.source-label {
-  font-size: 11px;
-  color: rgba(217, 227, 255, 0.62);
-  font-weight: 600;
-}
-
-.inline-link,
-.attachment-link {
-  color: #67e8f9;
-  text-decoration: none;
-  border-bottom: 1px dashed rgba(103, 232, 249, 0.35);
-}
-
-.inline-link--button {
-  padding: 0;
-  background: transparent;
-  border-top: 0;
-  border-left: 0;
-  border-right: 0;
-  border-bottom-style: dashed;
-  font: inherit;
-  cursor: pointer;
-}
-
-.inline-link:hover,
-.attachment-link:hover,
-.inline-link--button:hover {
-  border-bottom-style: solid;
-}
-
-.inline-link {
-  font-size: 12px;
-}
-
-.source-attachments {
-  margin-top: 4px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.attachment-link {
-  width: fit-content;
-  max-width: 100%;
-  font-size: 12px;
-  word-break: break-all;
-}
+/* Source display styles moved to SourcePanel.vue */
 
 .error-tip {
   margin-top: 4px;

@@ -4,7 +4,7 @@
     <el-input
       v-model="text"
       :disabled="loading"
-      placeholder="请输入你的问题"
+      placeholder="询问项目能力、RAG 流程、来源依据或 Prism Core 方案"
       @keyup.enter="send"
     />
     <el-button class="send-btn" :loading="loading" :disabled="loading" @click="send">
