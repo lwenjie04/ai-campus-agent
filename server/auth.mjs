@@ -9,6 +9,9 @@ const DEFAULT_ADMIN_NAME = process.env.AUTH_DEFAULT_ADMIN_NAME || '系统管理�
 const CODE_EXPIRE_MINUTES = Number(process.env.AUTH_CODE_EXPIRE_MINUTES || 10)
 const CODE_RESEND_SECONDS = Number(process.env.AUTH_CODE_RESEND_SECONDS || 60)
 
+const getErrorMessage = (error) =>
+  error instanceof Error ? error.message : String(error || 'Unknown error')
+
 let authSchemaReadyPromise = null
 let mailTransporter = null
 
@@ -122,10 +125,9 @@ const sendMail = async (payload) => {
       host: process.env.MAIL_HOST || '',
       port: Number(process.env.MAIL_PORT || 0),
       secure: String(process.env.MAIL_SECURE || 'true') !== 'false',
-      user: process.env.MAIL_USER || '',
-      to: payload?.to || '',
-      subject: payload?.subject || '',
-      message: error instanceof Error ? error.message : String(error),
+      code: error && typeof error === 'object' ? error.code || '' : '',
+      responseCode: error && typeof error === 'object' ? error.responseCode || '' : '',
+      message: getErrorMessage(error),
     })
     throw error
   }
@@ -249,7 +251,7 @@ const handleSendRegisterCode = async (req, res, helpers) => {
   try {
     await sendRegisterCodeMail({ email, code, displayName })
   } catch (error) {
-    console.error('[auth-mail] 验证码邮件发送失败：', error)
+    console.error('[auth-mail] 验证码邮件发送失败：', getErrorMessage(error))
     return helpers.json(res, 500, {
       error: { code: 'AUTH_CODE_SEND_FAILED', message: '验证码发送失败，请检查邮箱配置' },
     })
@@ -378,7 +380,7 @@ const handleRegister = async (req, res, helpers) => {
   try {
     await sendRegistrationNotice(normalizeUser(user))
   } catch (error) {
-    console.error('[auth-mail] 注册通知邮件发送失败：', error)
+    console.error('[auth-mail] 注册通知邮件发送失败：', getErrorMessage(error))
   }
 
   return helpers.json(res, 201, {

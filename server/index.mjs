@@ -1,4 +1,5 @@
 import { createServer } from 'node:http'
+import { request as httpRequest } from 'node:http'
 import { randomUUID } from 'node:crypto'
 import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs'
 import { extname, resolve } from 'node:path'
@@ -6,6 +7,7 @@ import { handleAuthRoute } from './auth.mjs'
 import { handleCommunityRoute } from './community.mjs'
 import { buildRuleBasedSources } from './sources-rules.mjs'
 import { buildRagContext, getKnowledgeBaseEntryById, ragHitsToSources, searchKnowledgeBase } from './rag.mjs'
+import { checkLightRagHealth, formatLightragContext, lightragContextToSources, queryLightRag } from './lightrag.mjs'
 import { handleTtsRoute } from './tts.mjs'
 
 // 读取 .env 文件并注入到 process.env。
@@ -43,11 +45,36 @@ loadEnvFile(resolve(process.cwd(), '.env.server'))
 // 后端运行时配置。
 // 这里集中定义服务端口、模型提供商地址、模型名称和 CORS 来源。
 const PORT = Number(process.env.PORT || 3000)
+const HOST = process.env.HOST || '127.0.0.1'
 const PROVIDER_MODE = 'deepseek'
 const LLM_API_BASE_URL = process.env.LLM_API_BASE_URL || 'https://api.deepseek.com'
 const LLM_API_KEY = process.env.LLM_API_KEY || ''
 const LLM_MODEL = process.env.LLM_MODEL || 'deepseek-chat'
 const ALLOW_ORIGIN = process.env.CORS_ORIGIN || '*'
+const LIGHTRAG_PRIMARY = process.env.LIGHTRAG_PRIMARY === 'true'
+const LIGHTRAG_API_BASE_URL = process.env.LIGHTRAG_API_BASE_URL || 'http://127.0.0.1:9621'
+
+// LightRAG 健康状态缓存，避免每次聊天请求都做健康检查。
+let lightragIsHealthy = false
+const refreshLightragHealth = async () => {
+  try {
+    await checkLightRagHealth()
+    lightragIsHealthy = true
+    console.log('[LightRAG] 健康检查通过，已切换为 LightRAG 主力检索')
+  } catch (err) {
+    lightragIsHealthy = false
+    console.log('[LightRAG] 健康检查失败:', err.message)
+  }
+}
+
+// 启动时检查一次，之后每 60 秒刷新。
+if (LIGHTRAG_PRIMARY) {
+  console.log('[LightRAG] LIGHTRAG_PRIMARY=true，开始健康检查...')
+  refreshLightragHealth()
+  setInterval(refreshLightragHealth, 60_000)
+} else {
+  console.log('[LightRAG] LIGHTRAG_PRIMARY=false，使用关键词 RAG')
+}
 
 const MIME_BY_EXT = {
   '.pdf': 'application/pdf',
@@ -528,9 +555,69 @@ const handleChatStream = async (req, res) => {
     // 先确保 system prompt 存在，再提取最后一条用户问题做 RAG 检索。
     const messages = ensureSystemPrompt(body.messages)
     const userText = [...messages].reverse().find((m) => m.role === 'user')?.content ?? ''
-    const ragHits = await searchKnowledgeBase(userText, { limit: 3, minScore: 3 })
-    const ragSources = ragHitsToSources(ragHits)
-    const messagesForLlm = appendRagContextToMessages(messages, ragHits)
+
+    // ---- RAG 检索：LightRAG 优先，关键词 RAG 回退 ----
+    let ragHits = []
+    let ragSources = []
+    let ragContext = ''
+    let ragUsed = 'none'
+
+    if (LIGHTRAG_PRIMARY && lightragIsHealthy) {
+      try {
+        const lightragResult = await queryLightRag(userText, {
+          mode: 'hybrid',
+          onlyNeedContext: true,
+          includeChunkContent: true,
+          timeoutMs: 15_000,
+        })
+        ragContext = formatLightragContext(lightragResult?.response, lightragResult?.mode)
+        try {
+          ragSources = lightragContextToSources(
+            lightragResult?.response,
+            lightragResult?.references,
+          )
+        } catch (srcErr) {
+          console.log(
+            JSON.stringify({
+              level: 'warn',
+              requestId,
+              rag: 'lightrag_sources_error',
+              message: srcErr?.message || 'unknown',
+            }),
+          )
+          ragSources = []
+        }
+        if (ragContext) {
+          ragUsed = 'lightrag'
+        }
+      } catch (err) {
+        console.log(
+          JSON.stringify({
+            level: 'warn',
+            requestId,
+            rag: 'lightrag_error',
+            message: err?.message || 'unknown',
+          }),
+        )
+        ragContext = ''
+      }
+    }
+
+    if (!ragContext) {
+      // 回退到关键词 + 向量混合检索
+      ragHits = await searchKnowledgeBase(userText, { limit: 3, minScore: 3 })
+      ragSources = ragHitsToSources(ragHits)
+      ragContext = buildRagContext(ragHits)
+      if (ragHits.length > 0) ragUsed = 'keyword'
+    }
+
+    // 把 RAG 上下文注入到消息列表
+    const messagesForLlm =
+      ragHits.length > 0
+        ? appendRagContextToMessages(messages, ragHits)
+        : ragContext
+          ? [...messages, { role: 'system', content: ragContext }]
+          : messages
 
     // 建立流式响应头，告诉浏览器这是持续输出的数据流。
     res.writeHead(200, {
@@ -576,6 +663,7 @@ const handleChatStream = async (req, res) => {
         path: '/chat/stream',
         providerMode: PROVIDER_MODE,
         intent: classified.intent,
+        rag: ragUsed,
         ragHits: ragHits.length,
         durationMs,
       }),
@@ -665,8 +753,43 @@ const handleChat = async (req, res) => {
     // 先做 system prompt 补全，再拿用户问题做检索。
     const messages = ensureSystemPrompt(body.messages)
     const userText = [...messages].reverse().find((m) => m.role === 'user')?.content ?? ''
-    const ragHits = await searchKnowledgeBase(userText, { limit: 3, minScore: 3 })
-    const ragSources = ragHitsToSources(ragHits)
+
+    // ---- RAG 检索：LightRAG 优先，关键词 RAG 回退 ----
+    let ragHits = []
+    let ragSources = []
+    let ragContext = ''
+    let ragUsed = 'keyword'
+
+    if (LIGHTRAG_PRIMARY && lightragIsHealthy) {
+      try {
+        const lightragResult = await queryLightRag(userText, {
+          mode: 'hybrid',
+          onlyNeedContext: true,
+          includeChunkContent: true,
+          timeoutMs: 15_000,
+        })
+        ragContext = formatLightragContext(lightragResult?.response, lightragResult?.mode)
+        try {
+          ragSources = lightragContextToSources(
+            lightragResult?.response,
+            lightragResult?.references,
+          )
+        } catch {
+          ragSources = []
+        }
+        if (ragContext) ragUsed = 'lightrag'
+      } catch (err) {
+        // LightRAG 查询本身失败，清空 context 触发回退
+        ragContext = ''
+        ragSources = []
+      }
+    }
+
+    if (!ragContext) {
+      ragHits = await searchKnowledgeBase(userText, { limit: 3, minScore: 3 })
+      ragSources = ragHitsToSources(ragHits)
+      ragContext = buildRagContext(ragHits)
+    }
 
     let content = ''
     let intent = 'general'
@@ -674,7 +797,12 @@ const handleChat = async (req, res) => {
     let sources = []
 
     // 把知识库上下文附加到消息列表中，让大模型带着资料回答。
-    const messagesForLlm = appendRagContextToMessages(messages, ragHits)
+    const messagesForLlm =
+      ragHits.length > 0
+        ? appendRagContextToMessages(messages, ragHits)
+        : ragContext
+          ? [...messages, { role: 'system', content: ragContext }]
+          : messages
     content = await requestOpenAICompatibleChat(messagesForLlm, requestId)
     const classified = classifyIntentAndVideoCue(content)
     intent = classified.intent
@@ -689,6 +817,7 @@ const handleChat = async (req, res) => {
         path: '/chat',
         providerMode: PROVIDER_MODE,
         intent,
+        rag: ragUsed,
         ragHits: ragHits.length,
         durationMs,
       }),
@@ -820,13 +949,54 @@ const server = createServer(async (req, res) => {
     return handleKnowledgeBaseDownload(req, res)
   }
 
+  // LightRAG 反向代理：让前端管理面板通过后端访问 LightRAG 自带的 Web UI。
+  // /lightrag/xxx → http://127.0.0.1:9621/xxx
+  if (requestUrl.pathname.startsWith('/lightrag') || requestUrl.pathname.startsWith('/api/lightrag')) {
+    const targetPath = requestUrl.pathname.replace(/^\/api\/lightrag/, '/lightrag').replace(/^\/lightrag/, '')
+    const targetUrl = new URL(targetPath || '/', LIGHTRAG_API_BASE_URL)
+
+    const proxyReq = httpRequest(
+      targetUrl,
+      {
+        method: req.method,
+        headers: { ...req.headers, host: targetUrl.host },
+      },
+      (proxyRes) => {
+        // 复制响应头
+        const headers = { ...proxyRes.headers }
+        headers['Access-Control-Allow-Origin'] = ALLOW_ORIGIN
+        res.writeHead(proxyRes.statusCode, headers)
+        proxyRes.pipe(res)
+      },
+    )
+
+    proxyReq.on('error', () => {
+      if (!res.headersSent) {
+        json(res, 502, {
+          error: { code: 'LIGHTRAG_PROXY_ERROR', message: 'LightRAG 服务不可达，请确认服务已启动' },
+        })
+      } else {
+        res.destroy()
+      }
+    })
+
+    // 转发请求体（POST 等）
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      req.pipe(proxyReq)
+    } else {
+      proxyReq.end()
+    }
+
+    return
+  }
+
   return json(res, 404, {
     error: { code: 'NOT_FOUND', message: 'Route not found' },
   })
 })
 
-server.listen(PORT, () => {
+server.listen(PORT, HOST, () => {
   console.log(
-    `AI Campus backend listening on http://localhost:${PORT} (provider: ${PROVIDER_MODE}, model: ${LLM_MODEL})`,
+    `AI Campus backend listening on http://${HOST}:${PORT} (provider: ${PROVIDER_MODE}, model: ${LLM_MODEL})`,
   )
 })
