@@ -44,6 +44,31 @@ server/.env
 # CodeGraph local index
 .codegraph/
 
+# Local tool caches and generated declarations
+.cache/
+.playwright-cli/
+__pycache__/
+*.py[cod]
+components.d.ts
+
+# Temporary conversion and OCR artifacts
+/tmp/
+/tmp_*.docx
+/tmp_*.pdf
+/*.traineddata
+
 # LightRAG local runtime
 rag_storage/
 inputs/
+
+# Private source documents and local ingestion exports
+/_ingest/
+/src/project-text/exports/
+/*.doc
+/*.docx
+/*.pdf
+
+# Local design reviews, generated documentation media, and archived experiments
+/design/
+/docs/assets/
+/archive/

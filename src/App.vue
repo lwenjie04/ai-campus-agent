@@ -53,15 +53,24 @@
 
         <!-- Hub: digital human + sub-page -->
         <template v-else-if="activeSection === 'hub'" key="hub">
-          <div class="hub-layout">
+          <AgentChat v-if="activeHubPage === 'chat'" key="chat" @open-community-post="openPostFromSource" />
+          <CommunityView
+            v-else-if="activeHubPage === 'community' && communityView === 'list'"
+            key="comm-list"
+            @open-post="openPostDetail"
+          />
+          <PostDetailView
+            v-else-if="activeHubPage === 'community' && communityView === 'detail'"
+            key="comm-detail"
+            :post-id="currentPostId"
+            @back-list="backToCommunityList"
+          />
+          <div v-else class="hub-layout">
             <aside class="hub-human">
               <DigitalHumanPanel />
             </aside>
             <section class="hub-main">
-              <AgentChat v-if="activeHubPage === 'chat'" key="chat" @open-community-post="openPostFromSource" />
-              <CommunityView v-else-if="activeHubPage === 'community' && communityView === 'list'" key="comm-list" @open-post="openPostDetail" />
-              <PostDetailView v-else-if="activeHubPage === 'community' && communityView === 'detail'" key="comm-detail" :post-id="currentPostId" @back-list="backToCommunityList" />
-              <AdminReviewView v-else-if="activeHubPage === 'admin' && authStore.isAdmin" key="admin" @go-login="goHome" @logout="logout" />
+              <AdminReviewView v-if="activeHubPage === 'admin' && authStore.isAdmin" key="admin" @go-login="goHome" @logout="logout" />
             </section>
           </div>
         </template>
@@ -130,7 +139,6 @@ onMounted(() => {
   min-height: 100vh;
   background: #faf9f7;
   font-family: var(--font-sans);
-  zoom: 1.5;
 }
 
 /* ====== Top Nav — Apple text-only style ====== */
@@ -219,16 +227,18 @@ onMounted(() => {
 /* ====== Hub Layout ====== */
 .hub-layout {
   display: grid;
-  grid-template-columns: 18rem 1fr;
+  grid-template-columns: 16.5rem 1fr;
   height: calc(100vh - 6rem);
   overflow: hidden;
 }
 .hub-human {
-  border-right: 0.5px solid rgba(0,0,0,0.06);
-  background: rgba(0,0,0,0.01);
+  border-right: 0.5px solid rgba(255,255,255,0.08);
+  background: #0a0a0a;
   padding: var(--space-4);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
-.hub-main { min-width: 0; overflow: hidden; }
+.hub-main { min-width: 0; overflow-y: auto; background: var(--dark-bg); }
 
 .page-content { padding-top: 0; }
 

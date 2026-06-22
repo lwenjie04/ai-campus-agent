@@ -1,0 +1,124 @@
+/* ==========================================================================
+   Global Motion System — Apple-style micro-interactions
+   ========================================================================== */
+
+/* ---- Cursor Glow (applied to body) ---- */
+body.has-cursor-glow::after {
+  content: '';
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  width: 24rem;
+  height: 24rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,113,227,0.06) 0%, transparent 70%);
+  transform: translate(-50%, -50%);
+  transition: opacity 0.3s ease;
+}
+
+/* ---- Card Tilt ---- */
+.card-tilt {
+  transition: transform 0.1s ease-out;
+}
+
+/* ---- Scroll Reveal ---- */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(1.5rem);
+  transition: opacity 0.6s cubic-bezier(0, 0, 0.2, 1),
+              transform 0.6s cubic-bezier(0, 0, 0.2, 1);
+}
+.reveal-on-scroll.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger children */
+.reveal-stagger > * {
+  opacity: 0;
+  transform: translateY(1rem);
+  transition: opacity 0.5s cubic-bezier(0, 0, 0.2, 1),
+              transform 0.5s cubic-bezier(0, 0, 0.2, 1);
+}
+.reveal-stagger > *.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ---- Status Badge Breathing ---- */
+.badge-breathe {
+  animation: badge-breathe 2.4s ease-in-out infinite;
+}
+@keyframes badge-breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+/* ---- Shimmer (loading skeleton) ---- */
+.shimmer {
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0.03) 25%,
+    rgba(255,255,255,0.08) 37%,
+    rgba(255,255,255,0.03) 63%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s ease-in-out infinite;
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ---- Hover Lift ---- */
+.hover-lift {
+  transition: transform var(--transition-micro), box-shadow var(--transition-micro);
+}
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-floating);
+}
+
+/* ---- Scale Press (buttons) ---- */
+.scale-press:active {
+  transform: scale(0.96);
+  transition: transform 0.1s ease;
+}
+
+/* ---- Page Transition ---- */
+.page-enter-active {
+  transition: opacity 0.2s ease-out, transform 0.25s cubic-bezier(0, 0, 0.2, 1);
+}
+.page-leave-active {
+  transition: opacity 0.12s ease-in;
+}
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(0.5rem);
+}
+.page-leave-to {
+  opacity: 0;
+}
+
+/* ---- Focus Ring (Apple style) ---- */
+.focus-ring:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0,113,227,0.35);
+}
+
+/* ---- Reduced Motion ---- */
+@media (prefers-reduced-motion: reduce) {
+  .reveal-on-scroll,
+  .reveal-on-scroll.revealed,
+  .reveal-stagger > *,
+  .reveal-stagger > *.revealed,
+  .card-tilt,
+  .badge-breathe,
+  .shimmer,
+  .hover-lift,
+  .scale-press {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

@@ -10,10 +10,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
-const props = withDefaults(defineProps<{ cueKey?: string; variant?: string; sourceCount?: number }>(),
-  { cueKey: 'idle', variant: 'panel', sourceCount: 0 })
+const props = withDefaults(defineProps<{ cueKey?: string }>(),
+  { cueKey: 'idle' })
 
 const hovered = ref(false)
 const canvas = ref<HTMLCanvasElement | null>(null)
@@ -131,6 +131,7 @@ let bobPhase = 0
 function drawSprite(ctx: CanvasRenderingContext2D, grid: string[], ox: number, oy: number) {
   for (let y = 0; y < grid.length; y++) {
     const row = grid[y]
+    if (!row) continue
     for (let x = 0; x < row.length; x++) {
       const key = row[x] as keyof typeof C
       const color = C[key]

@@ -179,8 +179,7 @@ const emit = defineEmits<{
     font-size: 17px;
   }
 
-  .bubble,
-  .sources {
+  .bubble {
     max-width: 100%;
   }
 
@@ -189,15 +188,6 @@ const emit = defineEmits<{
     padding: 0 14px;
     border-radius: 8px;
     font-size: 13px;
-  }
-
-  .source-head {
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .source-meta {
-    justify-content: flex-start;
   }
 }
 </style>

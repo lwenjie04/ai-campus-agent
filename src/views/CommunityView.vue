@@ -555,4 +555,82 @@ onMounted(async () => {
     align-items: stretch;
   }
 }
+
+/* Green community theme shared with the restored digital-human page. */
+.community-page {
+  --community-green: #24964e;
+  --community-green-dark: #173f24;
+  --community-muted: #55715c;
+  min-height: calc(100dvh - 5.75rem);
+  box-sizing: border-box;
+  padding: 1rem;
+  color: var(--community-green-dark);
+  background:
+    radial-gradient(circle at 14% 8%, rgba(255, 255, 255, 0.82), transparent 27%),
+    radial-gradient(circle at 84% 10%, rgba(255, 255, 255, 0.55), transparent 24%),
+    linear-gradient(180deg, #eef7eb 0%, #d6f0ce 42%, #9ae686 74%, #59da48 100%);
+}
+
+.community-hero,
+.community-shell {
+  width: min(100%, 75rem);
+  max-width: none;
+}
+
+.community-hero,
+.toolbar-card,
+.list-card,
+.aside-block {
+  border-color: rgba(46, 113, 53, 0.14);
+  background: rgba(255, 255, 255, 0.68);
+  box-shadow: 0 1.25rem 3.5rem rgba(31, 106, 57, 0.1);
+}
+
+.hero-kicker,
+.hot-tag,
+.post-category {
+  color: var(--community-green);
+  background: rgba(36, 150, 78, 0.09);
+}
+
+.community-hero h1,
+.list-header h2,
+.aside-block strong,
+.post-card h3,
+.hero-stat strong {
+  color: var(--community-green-dark);
+}
+
+.community-hero p,
+.list-header p,
+.aside-block p,
+.aside-label,
+.post-meta,
+.post-preview,
+.post-author,
+.hero-stat span {
+  color: var(--community-muted);
+}
+
+.community-shell { grid-template-columns: minmax(13rem, 15rem) minmax(0, 1fr); }
+.post-card { border-color: rgba(46, 113, 53, 0.12); background: rgba(255, 255, 255, 0.72); }
+.post-card:hover { border-color: rgba(36, 150, 78, 0.35); box-shadow: 0 0.85rem 2rem rgba(31, 106, 57, 0.12); }
+.post-count { color: var(--community-green); background: rgba(36, 150, 78, 0.1); }
+
+:deep(.el-button--primary) {
+  border-color: var(--community-green);
+  background: var(--community-green);
+}
+
+:deep(.el-input__wrapper),
+:deep(.el-select__wrapper),
+:deep(.el-segmented) {
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: inset 0 0 0 1px rgba(46, 113, 53, 0.14) !important;
+}
+
+@media (max-width: 900px) {
+  .community-page { padding: 0.75rem; }
+  .community-shell { grid-template-columns: 1fr; }
+}
 </style>

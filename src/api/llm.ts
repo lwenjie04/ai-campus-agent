@@ -1,4 +1,3 @@
-import axios from 'axios'
 import type { Message, MessageSource } from '@/types/agent'
 import { appConfig } from '@/config/app'
 
@@ -73,11 +72,19 @@ export const sendChat = async (messages: Message[]): Promise<ChatApiResponse> =>
   }
 
   // 非流式接口适合简单请求，直接等待后端一次性返回完整结果。
-  const res = await axios.post<ChatApiResponse>(`${appConfig.apiBaseUrl}/chat`, {
-    messages,
+  const resp = await fetch(`${appConfig.apiBaseUrl}/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages }),
   })
-
-  return res.data
+  if (!resp.ok) {
+    let errData: any = null
+    try { errData = await resp.json() } catch { /* ignore */ }
+    const err: any = new Error(errData?.error?.message || `HTTP ${resp.status}`)
+    err.code = errData?.error?.code || 'HTTP_ERROR'
+    throw err
+  }
+  return resp.json()
 }
 
 export const streamChat = async (

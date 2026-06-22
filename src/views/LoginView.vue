@@ -125,7 +125,6 @@
 </template>
 
 <script setup lang="ts">
-import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import { onBeforeUnmount, ref } from 'vue'
 import { sendRegisterCode } from '@/api/auth'
@@ -159,10 +158,10 @@ const registerForm = ref({
 })
 
 const extractErrorMessage = (error: unknown, fallback: string) => {
-  if (axios.isAxiosError(error)) {
+  if (error && typeof error === 'object' && 'status' in error && 'code' in error) {
+    const err = error as { status?: number; code?: string; message?: string }
     return (
-      (error.response?.data as { error?: { message?: string } } | undefined)?.error?.message ||
-      error.message ||
+      err.message ||
       fallback
     )
   }

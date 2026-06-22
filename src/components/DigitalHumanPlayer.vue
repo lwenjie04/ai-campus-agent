@@ -1,25 +1,43 @@
 <template>
-  <section class="agent-core-panel" :class="stageClass">
-    <div class="agent-core-stage" aria-label="Prism Core 抽象智能体展示">
-      <RobotAvatar
-        class="agent-core-scene"
-        :cue-key="normalizedCue"
-        variant="panel"
-        :source-count="normalizedSourceCount"
-      />
+  <section class="digital-human" :class="`is-${normalizedCue}`">
+    <video
+      v-show="!showFallback"
+      ref="videoRef"
+      class="digital-human__video"
+      :class="{ 'is-ready': videoReady }"
+      :src="currentVideoSrc"
+      :loop="normalizedCue !== 'greeting'"
+      autoplay
+      muted
+      playsinline
+      preload="auto"
+      @loadeddata="handleLoaded"
+      @ended="handleEnded"
+      @error="handleVideoError"
+    />
 
-      <div class="caption">
-        <span>{{ statusLabel }}</span>
-        <strong>{{ sourceTraceLabel }}</strong>
-      </div>
+    <div v-if="showFallback" class="digital-human__fallback" role="status">
+      <span class="digital-human__fallback-mark">AI</span>
+      <strong>数字人资源暂不可用</strong>
+      <span>请检查视频文件后重试</span>
+    </div>
+
+    <div class="digital-human__shade" aria-hidden="true" />
+
+    <div class="digital-human__status">
+      <span class="digital-human__pulse" aria-hidden="true" />
+      <span>{{ statusLabel }}</span>
+      <strong>{{ sourceLabel }}</strong>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { requestBackendTts } from '@/api/tts'
-import RobotAvatar from '@/components/RobotAvatar.vue'
+import { normalizeNarrationText } from '@/utils/text'
+
+const VIDEO_BASE_PATH = '/videos/digital-human'
 
 const props = defineProps<{
   cueKey: string
@@ -31,334 +49,315 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'request-idle'): void
-  (e: 'narration-ended'): void
+  (event: 'request-idle'): void
+  (event: 'narration-ended'): void
 }>()
 
-const narrationAudioRef = ref<HTMLAudioElement | null>(null)
+const videoRef = ref<HTMLVideoElement | null>(null)
+const audioRef = ref<HTMLAudioElement | null>(null)
 const activeAudioUrl = ref('')
-const narrationToken = ref(0)
-const narrationQueue = ref<string[]>([])
-const narrationProcessing = ref(false)
-
-const TTS_SEGMENT_MAX_LENGTH = 140
+const playbackToken = ref(0)
+const narrationQueue: string[] = []
+let narrationQueueRunning = false
+let activePlaybackResolve: (() => void) | null = null
+const videoReady = ref(false)
+const showFallback = ref(false)
 
 const normalizedCue = computed(() => {
   const cue = (props.cueKey || 'idle').trim()
-  return ['greeting', 'idle', 'teaching'].includes(cue) ? cue : 'idle'
+  return ['idle', 'greeting', 'teaching'].includes(cue) ? cue : 'idle'
 })
-const stageClass = computed(() => ({
-  'is-greeting': normalizedCue.value === 'greeting',
-  'is-idle': normalizedCue.value === 'idle',
-  'is-teaching': normalizedCue.value === 'teaching',
-}))
-const statusLabel = computed(() => {
-  if (normalizedCue.value === 'teaching') return 'Prism Core 正在生成回答'
-  if (normalizedCue.value === 'greeting') return 'Prism Core 已唤醒'
-  return 'Prism Core 待机'
-})
-const normalizedSourceCount = computed(() => Math.max(0, Math.round(props.sourceCount || 0)))
-const sourceTraceLabel = computed(() =>
-  normalizedSourceCount.value > 0 ? `${normalizedSourceCount.value} 个来源信号` : '等待来源信号',
+
+const currentVideoSrc = computed(
+  () => `${VIDEO_BASE_PATH}/${normalizedCue.value}.mp4`,
 )
 
-const normalizeNarrationText = (raw: string) =>
-  raw
-    .replace(/[`*_#>-]/g, ' ')
-    .replace(/\[(.*?)\]\((.*?)\)/g, '$1')
-    .replace(/\s+/g, ' ')
-    .trim()
+const statusLabel = computed(() => {
+  if (normalizedCue.value === 'teaching') return '正在为你讲解'
+  if (normalizedCue.value === 'greeting') return '数字人已唤醒'
+  return '数字人在线'
+})
 
-const splitNarrationText = (raw: string, maxLength = TTS_SEGMENT_MAX_LENGTH) => {
-  const normalized = normalizeNarrationText(raw)
-  if (!normalized) return []
-  if (normalized.length <= maxLength) return [normalized]
+const sourceLabel = computed(() => {
+  const count = Math.max(0, Math.round(props.sourceCount || 0))
+  return count > 0 ? `${count} 个参考来源` : '等待提问'
+})
 
-  const parts = normalized
-    .split(/(?<=[。！？；;.!?\n])/)
-    .map((part) => part.trim())
-    .filter(Boolean)
-
-  const result: string[] = []
-  let buffer = ''
-
-  const flushBuffer = () => {
-    const text = buffer.trim()
-    if (text) result.push(text)
-    buffer = ''
+const releaseCurrentAudio = () => {
+  const audio = audioRef.value
+  if (audio) {
+    audio.pause()
+    audio.onended = null
+    audio.onerror = null
+    audio.removeAttribute('src')
+    audio.load()
   }
-
-  for (const part of parts) {
-    if (part.length > maxLength) {
-      flushBuffer()
-      let start = 0
-      while (start < part.length) {
-        result.push(part.slice(start, start + maxLength).trim())
-        start += maxLength
-      }
-      continue
-    }
-
-    const next = buffer ? `${buffer} ${part}` : part
-    if (next.length > maxLength) {
-      flushBuffer()
-      buffer = part
-    } else {
-      buffer = next
-    }
-  }
-
-  flushBuffer()
-  return result
-}
-
-const stopNarration = () => {
-  narrationToken.value += 1
-  narrationQueue.value = []
-  narrationProcessing.value = false
-
-  const audioEl = narrationAudioRef.value
-  if (audioEl) {
-    audioEl.pause()
-    audioEl.removeAttribute('src')
-    audioEl.load()
-  }
-
   if (activeAudioUrl.value) {
     URL.revokeObjectURL(activeAudioUrl.value)
     activeAudioUrl.value = ''
   }
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel()
+  activePlaybackResolve?.()
+  activePlaybackResolve = null
 }
 
-const playAudioBlob = async (blob: Blob, token: number) => {
-  if (token !== narrationToken.value) return
+const stopAudio = () => {
+  playbackToken.value += 1
+  narrationQueue.length = 0
+  releaseCurrentAudio()
+}
 
-  const audioUrl = URL.createObjectURL(blob)
-  const audioEl = narrationAudioRef.value || new Audio()
-  narrationAudioRef.value = audioEl
-
-  if (activeAudioUrl.value) {
-    URL.revokeObjectURL(activeAudioUrl.value)
+const speakWithBrowser = (text: string, token: number) => new Promise<void>((resolve) => {
+  if (!('speechSynthesis' in window)) {
+    resolve()
+    return
   }
-  activeAudioUrl.value = audioUrl
 
-  await new Promise<void>(async (resolve) => {
-    const finish = () => {
-      audioEl.onended = null
-      audioEl.onerror = null
-      resolve()
+  const utterance = new SpeechSynthesisUtterance(text)
+  utterance.lang = 'zh-CN'
+  utterance.rate = 0.96
+  utterance.pitch = 1
+  const finish = () => {
+    if (activePlaybackResolve === finish) activePlaybackResolve = null
+    resolve()
+  }
+  utterance.onend = finish
+  utterance.onerror = finish
+  activePlaybackResolve = finish
+  window.speechSynthesis.cancel()
+  if (token === playbackToken.value) window.speechSynthesis.speak(utterance)
+  else finish()
+})
+
+const playNarrationChunk = async (text: string, token: number) => {
+  try {
+    const blob = await requestBackendTts({ text })
+    if (token !== playbackToken.value) return
+
+    const url = URL.createObjectURL(blob)
+    const audio = audioRef.value || new Audio()
+    audioRef.value = audio
+    activeAudioUrl.value = url
+    audio.src = url
+    await new Promise<void>((resolve, reject) => {
+      const finish = () => {
+        if (activePlaybackResolve === finish) activePlaybackResolve = null
+        resolve()
+      }
+      activePlaybackResolve = finish
+      audio.onended = finish
+      audio.onerror = () => reject(new Error('TTS_AUDIO_PLAYBACK_FAILED'))
+      audio.play().catch(reject)
+    })
+  } catch {
+    if (token === playbackToken.value) await speakWithBrowser(text, token)
+  } finally {
+    releaseCurrentAudio()
+  }
+}
+
+const drainNarrationQueue = async () => {
+  if (narrationQueueRunning) return
+  narrationQueueRunning = true
+  const token = playbackToken.value
+
+  try {
+    while (token === playbackToken.value && narrationQueue.length > 0) {
+      const text = narrationQueue.shift()
+      if (text) await playNarrationChunk(text, token)
     }
 
-    audioEl.onended = finish
-    audioEl.onerror = finish
-    audioEl.src = audioUrl
-
-    try {
-      await audioEl.play()
-    } catch {
-      finish()
+    if (token === playbackToken.value && narrationQueue.length === 0) {
+      emit('narration-ended')
     }
+  } finally {
+    narrationQueueRunning = false
+    if (narrationQueue.length > 0) void drainNarrationQueue()
+  }
+}
+
+const enqueueNarration = (rawText: string) => {
+  const text = normalizeNarrationText(rawText)
+  if (!text) return
+  narrationQueue.push(text)
+  void drainNarrationQueue()
+}
+
+const playVideo = async () => {
+  videoReady.value = false
+  showFallback.value = false
+  await nextTick()
+
+  const video = videoRef.value
+  if (!video) return
+  video.muted = true
+  video.load()
+
+  try {
+    await video.play()
+  } catch {
+    showFallback.value = true
+  }
+}
+
+const handleLoaded = () => {
+  showFallback.value = false
+  requestAnimationFrame(() => {
+    videoReady.value = true
   })
 }
 
-const playNarrationBySegments = async (content: string, token: number) => {
-  const segments = splitNarrationText(content)
-  for (const segment of segments) {
-    if (token !== narrationToken.value) return
-    const blob = await requestBackendTts({ text: segment })
-    await playAudioBlob(blob, token)
-  }
+const handleEnded = () => {
+  if (normalizedCue.value === 'greeting') emit('request-idle')
 }
 
-const drainNarrationQueue = async (token: number) => {
-  if (narrationProcessing.value) return
-  narrationProcessing.value = true
-
-  try {
-    while (token === narrationToken.value && narrationQueue.value.length > 0) {
-      const content = normalizeNarrationText(narrationQueue.value.shift() || '')
-      if (!content) continue
-
-      try {
-        const blob = await requestBackendTts({ text: content })
-        await playAudioBlob(blob, token)
-      } catch {
-        await playNarrationBySegments(content, token).catch(() => undefined)
-      }
-    }
-  } finally {
-    narrationProcessing.value = false
-    if (token === narrationToken.value && narrationQueue.value.length === 0) {
-      emit('narration-ended')
-    }
-  }
-}
-
-const startNarration = (text: string) => {
-  const content = normalizeNarrationText(text)
-  if (!content) return
-
-  const token = narrationToken.value
-  narrationQueue.value.push(content)
-  void drainNarrationQueue(token)
+const handleVideoError = () => {
+  videoReady.value = false
+  showFallback.value = true
+  if (normalizedCue.value !== 'idle') emit('request-idle')
 }
 
 watch(
-  () => props.playSignal,
-  () => {
-    if (normalizedCue.value === 'greeting') {
-      window.setTimeout(() => emit('request-idle'), 1800)
-    }
-  },
+  () => [normalizedCue.value, props.playSignal],
+  () => void playVideo(),
   { immediate: true },
 )
 
 watch(
   () => props.narrationSignal,
-  () => startNarration(props.narrationText || ''),
-)
-
-watch(
-  () => normalizedCue.value,
-  (cue) => {
-    if (cue !== 'teaching') stopNarration()
-  },
+  () => enqueueNarration(props.narrationText || ''),
 )
 
 watch(
   () => props.stopSignal,
-  () => stopNarration(),
+  () => {
+    videoRef.value?.pause()
+    stopAudio()
+  },
 )
 
 onBeforeUnmount(() => {
-  stopNarration()
+  videoRef.value?.pause()
+  stopAudio()
 })
 </script>
 
 <style scoped>
-.agent-core-panel {
+.digital-human {
   position: relative;
+  width: 100%;
   height: 100%;
-  min-height: 18rem;
+  min-height: 0;
   overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-xl);
-  background:
-    radial-gradient(circle at 50% 8%, rgba(90, 200, 250, 0.12), transparent 38%),
-    linear-gradient(180deg, #0a0a10 0%, #000000 100%);
-  border: 0.5px solid rgba(255, 255, 255, 0.06);
-  box-shadow: var(--shadow-floating);
+  background: linear-gradient(180deg, #dcefdc 0%, #aedcaf 100%);
   isolation: isolate;
-  cursor: pointer;
-  transition: border-color var(--transition-base), box-shadow var(--transition-base);
 }
 
-/* Hover glow */
-.agent-core-panel:hover {
-  border-color: rgba(90, 200, 250, 0.25);
-  box-shadow: var(--shadow-floating), var(--shadow-glow-cyan);
-}
-
-/* Inner border glow ring */
-.agent-core-panel::before {
-  position: absolute;
-  inset: 0.5rem;
-  content: '';
-  border: 0.5px solid rgba(255, 255, 255, 0.04);
-  border-radius: calc(var(--radius-xl) - 0.25rem);
-  pointer-events: none;
-  z-index: 2;
-}
-
-/* Click ripple overlay */
-.agent-core-panel::after {
-  content: '';
+.digital-human__video {
   position: absolute;
   inset: 0;
-  border-radius: var(--radius-xl);
-  pointer-events: none;
-  z-index: 3;
-  background: transparent;
-  transition: background 0.3s ease;
-}
-.agent-core-panel:active::after {
-  background: radial-gradient(circle at center, rgba(90,200,250,0.08) 0%, transparent 70%);
-  transition: background 0s;
-}
-
-.agent-core-stage {
-  position: relative;
-  z-index: 1;
+  width: 100%;
   height: 100%;
-  min-height: inherit;
-  padding: 0;
+  object-fit: contain;
+  object-position: center bottom;
+  opacity: 0;
+  transform: scale(1.015);
+  transition: opacity 360ms ease, transform 520ms ease;
 }
 
-.agent-core-scene {
-  min-height: inherit;
+.digital-human__video.is-ready {
+  opacity: 1;
+  transform: scale(1);
 }
 
-/* Caption: Apple-style status label */
-.caption {
+.digital-human__shade {
   position: absolute;
-  left: 0.75rem;
-  right: 0.75rem;
-  bottom: 0.625rem;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent 58%, rgba(5, 8, 14, 0.72) 100%);
+}
+
+.digital-human__status {
+  position: absolute;
+  right: 4%;
+  bottom: 3%;
+  left: 4%;
+  z-index: 2;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  z-index: 4;
+  min-height: 2.75rem;
+  gap: 0.55rem;
+  padding: 0.55rem 0.75rem;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.875rem;
+  background: rgba(10, 14, 22, 0.64);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 0.75rem;
+  backdrop-filter: blur(1rem) saturate(135%);
 }
 
-.caption span {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  color: var(--dark-muted);
-  font-size: var(--font-size-caption);
-  font-weight: var(--font-weight-medium);
-  letter-spacing: var(--letter-spacing-wide);
+.digital-human__status strong {
+  margin-left: auto;
+  color: rgba(255, 255, 255, 0.54);
+  font-weight: 500;
 }
 
-.caption span::before {
-  content: '';
-  display: block;
-  width: 0.375rem;
-  height: 0.375rem;
+.digital-human__pulse {
+  width: 0.45rem;
+  height: 0.45rem;
+  flex: 0 0 auto;
   border-radius: 50%;
-  background: var(--apple-green);
-}
-.is-teaching .caption span::before { background: var(--apple-blue); }
-.is-greeting .caption span::before { background: var(--apple-cyan); }
-
-.caption strong {
-  color: rgba(245,245,247,0.5);
-  font-size: var(--font-size-caption);
-  font-weight: var(--font-weight-regular);
+  background: #45d483;
+  box-shadow: 0 0 0 0 rgba(69, 212, 131, 0.45);
+  animation: status-pulse 2s ease-out infinite;
 }
 
-/* Cue-based border glow */
-.is-greeting.agent-core-panel {
-  border-color: rgba(90, 200, 250, 0.3);
-}
-.is-teaching.agent-core-panel {
-  border-color: rgba(172, 57, 255, 0.25);
-  animation: border-glow-teaching 2s ease-in-out infinite;
+.is-teaching .digital-human__pulse {
+  background: #6cb8ff;
+  animation-duration: 1.1s;
 }
 
-@keyframes border-glow-teaching {
-  0%, 100% { border-color: rgba(172, 57, 255, 0.25); }
-  50% { border-color: rgba(172, 57, 255, 0.5); }
+.digital-human__fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.65rem;
+  color: rgba(255, 255, 255, 0.88);
+  text-align: center;
+  background: #0a0e17;
 }
 
-@media (max-width: 720px) {
-  .agent-core-panel { min-height: 14rem; }
+.digital-human__fallback span:last-child {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.875rem;
 }
+
+.digital-human__fallback-mark {
+  display: grid;
+  width: 3.25rem;
+  aspect-ratio: 1;
+  place-items: center;
+  color: #08111f;
+  font-weight: 800;
+  border-radius: 50%;
+  background: #9fd7ff;
+}
+
+@keyframes status-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(69, 212, 131, 0.45); }
+  70%, 100% { box-shadow: 0 0 0 0.55rem rgba(69, 212, 131, 0); }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .agent-core-panel,
-  .agent-core-panel::after {
-    animation: none !important;
-    transition: none !important;
+  .digital-human__video,
+  .digital-human__pulse {
+    transition: none;
+    animation: none;
   }
 }
 </style>

@@ -1,6 +1,26 @@
 <template>
   <div class="admin-page light-surface">
-    <header class="admin-hero">
+    <!-- 标签栏 -->
+    <nav class="admin-tabs">
+      <button
+        class="admin-tab"
+        :class="{ active: activeTab === 'review' }"
+        @click="activeTab = 'review'"
+      >
+        📋 内容审核
+      </button>
+      <button
+        class="admin-tab"
+        :class="{ active: activeTab === 'lightrag' }"
+        @click="activeTab = 'lightrag'"
+      >
+        🔍 LightRAG 控制台
+      </button>
+    </nav>
+
+    <!-- Tab：内容审核 -->
+    <div v-show="activeTab === 'review'">
+      <header class="admin-hero">
       <div class="admin-hero__content">
         <div class="admin-kicker">管理员工作台</div>
         <h1>社区知识审核中控</h1>
@@ -362,6 +382,12 @@
         </template>
       </el-skeleton>
     </el-dialog>
+    </div><!-- /activeTab === 'review' -->
+
+    <!-- Tab：LightRAG 控制台 -->
+    <div v-show="activeTab === 'lightrag'">
+      <AdminLightRagView />
+    </div>
   </div>
 </template>
 
@@ -369,6 +395,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useCommunityStore } from '@/store/community'
+import AdminLightRagView from '@/views/AdminLightRagView.vue'
 
 defineEmits<{
   (e: 'go-login'): void
@@ -376,6 +403,7 @@ defineEmits<{
 }>()
 
 const store = useCommunityStore()
+const activeTab = ref<'review' | 'lightrag'>('review')
 const detailDialogVisible = ref(false)
 const detailDialogTitle = ref('帖子详情')
 
@@ -528,6 +556,36 @@ onMounted(async () => {
   background: var(--light-bg);
   color: var(--light-ink);
   font-family: var(--font-sans);
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 0;
+  max-width: 86rem;
+  margin: 0 auto 1.125rem;
+  border-bottom: 2px solid var(--light-line);
+}
+
+.admin-tab {
+  padding: 0.625rem 1.25rem;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  background: transparent;
+  color: var(--light-muted);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.admin-tab:hover {
+  color: var(--light-ink);
+}
+
+.admin-tab.active {
+  color: var(--primary-500);
+  border-bottom-color: var(--primary-500);
 }
 
 .admin-hero,

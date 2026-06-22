@@ -214,8 +214,7 @@ onMounted(async () => {
 .detail-meta,
 .reply-item-head,
 .reply-actions,
-.detail-actions,
-.knowledge-actions {
+.detail-actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -301,7 +300,6 @@ onMounted(async () => {
 }
 
 .detail-tags,
-.knowledge-actions,
 .reply-editor {
   margin-top: 18px;
 }
@@ -342,10 +340,79 @@ onMounted(async () => {
   .detail-meta,
   .reply-item-head,
   .reply-actions,
-  .detail-actions,
-  .knowledge-actions {
+  .detail-actions {
     flex-direction: column;
     align-items: stretch;
   }
+}
+
+/* Match the restored green community list while preserving detail actions. */
+.detail-page {
+  --community-green: #24964e;
+  --community-green-dark: #173f24;
+  --community-muted: #55715c;
+  min-height: calc(100dvh - 5.75rem);
+  box-sizing: border-box;
+  padding: 1rem;
+  color: var(--community-green-dark);
+  background:
+    radial-gradient(circle at 14% 8%, rgba(255, 255, 255, 0.82), transparent 27%),
+    radial-gradient(circle at 84% 10%, rgba(255, 255, 255, 0.55), transparent 24%),
+    linear-gradient(180deg, #eef7eb 0%, #d6f0ce 42%, #9ae686 74%, #59da48 100%);
+}
+
+.detail-header,
+.detail-layout {
+  width: min(100%, 75rem);
+  max-width: none;
+}
+
+.detail-header,
+.detail-card,
+.reply-card,
+.side-panel {
+  border-color: rgba(46, 113, 53, 0.14);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 1.25rem 3.5rem rgba(31, 106, 57, 0.1);
+}
+
+.detail-kicker {
+  color: var(--community-green);
+  background: rgba(36, 150, 78, 0.09);
+}
+
+.detail-header h1,
+.reply-header h2,
+.reply-editor h3,
+.side-panel strong {
+  color: var(--community-green-dark);
+}
+
+.detail-meta,
+.side-label,
+.side-panel p,
+.reply-item-head {
+  color: var(--community-muted);
+}
+
+.detail-content,
+.reply-item-content { color: #25442d; }
+.detail-layout { grid-template-columns: minmax(0, 1fr) minmax(14rem, 17rem); }
+.reply-item { border-color: rgba(46, 113, 53, 0.12); background: rgba(255, 255, 255, 0.74); }
+
+:deep(.el-button--primary) {
+  border-color: var(--community-green);
+  background: var(--community-green);
+}
+
+:deep(.el-input__wrapper),
+:deep(.el-textarea__inner) {
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: inset 0 0 0 1px rgba(46, 113, 53, 0.14) !important;
+}
+
+@media (max-width: 900px) {
+  .detail-page { padding: 0.75rem; }
+  .detail-layout { grid-template-columns: 1fr; }
 }
 </style>
