@@ -1,9 +1,5 @@
 <template>
-  <div v-if="!bypassLogin && !authStore.loggedIn" class="app-auth-shell">
-    <LoginView @login-success="handleLoginSuccess" />
-  </div>
-
-  <div v-else class="app-layout">
+  <div class="app-layout">
     <!-- ====== Top Nav: 首页 | 数字人 ====== -->
     <header class="top-nav">
       <div class="top-nav__inner">
@@ -25,9 +21,9 @@
         </nav>
 
         <div class="top-nav__auth">
-          <span class="top-nav__auth-role">{{ authStore.isAdmin ? '管理员' : '用户' }}</span>
-          <span class="top-nav__auth-text">{{ authStore.displayName || authStore.username }}</span>
-          <button v-if="!bypassLogin" type="button" class="top-nav__tab" @click="logout">退出</button>
+          <span class="top-nav__auth-role">{{ authStore.loggedIn ? authStore.isAdmin ? '管理员' : '用户' : '访客' }}</span>
+          <span class="top-nav__auth-text">{{ authStore.loggedIn ? authStore.displayName || authStore.username : '未登录' }}</span>
+          <button v-if="!bypassLogin && authStore.loggedIn" type="button" class="top-nav__tab" @click="logout">退出</button>
         </div>
       </div>
 
@@ -53,7 +49,10 @@
 
         <!-- Hub: digital human + sub-page -->
         <template v-else-if="activeSection === 'hub'" key="hub">
-          <AgentChat v-if="activeHubPage === 'chat'" key="chat" @open-community-post="openPostFromSource" />
+          <div v-if="requiresHubLogin" key="hub-login" class="app-auth-shell">
+            <LoginView @login-success="handleLoginSuccess" />
+          </div>
+          <AgentChat v-else-if="activeHubPage === 'chat'" key="chat" @open-community-post="openPostFromSource" />
           <CommunityView
             v-else-if="activeHubPage === 'community' && communityView === 'list'"
             key="comm-list"
@@ -80,7 +79,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import AgentChat from './views/AgentChat.vue'
 import DigitalHumanPanel from './views/DigitalHumanPanel.vue'
 import PortfolioHome from './views/PortfolioHome.vue'
@@ -100,7 +99,8 @@ const activeSection = ref<MainSection>('home')
 const activeHubPage = ref<HubPage>('chat')
 const communityView = ref<CommunityViewState>('list')
 const currentPostId = ref('')
-const bypassLogin = import.meta.env.VITE_BYPASS_LOGIN !== 'false'
+const bypassLogin = import.meta.env.VITE_BYPASS_LOGIN === 'true'
+const requiresHubLogin = computed(() => activeSection.value === 'hub' && !bypassLogin && !authStore.loggedIn)
 
 const updateCursorGlow = () => {
   document.body.classList.toggle('has-cursor-glow', activeSection.value === 'home')
@@ -117,7 +117,11 @@ const openPostDetail = (postId: string) => {
 const openPostFromSource = (postId: string) => { openPostDetail(postId) }
 const backToCommunityList = () => { communityView.value = 'list' }
 
-const handleLoginSuccess = (role: LoginRole) => { activeSection.value = 'home' }
+const handleLoginSuccess = (_role: LoginRole) => {
+  activeSection.value = 'hub'
+  if (!activeHubPage.value) activeHubPage.value = 'chat'
+  updateCursorGlow()
+}
 const logout = () => {
   authStore.logout()
   if (bypassLogin) authStore.enterGuestUser()

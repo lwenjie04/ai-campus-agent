@@ -17,34 +17,48 @@
       <span ref="textRef" style="font-size:clamp(2.5rem,8vw,5rem);font-weight:700;letter-spacing:-0.04em;color:#1a1a18">PRISM</span>
     </div>
 
-    <!-- ====== Hero ====== -->
-    <section class="hero">
-      <div class="hero__bg-orbs">
-        <span class="orb orb--violet"></span>
-        <span class="orb orb--amber"></span>
-      </div>
-      <div class="hero__glass">
-        <div class="hero__text">
-          <h1 class="hero__title">
-            <span class="line" data-reveal>Prism</span>
-            <span class="line" data-reveal>Studio<span class="dot">.</span></span>
-          </h1>
-          <p class="hero__sub" data-reveal>
-            校园 AI 知识助手&ensp;·&ensp;LightRAG&ensp;·&ensp;Prism Core
-          </p>
+    <!-- ====== Hero + Marquee Video Stage ====== -->
+    <section class="hero-stage" aria-label="Prism Studio">
+      <video
+        class="hero-stage__video"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="metadata"
+        aria-hidden="true"
+        @error="onHeroVideoError"
+      >
+        <source :src="heroVideoSources.webm" type="video/webm">
+        <source :src="heroVideoSources.mp4" type="video/mp4">
+      </video>
+      <div class="hero-stage__fallback" :class="{ 'is-visible': heroVideoFailed }" aria-hidden="true" />
+      <div class="hero-stage__veil" aria-hidden="true" />
+
+      <section class="hero">
+        <div class="hero__glass">
+          <div class="hero__text">
+            <h1 class="hero__title">
+              <span class="line" data-reveal>Prism</span>
+              <span class="line" data-reveal>Studio<span class="dot">.</span></span>
+            </h1>
+            <p class="hero__sub" data-reveal>
+              校园 AI 知识助手&ensp;·&ensp;LightRAG&ensp;·&ensp;Prism Core
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====== Marquee ====== -->
+      <div class="marquee">
+        <span class="marquee__label">热门问题</span>
+        <div ref="marqueeRef" class="marquee__track">
+          <button v-for="(tag, i) in allMarqueeTags" :key="i" class="marquee__pill" :style="{ '--pill-bg': tag.bg, '--pill-fg': tag.fg }" @click="emit('openChat')">
+            {{ tag.text }}
+          </button>
         </div>
       </div>
     </section>
-
-    <!-- ====== Marquee ====== -->
-    <div class="marquee">
-      <span class="marquee__label">热门问题</span>
-      <div ref="marqueeRef" class="marquee__track">
-        <button v-for="(tag, i) in allMarqueeTags" :key="i" class="marquee__pill" :style="{ background: tag.bg, color: tag.fg }" @click="emit('openChat')">
-          {{ tag.text }}
-        </button>
-      </div>
-    </div>
 
     <!-- ====== Work Grid (功能模块) ====== -->
     <section class="grid">
@@ -114,6 +128,11 @@ const emit = defineEmits<{
 const loaderRef = ref<HTMLElement | null>(null)
 const textRef = ref<HTMLElement | null>(null)
 const marqueeRef = ref<HTMLElement | null>(null)
+const heroVideoFailed = ref(false)
+const heroVideoSources = {
+  webm: '/videos/prism-glass-bg.webm',
+  mp4: '/videos/prism-glass-bg.mp4',
+}
 let marqueeRaf = 0
 
 // ---- Custom cursor ----
@@ -124,6 +143,10 @@ let cursorX = 0
 let cursorY = 0
 let cursorRaf = 0
 const interactiveSelector = 'a, button, .grid__item, .cta__input, .marquee__pill, [data-cursor-view]'
+
+function onHeroVideoError() {
+  heroVideoFailed.value = true
+}
 
 function onCursorMove(e: MouseEvent) {
   cursorX = e.clientX
@@ -184,7 +207,7 @@ function startMarquee() {
   const chunkWidth = trackElement.scrollWidth / 4
   let offset = 0
   function tick() {
-    offset -= 1.2
+    offset -= 0.84
     if (offset <= -chunkWidth) offset += chunkWidth
     trackElement.style.transform = 'translateX(' + offset + 'px)'
     marqueeRaf = requestAnimationFrame(tick)
@@ -314,77 +337,129 @@ onUnmounted(() => {
 
 /* Loading styles in non-scoped block below */
 
+/* ---- Hero video stage ---- */
+.hero-stage {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  isolation: isolate;
+  background: #f8f7f4;
+}
+
+.hero-stage__video,
+.hero-stage__fallback,
+.hero-stage__veil {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.hero-stage__video {
+  z-index: -3;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.84;
+  filter: saturate(1.32) contrast(1.02) brightness(1.03);
+}
+
+.hero-stage__fallback {
+  z-index: -4;
+  opacity: 0.96;
+  background:
+    radial-gradient(ellipse 36% 28% at 18% 28%, rgba(93, 177, 255, 0.58), transparent 66%),
+    radial-gradient(ellipse 30% 36% at 80% 18%, rgba(132, 105, 255, 0.46), transparent 68%),
+    radial-gradient(ellipse 44% 30% at 56% 78%, rgba(82, 218, 190, 0.48), transparent 64%),
+    radial-gradient(ellipse 30% 24% at 18% 78%, rgba(255, 187, 122, 0.32), transparent 64%),
+    linear-gradient(120deg, #f7fbff 0%, #dfeeff 42%, #f1ebff 68%, #effaf1 100%);
+  background-size: 116% 116%, 124% 124%, 132% 132%, 120% 120%, 100% 100%;
+  animation: prism-video-fallback 18s ease-in-out infinite alternate;
+  filter: saturate(1.24) contrast(1.03);
+}
+
+.hero-stage__fallback.is-visible {
+  opacity: 1;
+}
+
+.hero-stage__veil {
+  z-index: -2;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.52) 0%, rgba(255,255,255,0.08) 48%, rgba(255,255,255,0.58) 100%),
+    linear-gradient(90deg, rgba(255,255,255,0.58), rgba(255,255,255,0.04) 45%, rgba(255,255,255,0.48)),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23f)' opacity='.34'/%3E%3C/svg%3E");
+  background-size: 100% 100%, 100% 100%, 9rem 9rem;
+  backdrop-filter: blur(0.65rem) saturate(1.12);
+  -webkit-backdrop-filter: blur(0.65rem) saturate(1.12);
+  mix-blend-mode: normal;
+}
+
 /* ---- Hero ---- */
 .hero {
   position: relative; z-index: 1;
   overflow: visible;
   min-height: 55vh;
   display: flex; align-items: center; justify-content: center;
-  /* 紫+琥珀双色渐变背景，供磨砂玻璃模糊 */
-  background:
-    radial-gradient(ellipse 80% 60% at 25% 25%, rgba(139,92,246,0.3), transparent 55%),
-    radial-gradient(ellipse 70% 55% at 75% 35%, rgba(251,191,36,0.28), transparent 55%),
-    #faf9f7;
-}
-
-/* Ambient light halos — soft glowing orbs, not hard circles */
-.hero__bg-orbs {
-  position: absolute; inset: 0; pointer-events: none; z-index: 0;
-}
-.orb {
-  position: absolute; border-radius: 50%;
-}
-.orb--violet {
-  width: 26rem; height: 26rem;
-  background: radial-gradient(circle at 50% 50%, rgba(139,92,246,0.5) 0%, rgba(139,92,246,0.15) 35%, transparent 70%);
-  top: 10%; left: 5%;
-  animation: orb-float-violet 8s ease-in-out infinite;
-}
-.orb--violet::after {
-  content: '';
-  position: absolute;
-  top: 50%; left: 50%;
-  width: 3rem; height: 3rem;
-  margin: -1.5rem 0 0 -1.5rem;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.7);
-  filter: blur(0.5rem);
-}
-.orb--amber {
-  width: 22rem; height: 22rem;
-  background: radial-gradient(circle at 50% 50%, rgba(251,191,36,0.5) 0%, rgba(251,191,36,0.12) 35%, transparent 70%);
-  top: 15%; right: 5%;
-  animation: orb-float-amber 10s ease-in-out infinite;
-}
-.orb--amber::after {
-  content: '';
-  position: absolute;
-  top: 50%; left: 50%;
-  width: 2.5rem; height: 2.5rem;
-  margin: -1.25rem 0 0 -1.25rem;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.65);
-  filter: blur(0.5rem);
+  background: transparent;
 }
 
 /* Frosted glass card — blurs the gradient + orbs behind it */
 .hero__glass {
   position: relative; z-index: 2;
-  width: min(86vw, 42rem);
-  padding: clamp(3rem, 8vh, 6rem) clamp(2rem, 4vw, 4rem);
+  width: min(88vw, 46rem);
+  padding: clamp(3.25rem, 8vh, 6.5rem) clamp(2rem, 5vw, 4.5rem);
   display: flex; flex-direction: column; align-items: center;
-  /* 半透明白底 + 强力毛玻璃 */
-  background: rgba(255,255,255,0.35);
-  backdrop-filter: blur(3rem);
-  -webkit-backdrop-filter: blur(3rem);
-  border: 1px solid rgba(255,255,255,0.5);
-  border-radius: 1.5rem;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.48), rgba(246,247,250,0.16) 46%, rgba(255,255,255,0.32)),
+    radial-gradient(circle at 18% 14%, rgba(255,255,255,0.58), transparent 24%),
+    radial-gradient(circle at 76% 72%, rgba(94,106,210,0.14), transparent 38%);
+  backdrop-filter: blur(3.5rem) saturate(1.18) contrast(0.96);
+  -webkit-backdrop-filter: blur(3.5rem) saturate(1.18) contrast(0.96);
+  border: 1px solid rgba(255,255,255,0.58);
+  border-radius: clamp(1.25rem, 2vw, 2rem);
   box-shadow:
-    0 4px 24px rgba(0,0,0,0.06),
-    inset 0 1px 0 rgba(255,255,255,0.5);
+    0 1.5rem 5.5rem rgba(31,35,66,0.1),
+    0 0.35rem 1.4rem rgba(31,35,66,0.055),
+    inset 0 1px 0 rgba(255,255,255,0.72),
+    inset 0 -1px 0 rgba(255,255,255,0.2);
 }
 
-.hero__text { text-align: center; }
+.hero__glass::before,
+.hero__glass::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.hero__glass::before {
+  z-index: -1;
+  background:
+    linear-gradient(115deg, transparent 0 22%, rgba(255,255,255,0.42) 34%, transparent 48% 100%),
+    linear-gradient(180deg, rgba(255,255,255,0.32), transparent 42%, rgba(255,255,255,0.16));
+  opacity: 0.5;
+  transform: translateX(-16%);
+  animation: glass-sheen 8s ease-in-out infinite;
+}
+
+.hero__glass::after {
+  border: 1px solid rgba(255,255,255,0.34);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.14),
+    inset 0 0.85rem 2.4rem rgba(255,255,255,0.22);
+  background-image:
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23f)' opacity='.42'/%3E%3C/svg%3E"),
+    linear-gradient(rgba(255,255,255,0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.045) 1px, transparent 1px);
+  background-size: 11rem 11rem, 3.5rem 3.5rem, 3.5rem 3.5rem;
+  mask-image: radial-gradient(circle at 50% 50%, black 0 56%, transparent 88%);
+  opacity: 0.38;
+  mix-blend-mode: overlay;
+}
+
+.hero__text { position: relative; z-index: 1; text-align: center; }
 
 .hero__title {
   margin: 0;
@@ -396,55 +471,117 @@ onUnmounted(() => {
   display: grid; gap: 0;
   justify-items: center;
 }
-.hero__title .line { display: block; }
+.hero__title .line {
+  display: block;
+  position: relative;
+}
 .hero__title .dot { color: var(--accent); }
 
 .hero__sub {
   margin: clamp(1rem, 2vw, 1.5rem) 0 0;
   font-size: clamp(1rem, 1.8vw, 1.25rem);
-  color: var(--ink-muted);
+  color: rgba(26,26,24,0.56);
   letter-spacing: -0.01em; font-weight: 400;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.45);
 }
 
 /* ---- Marquee ---- */
 .marquee {
   position: relative; z-index: 1;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-  padding: 0.625rem 0;
+  border-top: 1px solid rgba(255,255,255,0.62);
+  border-bottom: 1px solid rgba(31,35,66,0.06);
+  padding: 0.7rem 0;
   display: flex; align-items: center;
   overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.58), rgba(255,255,255,0.22)),
+    rgba(255,255,255,0.32);
+  backdrop-filter: blur(1.7rem) saturate(1.28) contrast(0.94);
+  -webkit-backdrop-filter: blur(1.7rem) saturate(1.28) contrast(0.94);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.84),
+    inset 0 -1px 0 rgba(255,255,255,0.3),
+    0 0.8rem 2.2rem rgba(31,35,66,0.045);
 }
 .marquee__label {
   flex-shrink: 0;
-  padding: 0.3rem 0.75rem;
+  padding: 0.48rem 0.92rem;
   border-radius: var(--radius-pill);
-  background: var(--ink);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0.02)),
+    rgba(26,26,24,0.78);
   color: #fff;
   font-size: var(--font-size-caption);
   font-weight: 600;
   margin-left: var(--space-4);
   z-index: 2;
   margin-right: var(--space-3);
+  border: 1px solid rgba(255,255,255,0.28);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.24),
+    0 0.45rem 1rem rgba(0,0,0,0.1);
 }
 .marquee__track {
   display: flex;
+  gap: 0.55rem;
   mask-image: linear-gradient(to right, transparent 0%, black 3%, black 97%, transparent 100%);
 }
 .marquee__pill {
   all: unset;
+  position: relative;
   flex-shrink: 0;
-  padding: 0.4rem 1rem;
+  padding: 0.5rem 1.08rem;
   border-radius: var(--radius-pill);
   font-size: var(--font-size-subhead);
   font-weight: 600;
+  color: var(--pill-fg);
+  text-shadow: 0 1px 0 rgba(255,255,255,0.38);
   cursor: pointer;
   white-space: nowrap;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.74), rgba(255,255,255,0.24)),
+    radial-gradient(circle at 18% 18%, rgba(255,255,255,0.86), transparent 34%),
+    color-mix(in srgb, var(--pill-bg) 44%, rgba(255,255,255,0.64));
+  border: 1px solid rgba(255,255,255,0.72);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.92),
+    inset 0 -1px 0 rgba(255,255,255,0.18),
+    inset 0 0 1.15rem rgba(255,255,255,0.26),
+    0 0.42rem 1.15rem rgba(31,35,66,0.075);
+  backdrop-filter: blur(1.65rem) saturate(1.35) contrast(0.92);
+  -webkit-backdrop-filter: blur(1.65rem) saturate(1.35) contrast(0.92);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+.marquee__pill::before,
+.marquee__pill::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+.marquee__pill::before {
+  inset: 0.08rem 0.12rem auto;
+  height: 42%;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255,255,255,0.68), transparent);
+  opacity: 0.82;
+}
+.marquee__pill::after {
+  inset: 0;
+  border-radius: inherit;
+  background-image:
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 140 140' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.35' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E"),
+    linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0));
+  background-size: 6rem 6rem, 100% 100%;
+  opacity: 0.3;
+  mix-blend-mode: overlay;
 }
 .marquee__pill:hover {
-  transform: scale(1.06);
-  box-shadow: 0 0.25rem 0.75rem rgba(0,0,0,0.1);
+  transform: translateY(-0.08rem) scale(1.035);
+  border-color: rgba(255,255,255,0.82);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.84),
+    0 0.7rem 1.45rem rgba(31,35,66,0.11);
 }
 
 /* ---- Grid ---- */
@@ -635,20 +772,32 @@ onUnmounted(() => {
 }
 @media (prefers-reduced-motion: reduce) {
   [data-reveal] { opacity: 1; transform: none; transition: none; }
-  .orb { animation: none !important; }
+  .hero__glass::before { animation: none !important; }
+  .hero-stage__fallback { animation: none !important; }
+  .hero-stage__video { display: none; }
 }
 </style>
 
 <style>
-@keyframes orb-float-violet {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  25%  { transform: translate(14rem, -10rem) scale(1.15); }
-  50%  { transform: translate(-10rem, -14rem) scale(0.85); }
-  75%  { transform: translate(-14rem, 5rem) scale(1.1); }
+@keyframes prism-video-fallback {
+  0% {
+    background-position: 0% 18%, 100% 12%, 44% 96%, 0% 92%, 50% 50%;
+    transform: scale(1);
+  }
+  42% {
+    background-position: 22% 4%, 78% 36%, 58% 72%, 18% 70%, 50% 50%;
+    transform: scale(1.035);
+  }
+  100% {
+    background-position: 38% 34%, 56% 6%, 72% 86%, 34% 54%, 50% 50%;
+    transform: scale(1.06);
+  }
 }
-@keyframes orb-float-amber {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33%  { transform: translate(-16rem, 10rem) scale(1.2); }
-  66%  { transform: translate(10rem, -14rem) scale(0.8); }
+
+@keyframes glass-sheen {
+  0%, 100% { transform: translateX(-22%); opacity: 0.34; }
+  42% { transform: translateX(18%); opacity: 0.74; }
+  64% { transform: translateX(28%); opacity: 0.22; }
 }
+
 </style>
