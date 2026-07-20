@@ -7,8 +7,18 @@
       placeholder="请输入你的问题"
       @keyup.enter="send"
     />
-    <el-button class="send-btn" :loading="loading" :disabled="loading" @click="send">
-      ✨
+    <el-button
+      class="send-btn"
+      :loading="loading"
+      :disabled="loading"
+      :aria-label="loading ? '正在发送' : '发送消息'"
+      :title="loading ? '正在发送' : '发送消息'"
+      @click="send"
+    >
+      <svg v-if="!loading" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="m4.2 11.5 15-7-4.35 15-3.45-5-7.2-3Z" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="1.8" />
+        <path d="m11.4 14.5 7.8-10" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.8" />
+      </svg>
     </el-button>
   </div>
 </template>
@@ -42,31 +52,39 @@ const send = () => {
 
 <style scoped>
 .input-box {
+  min-width: 0;
   display: grid;
-  grid-template-columns: 1fr 54px;
+  grid-template-columns: minmax(0, 1fr) 52px;
   gap: 10px;
   align-items: center;
 }
 
 :deep(.el-input) {
   width: 100%;
+  min-width: 0;
 }
 
 :deep(.el-input__wrapper) {
-  border-radius: 999px;
+  border-radius: 17px;
   min-height: 52px;
   padding: 0 16px;
-  background: rgba(243, 243, 243, 0.95);
+  border: 1px solid rgba(64, 127, 76, 0.13);
+  background: rgba(250, 252, 248, 0.94);
   box-shadow:
-    inset 0 0 0 1px rgba(50, 110, 51, 0.12),
-    0 8px 14px rgba(33, 95, 40, 0.06) !important;
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    0 8px 18px rgba(33, 95, 40, 0.07) !important;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
 }
 
 :deep(.el-input__wrapper.is-focus) {
+  border-color: rgba(47, 142, 84, 0.48);
+  background: rgba(255, 255, 252, 0.98);
   box-shadow:
-    inset 0 0 0 1px rgba(47, 137, 66, 0.28),
-    0 0 0 4px rgba(98, 219, 93, 0.13),
-    0 8px 14px rgba(33, 95, 40, 0.07) !important;
+    0 0 0 3px rgba(73, 180, 100, 0.1),
+    0 10px 22px rgba(33, 95, 40, 0.09) !important;
 }
 
 :deep(.el-input__inner) {
@@ -75,35 +93,69 @@ const send = () => {
 }
 
 .send-btn {
-  width: 54px;
-  height: 54px;
-  border-radius: 50%;
-  border: none;
-  font-size: 22px;
-  color: #35c648;
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 10px 16px rgba(26, 85, 35, 0.12);
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  min-height: 52px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 17px;
+  color: #fff;
+  background: linear-gradient(145deg, #1d6a41 0%, #319156 58%, #4cb56b 100%);
+  box-shadow:
+    0 10px 20px rgba(27, 111, 63, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
+}
+
+.send-btn svg {
+  width: 22px;
+  height: 22px;
 }
 
 .send-btn:hover {
-  background: #fff;
-  color: #24b238;
+  color: #fff;
+  background: linear-gradient(145deg, #1d6a41 0%, #319156 58%, #4cb56b 100%);
+  filter: saturate(1.06) brightness(1.03);
+  transform: translateY(-1px);
+  box-shadow:
+    0 13px 24px rgba(27, 111, 63, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.24);
 }
 
 .send-btn.is-disabled {
-  opacity: 0.7;
+  opacity: 0.62;
+  transform: none;
 }
 
 @media (max-width: 680px) {
   .input-box {
-    grid-template-columns: 1fr 50px;
+    grid-template-columns: minmax(0, 1fr) 48px;
     gap: 8px;
   }
 
+  :deep(.el-input__wrapper) {
+    min-height: 48px;
+    border-radius: 16px;
+  }
+
   .send-btn {
-    width: 50px;
-    height: 50px;
-    font-size: 20px;
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+    border-radius: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .send-btn,
+  :deep(.el-input__wrapper) {
+    transition: none;
   }
 }
 </style>

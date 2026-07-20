@@ -499,9 +499,12 @@ onMounted(() => {
   padding: 12px;
   box-sizing: border-box;
   border-radius: 22px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.28) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  backdrop-filter: blur(8px);
+  background: linear-gradient(180deg, rgba(251, 255, 248, 0.76) 0%, rgba(238, 250, 234, 0.58) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow:
+    0 18px 42px rgba(38, 99, 48, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(12px);
   align-content: stretch;
 }
 
@@ -588,8 +591,15 @@ onMounted(() => {
 /* 停止播放按钮所在区域 */
 .chat-actions-bar {
   display: flex;
-  justify-content: flex-start;
+  justify-content: flex-end;
   padding: 0 4px;
+}
+
+:deep(.stop-btn.el-button) {
+  color: #3c7049;
+  border-color: rgba(55, 120, 69, 0.13);
+  background: rgba(247, 252, 244, 0.7);
+  box-shadow: none;
 }
 
 /* 设置面板 */
@@ -699,9 +709,9 @@ onMounted(() => {
   padding: 4px 10px;
   border-radius: 999px;
   font-size: 12px;
-  color: #255c31;
-  background: rgba(255, 255, 255, 0.65);
-  border: 1px solid rgba(255, 255, 255, 0.55);
+  color: #25633b;
+  background: rgba(230, 246, 226, 0.82);
+  border: 1px solid rgba(69, 137, 79, 0.12);
   white-space: nowrap;
 }
 
@@ -712,15 +722,21 @@ onMounted(() => {
   min-height: 0;
   box-sizing: border-box;
   border-radius: 18px;
-  padding: 6px;
-  background: rgba(255, 255, 255, 0.12);
+  padding: 0;
+  border: 1px solid rgba(75, 142, 84, 0.14);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(215, 241, 214, 0.7), transparent 34%),
+    linear-gradient(180deg, rgba(252, 255, 249, 0.84) 0%, rgba(238, 249, 234, 0.62) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    inset 0 -18px 34px rgba(104, 191, 99, 0.04);
   overflow: hidden;
 }
 
 /* 输入区顶部留一点呼吸感 */
 .input-area {
   min-width: 0;
-  padding-top: 2px;
+  padding: 0 2px 2px;
 }
 
 .dialog-footer {

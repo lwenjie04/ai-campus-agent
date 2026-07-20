@@ -1,14 +1,39 @@
 ﻿<template>
-  <!-- 单条消息由头像、消息气泡和可选的来源信息组成。 -->
-  <div class="message-row" :class="`is-${message.role}`">
-    <div v-if="message.role === 'assistant'" class="avatar">👩‍🏫</div>
+  <!-- 单条消息由品牌化头像、身份信息、消息气泡和可选来源组成。 -->
+  <div class="message-row" :class="`is-${message.role}`" :data-role="message.role" data-testid="message-row">
+    <ChatAvatar
+      class="message-avatar"
+      :role="message.role === 'user' ? 'user' : 'assistant'"
+      :active="message.role === 'assistant' && message.status === 'pending'"
+      :data-role="message.role"
+      data-testid="message-avatar"
+    />
 
     <div class="bubble-wrap">
-      <!-- 用户消息和助手消息复用同一个气泡结构，通过 role 决定额外装饰。 -->
-      <div class="bubble">
-        <span v-if="message.role === 'assistant'" class="bubble-icon">✨</span>
-        <span class="content">{{ formatMessageContent(message.content) }}</span>
-        <span v-if="message.role === 'assistant' && message.status === 'pending'" class="typing-cursor" />
+      <div class="message-meta">
+        <span class="sender-name">{{ message.role === 'user' ? '你' : '数智校答' }}</span>
+        <time v-if="formatMessageTime(message.createdAt)" class="message-time" :datetime="formatMessageDateTime(message.createdAt)">
+          {{ formatMessageTime(message.createdAt) }}
+        </time>
+      </div>
+
+      <!-- 空的 pending 消息显示单一加载动画；流式文本到达后切换为光标。 -->
+      <div class="bubble" :aria-busy="message.status === 'pending'" data-testid="message-bubble">
+        <span
+          v-if="message.role === 'assistant' && message.status === 'pending' && !formatMessageContent(message.content)"
+          class="typing-dots"
+          role="status"
+          aria-label="数智校答正在生成回复"
+          data-testid="loading-indicator"
+        >
+          <span />
+          <span />
+          <span />
+        </span>
+        <template v-else>
+          <span class="content">{{ formatMessageContent(message.content) }}</span>
+          <span v-if="message.role === 'assistant' && message.status === 'pending'" class="typing-cursor" />
+        </template>
       </div>
 
       <!-- 只有 assistant 消息才会展示来源，因为来源来自后端 RAG 检索结果。 -->
@@ -36,7 +61,7 @@
             <span v-else class="source-link">{{ source.title || `来源 ${index + 1}` }}</span>
 
             <div class="source-meta">
-              <span v-if="source.type" class="meta-chip type-chip">{{ source.type }}</span>
+              <span v-if="source.type" class="meta-chip type-chip">{{ getSourceTypeLabel(source.type) }}</span>
               <span v-if="typeof source.confidence === 'number'" class="meta-chip confidence-chip">
                 可信度 {{ Math.round(source.confidence * 100) }}%
               </span>
@@ -85,23 +110,18 @@
         </div>
       </div>
 
-      <div v-if="message.role === 'assistant' && message.status === 'pending'" class="pending-tip">
-        正在生成回复...
-      </div>
-
       <div v-if="message.status === 'error'" class="error-tip">
         发送异常，请稍后重试
         <span v-if="message.errorCode" class="error-code">({{ message.errorCode }})</span>
       </div>
     </div>
-
-    <div v-if="message.role === 'user'" class="avatar user-avatar">🧑‍🎓</div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { appConfig } from '@/config/app'
 import type { Message } from '@/types/agent'
+import ChatAvatar from './ChatAvatar.vue'
 
 // 聊天区目前按纯文本展示，不渲染 Markdown。
 // 这里把模型偶尔输出的强调符号做一次轻量清洗，避免页面出现 **标题** 这类星号噪声。
@@ -111,6 +131,30 @@ const formatMessageContent = (content: string) =>
     .replace(/\*(.*?)\*/g, '$1')
     .replace(/__(.*?)__/g, '$1')
     .replace(/_(.*?)_/g, '$1')
+
+// 旧缓存里的 createdAt 可能不存在或不是有效数字，遇到异常值时不显示时间。
+const messageTimeFormatter = new Intl.DateTimeFormat('zh-CN', {
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false,
+})
+
+const resolveMessageDate = (createdAt?: number) => {
+  if (typeof createdAt !== 'number' || !Number.isFinite(createdAt)) return ''
+  const date = new Date(createdAt)
+  if (Number.isNaN(date.getTime())) return ''
+  return date
+}
+
+const formatMessageTime = (createdAt?: number) => {
+  const date = resolveMessageDate(createdAt)
+  return date ? messageTimeFormatter.format(date) : ''
+}
+
+const formatMessageDateTime = (createdAt?: number) => {
+  const date = resolveMessageDate(createdAt)
+  return date ? date.toISOString() : undefined
+}
 
 // 把后端返回的来源地址统一转换成浏览器可直接访问的链接。
 // 这里要兼容完整链接、后端相对路径以及原样透传三种情况。
@@ -135,6 +179,18 @@ const getPrimaryLinkKindLabel = (url?: string) => (isFileLikeLink(url) ? '来源
 const getPrimaryLinkActionLabel = (url?: string) =>
   isFileLikeLink(url) ? '下载/打开文件' : '打开通知页面'
 
+// 后端使用稳定的英文枚举，界面转换为更自然的中文标签。
+const sourceTypeLabels: Record<string, string> = {
+  official_notice: '官方通知',
+  knowledge_base: '知识库',
+  attachment_index: '附件资料',
+  rule_match: '规则匹配',
+  community_post: '社区帖子',
+  community_summary: '社区经验',
+}
+
+const getSourceTypeLabel = (type?: string) => (type ? sourceTypeLabels[type] || type : '')
+
 // 当前组件只关心“如何展示一条消息”，消息列表的遍历由父组件负责。
 defineProps<{
   message: Message
@@ -147,94 +203,139 @@ const emit = defineEmits<{
 
 <style scoped>
 .message-row {
-  display: grid;
-  grid-template-columns: 42px 1fr 42px;
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
   gap: 10px;
-  align-items: center;
-  margin: 8px 0;
+  margin: 16px 0;
 }
 
-.message-row.is-user .bubble-wrap {
-  grid-column: 2;
-  justify-self: end;
-}
-
-.message-row.is-user .avatar:first-child {
-  visibility: hidden;
-}
-
-.message-row.is-assistant .user-avatar {
-  visibility: hidden;
-}
-
-.avatar {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font-size: 22px;
-  background: rgba(255, 255, 255, 0.84);
-  box-shadow: 0 6px 12px rgba(28, 91, 40, 0.08);
-}
-
-.user-avatar {
-  background: rgba(255, 255, 255, 0.88);
+.message-row.is-user {
+  flex-direction: row-reverse;
 }
 
 .bubble-wrap {
-  max-width: 100%;
+  min-width: 0;
+  max-width: min(calc(100% - 52px), 720px);
+}
+
+.message-row.is-user .bubble-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.message-meta {
+  min-height: 16px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 4px 5px;
+  color: #50705a;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.message-row.is-user .message-meta {
+  justify-content: flex-end;
+}
+
+.sender-name {
+  color: #245d38;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.message-time {
+  color: rgba(54, 91, 64, 0.56);
+  font-variant-numeric: tabular-nums;
 }
 
 .bubble {
   display: inline-flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 8px;
-  max-width: min(100%, 440px);
-  min-height: 46px;
-  padding: 0 16px;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.9);
-  color: #101410;
-  box-shadow: 0 8px 18px rgba(24, 86, 37, 0.08);
-  font-weight: 700;
+  max-width: 100%;
+  min-height: 44px;
+  padding: 10px 14px;
+  box-sizing: border-box;
+  color: #17291d;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.65;
+  background: rgba(255, 255, 252, 0.92);
+  border: 1px solid rgba(72, 139, 83, 0.16);
+  border-radius: 7px 18px 18px;
+  box-shadow:
+    0 9px 24px rgba(36, 92, 48, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.84);
+  backdrop-filter: blur(9px);
 }
 
 .message-row.is-user .bubble {
-  background: rgba(255, 255, 255, 0.93);
-}
-
-.bubble-icon {
-  color: #54d85c;
-  font-size: 18px;
-  line-height: 1;
-  flex: 0 0 auto;
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
+  border-radius: 18px 7px 18px 18px;
+  background: linear-gradient(135deg, #195d38 0%, #236f42 58%, #2b7d48 100%);
+  box-shadow:
+    0 10px 22px rgba(29, 111, 65, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
 .content {
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
   word-break: break-word;
-  line-height: 1.45;
+}
+
+.typing-dots {
+  min-width: 40px;
+  min-height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.typing-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #3daa61;
+  animation: typing-bounce 1.15s ease-in-out infinite;
+}
+
+.typing-dots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.typing-dots span:nth-child(3) {
+  animation-delay: 0.3s;
 }
 
 .typing-cursor {
-  width: 8px;
-  height: 1.1em;
-  border-radius: 4px;
-  background: #54d85c;
+  width: 2px;
+  height: 1.15em;
+  border-radius: 999px;
+  background: #3daa61;
   display: inline-block;
   align-self: center;
   animation: typing-blink 0.9s steps(1, end) infinite;
 }
 
 .sources {
-  margin-top: 6px;
-  max-width: min(100%, 440px);
-  border-radius: 14px;
-  padding: 8px 10px;
-  background: rgba(255, 255, 255, 0.66);
-  border: 1px solid rgba(46, 113, 53, 0.12);
-  max-height: 180px;
+  width: 100%;
+  max-width: 100%;
+  margin-top: 8px;
+  padding: 10px 12px;
+  box-sizing: border-box;
+  border-radius: 15px;
+  color: #294c32;
+  background: rgba(247, 252, 243, 0.88);
+  border: 1px solid rgba(67, 133, 79, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  max-height: 190px;
   overflow: auto;
 }
 
@@ -371,15 +472,13 @@ const emit = defineEmits<{
 }
 
 .error-tip {
-  margin-top: 4px;
+  margin-top: 6px;
+  padding: 5px 8px;
+  border: 1px solid rgba(187, 47, 47, 0.12);
+  border-radius: 9px;
+  background: rgba(255, 241, 241, 0.78);
   font-size: 12px;
   color: #bb2f2f;
-}
-
-.pending-tip {
-  margin-top: 4px;
-  font-size: 12px;
-  color: #2f6b3c;
 }
 
 .error-code {
@@ -398,29 +497,43 @@ const emit = defineEmits<{
   }
 }
 
+@keyframes typing-bounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.42;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
 @media (max-width: 680px) {
   .message-row {
-    grid-template-columns: 36px 1fr 36px;
     gap: 8px;
-    margin: 6px 0;
+    margin: 13px 0;
   }
 
-  .avatar {
-    width: 36px;
-    height: 36px;
-    font-size: 19px;
+  .bubble-wrap {
+    max-width: min(calc(100% - 44px), 100%);
   }
 
-  .bubble,
-  .sources {
-    max-width: 100%;
+  .message-meta {
+    margin-bottom: 4px;
   }
 
   .bubble {
     min-height: 42px;
-    padding: 0 14px;
-    border-radius: 22px;
+    padding: 9px 12px;
+    border-radius: 6px 16px 16px;
     font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .message-row.is-user .bubble {
+    border-radius: 16px 6px 16px 16px;
   }
 
   .source-head {
@@ -430,6 +543,13 @@ const emit = defineEmits<{
 
   .source-meta {
     justify-content: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .typing-cursor,
+  .typing-dots span {
+    animation: none;
   }
 }
 </style>
