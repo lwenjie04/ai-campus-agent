@@ -413,6 +413,7 @@ onMounted(() => {
 /* 页面大背景：负责铺满整个视口，并给出整体绿色渐变氛围 */
 .page-bg {
   min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
   padding: 14px;
@@ -428,7 +429,7 @@ onMounted(() => {
   width: min(1200px, 100%);
   height: calc(100vh - 28px);
   display: grid;
-  grid-template-columns: minmax(360px, 44%) minmax(0, 56%);
+  grid-template-columns: minmax(360px, 44fr) minmax(0, 56fr);
   gap: 14px;
 }
 
@@ -441,7 +442,7 @@ onMounted(() => {
 /* 左侧舞台卡片 */
 .left-stage {
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto minmax(0, 1fr);
   gap: 10px;
   padding: 10px;
   border-radius: 22px;
@@ -492,14 +493,15 @@ onMounted(() => {
 .chat-card {
   width: 100%;
   display: grid;
-  grid-template-rows: auto auto;
+  grid-template-rows: auto auto auto auto;
   gap: 10px;
   padding: 12px;
+  box-sizing: border-box;
   border-radius: 22px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.28) 100%);
   border: 1px solid rgba(255, 255, 255, 0.35);
   backdrop-filter: blur(8px);
-  align-content: start;
+  align-content: stretch;
 }
 
 /* 聊天头部 */
@@ -700,9 +702,11 @@ onMounted(() => {
   white-space: nowrap;
 }
 
-/* 聊天消息区域，固定高度，内部滚动 */
+/* 聊天消息区域：移动端固定窗口高度，桌面端由弹性网格分配高度 */
 .chat-body {
   height: 740px;
+  min-height: 0;
+  box-sizing: border-box;
   border-radius: 18px;
   padding: 6px;
   background: rgba(255, 255, 255, 0.12);
@@ -745,8 +749,45 @@ onMounted(() => {
   padding: 0 20px 18px;
 }
 
+/*
+ * 桌面端使用顶部导航下方的剩余高度，不再在组件内部重复计算 100vh。
+ * 消息区作为唯一弹性轨道吸收剩余空间，操作栏和输入区稳定贴近底部。
+ */
+@media (min-width: 981px) {
+  .page-bg {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .app-shell {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .left-stage,
+  .right-chat,
+  .stage-wrap,
+  .chat-card {
+    min-height: 0;
+  }
+
+  .chat-card {
+    height: 100%;
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    align-content: stretch;
+  }
+
+  .chat-body {
+    height: auto;
+  }
+}
+
 /* 中屏以下：两栏改为上下布局 */
 @media (max-width: 980px) {
+  .page-bg {
+    height: auto;
+  }
+
   .app-shell {
     grid-template-columns: 1fr;
     height: auto;

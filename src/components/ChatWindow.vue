@@ -55,8 +55,10 @@ watch(
 <style scoped>
 .chat-window {
   height: 100%;
+  min-height: 0;
   overflow: auto;
   padding: 4px 2px 8px;
+  box-sizing: border-box;
   background: transparent;
 }
 

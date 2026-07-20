@@ -3,7 +3,11 @@
     <LoginView @login-success="handleLoginSuccess" />
   </div>
 
-  <div v-else class="app-layout">
+  <div
+    v-else
+    class="app-layout"
+    :class="{ 'app-layout--agent': activeSection === 'home' }"
+  >
     <header class="top-nav">
       <div class="top-nav__inner">
         <div class="top-nav__brand">
@@ -49,7 +53,10 @@
       </div>
     </header>
 
-    <main class="page-content">
+    <main
+      class="page-content"
+      :class="{ 'page-content--agent': activeSection === 'home' }"
+    >
       <AgentChat v-if="activeSection === 'home'" @open-community-post="openPostFromSource" />
 
       <AdminReviewView
@@ -141,6 +148,16 @@ onMounted(() => {
 </script>
 
 <style scoped>
+:global(html),
+:global(body),
+:global(#app) {
+  min-height: 100%;
+}
+
+:global(body) {
+  margin: 0;
+}
+
 .app-auth-shell {
   min-height: 100vh;
 }
@@ -250,7 +267,28 @@ onMounted(() => {
 }
 
 .page-content {
+  min-width: 0;
   padding-top: 10px;
+  box-sizing: border-box;
+}
+
+/*
+ * 桌面端由应用壳层统一分配“导航 + 页面内容”的视口高度。
+ * 只约束数字人首页，社区和管理员页继续使用正常文档滚动。
+ */
+@media (min-width: 981px) {
+  .app-layout--agent {
+    height: 100dvh;
+    min-height: 0;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    overflow: hidden;
+  }
+
+  .page-content--agent {
+    min-height: 0;
+    overflow: hidden;
+  }
 }
 
 @media (max-width: 900px) {

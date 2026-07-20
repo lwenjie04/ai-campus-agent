@@ -5,7 +5,11 @@
         v-show="!showPlaceholder"
         ref="videoRef"
         class="video"
-        :class="{ 'is-visible': videoVisible, 'is-switching': videoSwitching }"
+        :class="{
+          'is-visible': videoVisible,
+          'is-switching': videoSwitching,
+          'video--idle': normalizedCue === 'idle',
+        }"
         autoplay
         muted
         :loop="isIdleLoop"
@@ -248,7 +252,7 @@ const playAudioBlob = async (blob: Blob, token: number) => {
   }
   activeAudioUrl.value = audioUrl
 
-  await new Promise<void>(async (resolve) => {
+  await new Promise<void>((resolve) => {
     const finish = () => {
       audioEl.onended = null
       audioEl.onerror = null
@@ -259,11 +263,7 @@ const playAudioBlob = async (blob: Blob, token: number) => {
     audioEl.onerror = finish
     audioEl.src = audioUrl
 
-    try {
-      await audioEl.play()
-    } catch {
-      finish()
-    }
+    void audioEl.play().catch(finish)
   })
 }
 
@@ -464,6 +464,7 @@ onBeforeUnmount(() => {
 .stage-shell {
   position: relative;
   height: 100%;
+  container-type: size;
   border-radius: 20px;
   overflow: hidden;
   background:
@@ -482,11 +483,30 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  object-position: center;
   background: transparent;
   opacity: 0;
   transition: opacity 420ms ease-in-out;
   transform: scale(1);
   transform-origin: center;
+}
+
+/*
+ * 桌面端只在舞台比 9:16 视频更窄时使用 cover：
+ * 此时只会裁左右安全区，不会裁掉人物头部或脚部。
+ */
+@media (min-width: 981px) {
+  .video--idle {
+    scale: 1.07;
+    transform-origin: center bottom;
+  }
+
+  @container (max-aspect-ratio: 9 / 16) {
+    .video {
+      object-fit: cover;
+      object-position: center bottom;
+    }
+  }
 }
 
 .video.is-switching {
