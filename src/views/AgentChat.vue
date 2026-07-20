@@ -492,6 +492,7 @@ onMounted(() => {
 /* 聊天卡片外壳 */
 .chat-card {
   width: 100%;
+  min-width: 0;
   display: grid;
   grid-template-rows: auto auto auto auto;
   gap: 10px;
@@ -506,6 +507,7 @@ onMounted(() => {
 
 /* 聊天头部 */
 .chat-header {
+  min-width: 0;
   display: grid;
   gap: 10px;
   padding: 2px 2px 0;
@@ -513,6 +515,7 @@ onMounted(() => {
 
 /* 头部主内容：标题和右侧操作区并排 */
 .header-main {
+  min-width: 0;
   display: flex;
   justify-content: space-between;
   gap: 8px;
@@ -705,6 +708,7 @@ onMounted(() => {
 /* 聊天消息区域：移动端固定窗口高度，桌面端由弹性网格分配高度 */
 .chat-body {
   height: 740px;
+  min-width: 0;
   min-height: 0;
   box-sizing: border-box;
   border-radius: 18px;
@@ -715,6 +719,7 @@ onMounted(() => {
 
 /* 输入区顶部留一点呼吸感 */
 .input-area {
+  min-width: 0;
   padding-top: 2px;
 }
 
@@ -757,14 +762,14 @@ onMounted(() => {
   .page-bg {
     height: 100%;
     min-height: 0;
-    padding-inline: 20px;
+    padding-inline: 10vw;
   }
 
   .app-shell {
     width: 100%;
     height: 100%;
     min-height: 0;
-    grid-template-columns: clamp(360px, calc((100% - 2px) * 0.44), 522px) minmax(0, 1fr);
+    grid-template-columns: clamp(360px, calc(44vw - 18.48px), 522px) minmax(0, 1fr);
   }
 
   .left-stage,
@@ -782,6 +787,23 @@ onMounted(() => {
 
   .chat-body {
     height: auto;
+  }
+}
+
+/* 窄桌面下让聊天头部纵向排列，避免 10vw 外边距压缩内容后产生横向溢出 */
+@media (min-width: 981px) and (max-width: 1279px) {
+  .header-main {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .profile-summary {
+    flex: 1;
   }
 }
 
