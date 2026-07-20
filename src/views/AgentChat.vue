@@ -757,11 +757,14 @@ onMounted(() => {
   .page-bg {
     height: 100%;
     min-height: 0;
+    padding-inline: 20px;
   }
 
   .app-shell {
+    width: 100%;
     height: 100%;
     min-height: 0;
+    grid-template-columns: clamp(360px, calc((100% - 2px) * 0.44), 522px) minmax(0, 1fr);
   }
 
   .left-stage,
