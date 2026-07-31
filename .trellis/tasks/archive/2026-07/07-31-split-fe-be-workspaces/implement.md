@@ -1,6 +1,10 @@
 # Implement: 前后端分离重构（同仓双包 + npm workspaces）
 
-执行分支：`feat/workspaces-split`（基于 master）。完成后合并 master，并快进 `dev-frontend` / `dev-backend`。
+执行分支：`feat/workspaces-split`（基于 master）。
+
+> **执行状态（2026-07-31）**：全部代码步骤已完成并验证（type-check / build / lint / server /health / KB 下载 / kb:repair dry-run 全绿）。3 个提交已 push 到 `origin/feat/workspaces-split`。
+> **用户决定**：master **暂不合并**，`dev-frontend` / `dev-backend` 保持旧基线。待后续需要时再合。
+> 实现中发现并记录的偏差：`mobile-uniapp` 因 uni-app 依赖与 vue3 peer 冲突未纳入根 workspaces；顺带修复了迁移前既存的 16 个 lint 错误（BOM/未用导入/空文件/any 等）。
 
 ## 0. 准备
 
