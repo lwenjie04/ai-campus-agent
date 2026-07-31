@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 1
+- **Total Sessions**: 2
 - **Last Active**: 2026-07-31
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~30 | Active |
+| `journal-1.md` | ~52 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 2 | 2026-07-31 | CI workflow：GitHub Actions 自动 type-check/lint/build + server 冒烟 | `70f53ea`, `fae2474` | `chore/ci-workflow` |
 | 1 | 2026-07-31 | 前后端分离重构（web/server workspaces）+ 分支方案落地 | `f434517`, `a66958c`, `9d09a20` | `feat/workspaces-split` |
 <!-- @@@/auto:session-history -->
 

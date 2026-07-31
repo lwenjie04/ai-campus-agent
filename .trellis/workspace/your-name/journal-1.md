@@ -28,3 +28,25 @@
 ### Status
 
 [OK] **Completed**
+
+
+## Session 2: CI workflow：GitHub Actions 自动 type-check/lint/build + server 冒烟
+
+**Date**: 2026-07-31
+**Task**: CI workflow：GitHub Actions 自动 type-check/lint/build + server 冒烟
+**Branch**: `chore/ci-workflow`
+
+### Summary
+
+新增 .github/workflows/ci.yml：web 跑 type-check/lint/build，server 跑 mjs 语法检查与 /health 冒烟（不依赖 MySQL），master/dev/feat/chore 分支与 PR 触发。本地命令全绿；推 chore/ci-workflow 后 GitHub Actions 首跑成功（web+server 双 job 全过）。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `70f53ea` | (see git log) |
+| `fae2474` | (see git log) |
+
+### Status
+
+[OK] **Completed**
