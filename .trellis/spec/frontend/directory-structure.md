@@ -30,8 +30,7 @@ web/src/
 ├── store/             # Pinia store（一个领域一个文件）
 │   ├── auth.ts        # 登录态：role、displayName、localStorage 持久化
 │   ├── agent.ts       # 问答会话：messages、流式发送、讲解 cue
-│   ├── community.ts   # 社区：帖子、回复、审核、知识
-│   └── chat.ts        # 轻量聊天示例 store（早期骨架，业务已并入 agent）
+│   └── community.ts   # 社区：帖子、回复、审核、知识
 │
 ├── types/             # 前端领域类型定义
 │   ├── agent.ts       # Message、MessageSource、AgentState
@@ -39,7 +38,6 @@ web/src/
 │
 ├── views/             # 页面级组件（按页面划分）
 │   ├── AgentChat.vue        # 数字人问答首页（主页面）
-│   ├── ChatView.vue         # 简易聊天页（演示用）
 │   ├── CommunityView.vue    # 社区列表页
 │   ├── PostDetailView.vue   # 帖子详情页
 │   ├── AdminReviewView.vue  # 管理员审核工作台
@@ -120,5 +118,5 @@ import MessageItem from './MessageItem.vue'
 
 ### 禁止
 
-- 不要用 `@/store/chat.ts` 这类带扩展名的别名导入（有反例，避免模仿）；统一省略 `.vue` / `.ts` 扩展名。
+- 不要用 `@/store/agent.ts` 这类带扩展名的别名导入（有反例，避免模仿）；统一省略 `.vue` / `.ts` 扩展名。
 - 不要跨层反向依赖（组件直接 import api 且不经过 store，除非是纯展示场景）。
