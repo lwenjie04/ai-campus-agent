@@ -1,4 +1,5 @@
-import axios from 'axios'
+import { getAuthToken } from '@/auth/token'
+import { http } from '@/api/http'
 import type { Message, MessageSource } from '@/types/agent'
 import { appConfig } from '@/config/app'
 
@@ -85,7 +86,7 @@ export const sendChat = async (messages: Message[]): Promise<ChatApiResponse> =>
   }
 
   // 非流式接口适合简单请求，直接等待后端一次性返回完整结果。
-  const res = await axios.post<ChatApiResponse>(`${appConfig.apiBaseUrl}/chat`, {
+  const res = await http.post<ChatApiResponse>('/chat', {
     messages,
   })
 
@@ -112,6 +113,7 @@ export const streamChat = async (
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      ...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {}),
     },
     body: JSON.stringify({ messages }),
   })

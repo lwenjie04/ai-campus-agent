@@ -1,6 +1,8 @@
 ﻿import { randomInt, randomUUID, scryptSync, timingSafeEqual } from 'node:crypto'
+import jwt from 'jsonwebtoken'
 import nodemailer from 'nodemailer'
 import { query } from './mysql.mjs'
+import { createRateLimiter } from './rate-limit.mjs'
 
 const AUTH_NOTIFY_EMAIL = process.env.AUTH_NOTIFY_EMAIL || '3279574698@qq.com'
 const DEFAULT_ADMIN_USERNAME = process.env.AUTH_DEFAULT_ADMIN_USERNAME || 'admin'
@@ -8,6 +10,20 @@ const DEFAULT_ADMIN_PASSWORD = process.env.AUTH_DEFAULT_ADMIN_PASSWORD || 'admin
 const DEFAULT_ADMIN_NAME = process.env.AUTH_DEFAULT_ADMIN_NAME || '系统管理员'
 const CODE_EXPIRE_MINUTES = Number(process.env.AUTH_CODE_EXPIRE_MINUTES || 10)
 const CODE_RESEND_SECONDS = Number(process.env.AUTH_CODE_RESEND_SECONDS || 60)
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me'
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d'
+
+if (!process.env.JWT_SECRET) {
+  console.warn('[auth] 未设置 JWT_SECRET，使用开发默认值；生产环境务必配置随机密钥。')
+}
+
+// 登录失败限流：同一账号 + 来源 IP 在窗口内最多允许 MAX_FAILURES 次尝试。
+const LOGIN_MAX_FAILURES = Number(process.env.AUTH_LOGIN_MAX_FAILURES || 5)
+const LOGIN_WINDOW_MS = Number(process.env.AUTH_LOGIN_WINDOW_MINUTES || 15) * 60 * 1000
+const loginLimiter = createRateLimiter({ windowMs: LOGIN_WINDOW_MS, max: LOGIN_MAX_FAILURES })
+// 验证码发送频率：同一邮箱 + 来源 IP 每小时最多 10 次。
+const sendCodeLimiter = createRateLimiter({ windowMs: 60 * 60 * 1000, max: 10 })
+const CODE_MAX_ATTEMPTS = Number(process.env.AUTH_CODE_MAX_ATTEMPTS || 5)
 
 let authSchemaReadyPromise = null
 let mailTransporter = null
@@ -28,6 +44,35 @@ const verifyPassword = (password, storedHash) => {
   return timingSafeEqual(actual, expectedBuffer)
 }
 
+const signToken = (user) =>
+  jwt.sign(
+    { sub: user.id, username: user.username, displayName: user.display_name, role: user.role },
+    JWT_SECRET,
+    { expiresIn: JWT_EXPIRES_IN },
+  )
+
+export const verifyToken = (token) => {
+  try {
+    const payload = jwt.verify(token, JWT_SECRET)
+    if (!payload?.sub) return null
+    return {
+      userId: payload.sub,
+      username: payload.username,
+      displayName: payload.displayName,
+      role: payload.role,
+    }
+  } catch {
+    return null
+  }
+}
+
+export const resolveRequestAuth = (req) => {
+  const header = String(req.headers?.authorization || '')
+  if (!header.startsWith('Bearer ')) return null
+  const token = header.slice(7).trim()
+  return token ? verifyToken(token) : null
+}
+
 const createAuthTables = async () => {
   await query(`
     CREATE TABLE IF NOT EXISTS auth_users (
@@ -36,6 +81,7 @@ const createAuthTables = async () => {
       password_hash VARCHAR(255) NOT NULL,
       display_name VARCHAR(64) NOT NULL,
       role VARCHAR(16) NOT NULL DEFAULT 'user',
+      must_change_password TINYINT(1) NOT NULL DEFAULT 0,
       email VARCHAR(128) DEFAULT NULL,
       created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -61,20 +107,43 @@ const createAuthTables = async () => {
 }
 
 const ensureDefaultAdmin = async () => {
-  const rows = await query('SELECT id FROM auth_users WHERE username = ? LIMIT 1', [DEFAULT_ADMIN_USERNAME])
-  if (Array.isArray(rows) && rows.length > 0) return
+  const rows = await query('SELECT id, password_hash FROM auth_users WHERE username = ? LIMIT 1', [DEFAULT_ADMIN_USERNAME])
+  if (Array.isArray(rows) && rows.length > 0) {
+    // 存量安装：若默认 admin 仍是默认密码，标记需改密。改密成功后字段清零，重复执行幂等。
+    const existing = rows[0]
+    if (verifyPassword(DEFAULT_ADMIN_PASSWORD, existing.password_hash)) {
+      await query(`UPDATE auth_users SET must_change_password = 1 WHERE id = ?`, [existing.id])
+    }
+    return
+  }
 
   await query(
-    `INSERT INTO auth_users (id, username, password_hash, display_name, role, email)
-     VALUES (?, ?, ?, ?, 'admin', ?)`,
+    `INSERT INTO auth_users (id, username, password_hash, display_name, role, email, must_change_password)
+     VALUES (?, ?, ?, ?, 'admin', ?, 1)`,
     [randomUUID(), DEFAULT_ADMIN_USERNAME, hashPassword(DEFAULT_ADMIN_PASSWORD), DEFAULT_ADMIN_NAME, AUTH_NOTIFY_EMAIL],
   )
+}
+
+// 幂等迁移：MySQL 不支持 ADD COLUMN IF NOT EXISTS，先查 information_schema 再 ALTER。
+const ensureColumnExists = async (table, column, definition) => {
+  const rows = await query(
+    `SELECT COUNT(*) AS cnt
+     FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+    [table, column],
+  )
+  const has = Number(rows?.[0]?.cnt || 0) > 0
+  if (!has) {
+    await query(`ALTER TABLE \`${table}\` ADD COLUMN ${definition}`)
+  }
 }
 
 const ensureAuthSchema = async () => {
   if (!authSchemaReadyPromise) {
     authSchemaReadyPromise = (async () => {
       await createAuthTables()
+      await ensureColumnExists('auth_users', 'must_change_password', 'must_change_password TINYINT(1) NOT NULL DEFAULT 0')
+      await ensureColumnExists('auth_verification_codes', 'attempts', 'attempts INT NOT NULL DEFAULT 0')
       await ensureDefaultAdmin()
     })().catch((error) => {
       authSchemaReadyPromise = null
@@ -166,6 +235,7 @@ const normalizeUser = (row) => ({
   displayName: row.display_name,
   role: row.role === 'admin' ? 'admin' : 'user',
   email: row.email || '',
+  mustChangePassword: Number(row.must_change_password || 0) === 1,
   createdAt: row.created_at,
 })
 
@@ -211,6 +281,19 @@ const handleSendRegisterCode = async (req, res, helpers) => {
   if (!isValidEmail(email)) {
     return helpers.json(res, 400, {
       error: { code: 'AUTH_EMAIL_INVALID', message: '请输入有效邮箱地址' },
+    })
+  }
+
+  const ip = req.socket?.remoteAddress || 'unknown'
+  const sendKey = `sendcode:${email}:${ip}`
+  const sendRate = sendCodeLimiter.check(sendKey)
+  if (!sendRate.allowed) {
+    return helpers.json(res, 429, {
+      error: {
+        code: 'AUTH_CODE_RATE_LIMITED',
+        message: '验证码发送过于频繁，请稍后再试',
+        retryAfterSeconds: Math.ceil(sendRate.retryAfterMs / 1000),
+      },
     })
   }
 
@@ -268,6 +351,20 @@ const handleLogin = async (req, res, helpers) => {
   const body = await helpers.parseJsonBody(req)
   const { account, password } = validateLoginPayload(body)
 
+  // 登录限流：窗口内失败次数过多直接 429，即使密码正确也不放行。
+  const ip = req.socket?.remoteAddress || 'unknown'
+  const rateKey = `login:${account}:${ip}`
+  const rate = loginLimiter.check(rateKey)
+  if (!rate.allowed) {
+    return helpers.json(res, 429, {
+      error: {
+        code: 'AUTH_RATE_LIMITED',
+        message: '尝试次数过多，请稍后再试',
+        retryAfterSeconds: Math.ceil(rate.retryAfterMs / 1000),
+      },
+    })
+  }
+
   await ensureAuthSchema()
   const rows = await query('SELECT * FROM auth_users WHERE username = ? OR email = ? LIMIT 1', [account, account])
   const user = Array.isArray(rows) ? rows[0] : null
@@ -278,8 +375,12 @@ const handleLogin = async (req, res, helpers) => {
     })
   }
 
+  loginLimiter.reset(rateKey)
   return helpers.json(res, 200, {
-    data: normalizeUser(user),
+    data: {
+      token: signToken(user),
+      user: normalizeUser(user),
+    },
   })
 }
 
@@ -352,6 +453,17 @@ const handleRegister = async (req, res, helpers) => {
   }
 
   if (String(codeRecord.code) !== verifyCode) {
+    const newAttempts = Number(codeRecord.attempts || 0) + 1
+    if (newAttempts >= CODE_MAX_ATTEMPTS) {
+      await query(
+        `UPDATE auth_verification_codes SET status = 'expired', attempts = ? WHERE id = ?`,
+        [newAttempts, codeRecord.id],
+      )
+      return helpers.json(res, 400, {
+        error: { code: 'AUTH_CODE_TOO_MANY_ATTEMPTS', message: '验证码错误次数过多，请重新获取' },
+      })
+    }
+    await query(`UPDATE auth_verification_codes SET attempts = ? WHERE id = ?`, [newAttempts, codeRecord.id])
     return helpers.json(res, 400, {
       error: { code: 'AUTH_CODE_INVALID', message: '验证码错误，请重新输入' },
     })
@@ -382,13 +494,50 @@ const handleRegister = async (req, res, helpers) => {
   }
 
   return helpers.json(res, 201, {
-    data: normalizeUser(user),
+    data: {
+      token: signToken(user),
+      user: normalizeUser(user),
+    },
     message: '注册成功，请登录',
   })
 }
 
+const handleChangePassword = async (req, res, helpers, auth) => {
+  if (!auth) {
+    return helpers.json(res, 401, {
+      error: { code: 'AUTH_REQUIRED', message: '请先登录' },
+    })
+  }
+
+  const body = await helpers.parseJsonBody(req)
+  const oldPassword = String(body?.oldPassword || '')
+  const newPassword = String(body?.newPassword || '')
+
+  if (newPassword.length < 6) {
+    return helpers.json(res, 400, {
+      error: { code: 'AUTH_REGISTER_INVALID', message: '新密码长度至少为 6 位' },
+    })
+  }
+
+  const rows = await query('SELECT * FROM auth_users WHERE id = ? LIMIT 1', [auth.userId])
+  const user = Array.isArray(rows) ? rows[0] : null
+  if (!user || !verifyPassword(oldPassword, user.password_hash)) {
+    return helpers.json(res, 400, {
+      error: { code: 'AUTH_INVALID', message: '原密码不正确' },
+    })
+  }
+
+  await query(
+    `UPDATE auth_users SET password_hash = ?, must_change_password = 0, updated_at = NOW() WHERE id = ?`,
+    [hashPassword(newPassword), auth.userId],
+  )
+
+  return helpers.json(res, 200, { message: '密码修改成功' })
+}
+
 export const handleAuthRoute = async (req, res, requestUrl, helpers) => {
   const isPath = (path) => requestUrl.pathname === path || requestUrl.pathname === `/api${path}`
+  const auth = resolveRequestAuth(req)
 
   if (req.method === 'POST' && isPath('/auth/send-register-code')) {
     return handleSendRegisterCode(req, res, helpers)
@@ -400,6 +549,10 @@ export const handleAuthRoute = async (req, res, requestUrl, helpers) => {
 
   if (req.method === 'POST' && isPath('/auth/register')) {
     return handleRegister(req, res, helpers)
+  }
+
+  if (req.method === 'POST' && isPath('/auth/change-password')) {
+    return handleChangePassword(req, res, helpers, auth)
   }
 
   return false

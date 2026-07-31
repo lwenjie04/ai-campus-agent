@@ -8,6 +8,7 @@ import type {
   CommunityReply,
   CommunityReviewListResponse,
 } from '@/types/community'
+import { getAuthToken } from '@/auth/token'
 import { appConfig } from '@/config/app'
 
 const API_BASE = appConfig.apiBaseUrl
@@ -19,13 +20,19 @@ type ApiEnvelope<T> = {
 }
 
 const request = async <T>(path: string, init?: RequestInit): Promise<T> => {
+  const token = getAuthToken()
   const response = await fetch(`${API_BASE}${path}`, {
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...init?.headers,
     },
     ...init,
   })
+
+  if (response.status === 401) {
+    window.dispatchEvent(new CustomEvent('auth:unauthorized'))
+  }
 
   const payload = (await response.json().catch(() => null)) as ApiEnvelope<T> | null
 

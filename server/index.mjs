@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs'
 import { extname, resolve } from 'node:path'
 import { handleAuthRoute } from './auth.mjs'
+import { requireAuth } from './auth-middleware.mjs'
 import { handleCommunityRoute } from './community.mjs'
 import { buildRuleBasedSources } from './sources-rules.mjs'
 import { buildRagContext, getKnowledgeBaseEntryById, ragHitsToSources, searchKnowledgeBase } from './rag.mjs'
@@ -751,7 +752,7 @@ const handleChat = async (req, res) => {
 
 // 原生 Node HTTP 服务入口。
 // 这里统一处理 CORS、健康检查、聊天接口和知识库下载接口。
-const server = createServer(async (req, res) => {
+const handleRequest = async (req, res) => {
   if (!req.url || !req.method) {
     return json(res, 400, { error: { code: 'BAD_REQUEST', message: 'Invalid request' } })
   }
@@ -808,13 +809,17 @@ const server = createServer(async (req, res) => {
     return ttsHandled
   }
 
-  // 非流式聊天接口。
+  // 非流式聊天接口（需登录）。
   if (req.method === 'POST' && isPath('/chat')) {
+    const auth = requireAuth(req, res, { json })
+    if (!auth) return
     return handleChat(req, res)
   }
 
-  // 流式聊天接口。
+  // 流式聊天接口（需登录）。
   if (req.method === 'POST' && isPath('/chat/stream')) {
+    const auth = requireAuth(req, res, { json })
+    if (!auth) return
     return handleChatStream(req, res)
   }
 
@@ -826,6 +831,28 @@ const server = createServer(async (req, res) => {
   return json(res, 404, {
     error: { code: 'NOT_FOUND', message: 'Route not found' },
   })
+}
+
+const server = createServer(async (req, res) => {
+  try {
+    await handleRequest(req, res)
+  } catch (error) {
+    // 兜底：单个接口异常（如数据库不可用）不应导致整个进程崩溃，避免被利用成 DoS。
+    console.error(
+      JSON.stringify({
+        level: 'error',
+        path: req.url,
+        message: error instanceof Error ? error.message : String(error),
+      }),
+    )
+    if (!res.headersSent) {
+      json(res, 500, {
+        error: { code: 'INTERNAL_ERROR', message: '服务暂时不可用，请稍后重试' },
+      })
+    } else {
+      res.destroy()
+    }
+  }
 })
 
 server.listen(PORT, () => {
