@@ -53,6 +53,8 @@
 npm install
 ```
 
+> 项目为 npm workspaces 多包结构：一次安装会装齐 `web/`（前端）与 `server/`（后端）依赖。`mobile-uniapp/` 因 uni-app 依赖与 Vue3 peer 冲突未纳入 workspaces，如需构建移动端，在 `mobile-uniapp/` 内单独 `npm install`。
+
 ---
 
 ## 3. 数据库初始化
@@ -86,6 +88,8 @@ source /var/www/ai-campus-agent/server/sql/auth-users.sql;
 ```sql
 SHOW TABLES;
 ```
+
+> `auth_users.must_change_password`、`auth_verification_codes.attempts` 两个新列由后端启动时**自动幂等迁移**（查 information_schema 后 ALTER），无需手工加列。
 
 至少应包含：
 
@@ -124,6 +128,13 @@ AUTH_DEFAULT_ADMIN_NAME=系统管理员
 AUTH_NOTIFY_EMAIL=3279574698@qq.com
 AUTH_CODE_EXPIRE_MINUTES=10
 AUTH_CODE_RESEND_SECONDS=60
+AUTH_LOGIN_MAX_FAILURES=5
+AUTH_LOGIN_WINDOW_MINUTES=15
+AUTH_CODE_MAX_ATTEMPTS=5
+
+# JWT（必配：换成随机长字符串，例如 `openssl rand -hex 32` 生成）
+JWT_SECRET=替换成随机密钥
+JWT_EXPIRES_IN=7d
 
 # SMTP
 MAIL_HOST=smtp.qq.com
@@ -230,8 +241,9 @@ http://服务器IP:3000/health
 
 确认：
 
-- 管理员账号 `admin / admin123` 可以登录
-- 普通用户可收邮箱验证码并注册
+- 管理员账号 `admin / admin123` 可以登录；**首次登录会强制修改初始密码**（登录响应 `mustChangePassword: true`），改完才可进入系统
+- 普通用户可收邮箱验证码并注册（注册后自动登录）
+- 受保护接口（问答、发帖/回复）无 token 返回 401；普通用户调审核接口返回 403
 
 ---
 
@@ -243,11 +255,13 @@ http://服务器IP:3000/health
 npm run build
 ```
 
-构建产物目录：
+构建产物目录（前后端分离后位于 web 包内）：
 
 ```bash
-dist/
+web/dist/
 ```
+
+> 反向代理时前端 root 指向该目录，见第 9 节 Nginx 示例。
 
 ---
 
@@ -259,10 +273,16 @@ dist/
 npm install -g pm2
 ```
 
-启动后端：
+启动后端（使用仓库内的 `ecosystem.config.cjs`，根 package.json 已提供脚本）：
 
 ```bash
-pm2 start server/index.mjs --name ai-campus-agent-backend
+npm run pm2:start
+```
+
+等价于：
+
+```bash
+pm2 start ecosystem.config.cjs
 ```
 
 查看状态：
@@ -281,7 +301,7 @@ pm2 startup
 查看日志：
 
 ```bash
-pm2 logs ai-campus-agent-backend
+pm2 logs ai-campus-server
 ```
 
 ---
@@ -290,7 +310,7 @@ pm2 logs ai-campus-agent-backend
 
 假设：
 
-- 前端目录：`/var/www/ai-campus-agent/dist`
+- 前端目录：`/var/www/ai-campus-agent/web/dist`
 - 后端地址：`http://127.0.0.1:3000`
 - 域名：`your-domain.com`
 
@@ -301,7 +321,7 @@ server {
     listen 80;
     server_name your-domain.com;
 
-    root /var/www/ai-campus-agent/dist;
+    root /var/www/ai-campus-agent/web/dist;
     index index.html;
 
     location / {
@@ -350,6 +370,8 @@ server {
 }
 ```
 
+> `/chat/stream` 为 NDJSON 流式接口，建议在对应 `location` 里加 `proxy_buffering off;`（后端已回 `X-Accel-Buffering: no`，但 Nginx 默认仍可能缓冲导致打字机效果卡顿）。
+
 如果要上 HTTPS，再配置证书并将 `CORS_ORIGIN` 改成正式前端域名。
 
 ---
@@ -360,7 +382,7 @@ server {
 
 - 前端首页正常打开
 - 登录页正常显示
-- 管理员账号可登录
+- 管理员账号可登录，首次登录完成强制改密
 - 普通用户可收到邮箱验证码
 - 注册成功后管理员邮箱收到通知
 - 首页问答正常返回
