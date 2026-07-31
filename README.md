@@ -63,12 +63,16 @@
 - RAG 检索逻辑 `server/rag.mjs`
 
 ## 目录说明
+项目为 npm workspaces 单仓多包结构：前端 `web/`、后端 `server/` 各为独立包（各自拥有 `package.json`），根 `package.json` 仅作 workspaces 壳与总脚本。
+
 ```text
-src/                     前端页面与组件
-server/                  后端接口、RAG、TTS、认证、脚本
+web/                     前端独立包（src/、public/、vite.config.ts、package.json）
+server/                  后端独立包（接口、RAG、TTS、认证、脚本、package.json）
+server/data/             知识库 JSON 与校园通知导出数据（data/project-text/）
+server/_ingest/          原始导入资料（奖学金、转专业 PDF 等）
 server/sql/              数据库建表与初始化 SQL
+mobile-uniapp/           移动端独立包（uni-app，单独安装依赖，未纳入根 workspaces）
 docs/                    项目方案、部署说明、规则文档
-public/                  公共静态资源
 ```
 
 ## 主要页面
@@ -106,6 +110,8 @@ public/                  公共静态资源
 ```bash
 npm install
 ```
+> 根 `npm install` 一次装齐 `web/` 与 `server/` 两个包的依赖（npm workspaces）。
+> `mobile-uniapp/` 因 uni-app 依赖与 Vue3 存在 peer 冲突，未纳入 workspaces，需单独在 `mobile-uniapp/` 内 `npm install`。
 
 ### 2. 启动前端
 ```bash

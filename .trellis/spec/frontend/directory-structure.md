@@ -6,8 +6,10 @@
 
 ## 顶层目录
 
+> 前端位于 `web/` 独立包内（npm workspaces 管理），`src/` 从仓库根迁入 `web/src/`。
+
 ```text
-src/
+web/src/
 ├── api/               # 后端接口封装（每个领域一个文件）
 │   ├── auth.ts        # 认证：登录、注册、验证码（axios）
 │   ├── community.ts   # 学生社区：帖子、回复、审核、知识（fetch）
@@ -23,8 +25,7 @@ src/
 │
 ├── config/            # 前端配置（环境变量读取统一收口在这里）
 │   ├── app.ts         # appConfig：apiBaseUrl、mock 开关、demo 模式等
-│   ├── agent.ts       # campusAgent：助手名称与 system prompt 常量
-│   └── model.ts       # 模型相关配置（当前为空）
+│   └── agent.ts       # campusAgent：助手名称与 system prompt 常量
 │
 ├── store/             # Pinia store（一个领域一个文件）
 │   ├── auth.ts        # 登录态：role、displayName、localStorage 持久化
@@ -44,7 +45,6 @@ src/
 │   ├── AdminReviewView.vue  # 管理员审核工作台
 │   └── LoginView.vue        # 登录/注册页
 │
-├── project-text/      # 已入库的校园通知文本（JSON 导出）
 ├── App.vue            # 根组件：登录态门控 + 顶部导航 + 页面切换
 ├── main.ts            # 入口：createApp + Pinia + Element Plus
 ```
@@ -52,7 +52,7 @@ src/
 其他相关位置：
 
 ```text
-public/
+web/public/
 ├── branding/          # 校徽等品牌图片
 └── videos/
     └── digital-human/ # 数字人视频：greeting.mp4 / idle.mp4 / teaching.mp4

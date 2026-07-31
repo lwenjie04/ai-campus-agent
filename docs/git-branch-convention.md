@@ -10,25 +10,22 @@
 ## 文件归属
 
 ### dev-frontend（前端分支只管这些路径）
-- `src/`、`public/`、`mobile-uniapp/`
-- `index.html`、`vite.config.ts`、`env.d.ts`、`tsconfig*.json`
-- `eslint.config.ts`、`.oxlintrc.json`、`.prettierrc.json`
-- `.env.example`（根目录，VITE_* 前端变量）
+- `web/` 整个包：`web/src/`、`web/public/`、`web/package.json`、`web/vite.config.ts`、`web/index.html`、`web/.env.example` 等全部前端代码与依赖
 
 ### dev-backend（后端分支只管这些路径）
-- `server/`（含 `server/.env.example`、`server/sql/` 等）
+- `server/` 整个包：`server/package.json`、`server/index.mjs`、`server/data/`、`server/sql/`、`server/scripts/` 等全部后端代码与依赖
 
 ### master（共享/工具，直接在 master 改，再合入需要的地方）
-- `package.json`、`package-lock.json` —— **前后端依赖共存于根目录，两边共享**
+- 根 `package.json`、`package-lock.json` —— **仅 npm workspaces 壳 + 总脚本；各包依赖在各包内 package.json，不再共享**
 - `docs/`、`README.md`
 - `.github/`、`.devcontainer/`、`.vscode/`
 - `.gitattributes`、`.gitignore`、`.editorconfig`
 - `.claude/`、`.trellis/`、`AGENTS.md`
+- `mobile-uniapp/` —— 独立包，因 uni-app 依赖与 vue3 存在 peer 冲突，**未纳入根 workspaces**，需单独 `npm install`
 
 ## 工作流
 1. 纯前端改动 → 在 `dev-frontend` 上做；纯后端改动 → 在 `dev-backend` 上做。
-2. 共享文件 `package.json` / `package-lock.json`：谁需要新增依赖就在谁的分支改，
-   改完**尽快合并回 master 并同步到另一分支**；package-lock 冲突以重新 `npm install` 解决。
+2. 依赖变更：各包只改自己的 `web/package.json` 或 `server/package.json`，互不干扰；根 `package.json` 一般不动。
 3. 跨端功能（改接口 + 改页面）：先在 `dev-backend` 定好接口并合 master，
    `dev-frontend` 从 master 同步后再接页面；最后在 master 上端到端联调。
 4. 文档、配置改动直接在 master 上提交。
