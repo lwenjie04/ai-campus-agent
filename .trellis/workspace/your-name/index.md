@@ -29,7 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
-| 2 | 2026-07-31 | 更新服务器部署清单 | `171b819`, `94c9b10` | `chore/deploy-checklist` |
+| 2 | 2026-07-31 | 删除无引用的 ChatView.vue 与 store/chat.ts | `cb058ae`, `538c5e1` | `chore/remove-chatview` |
 | 1 | 2026-07-31 | 前后端分离重构（web/server workspaces）+ 分支方案落地 | `f434517`, `a66958c`, `9d09a20` | `feat/workspaces-split` |
 <!-- @@@/auto:session-history -->
 
