@@ -28,3 +28,25 @@
 ### Status
 
 [OK] **Completed**
+
+
+## Session 2: 更新服务器部署清单
+
+**Date**: 2026-07-31
+**Task**: 更新服务器部署清单
+**Branch**: `chore/deploy-checklist`
+
+### Summary
+
+更新 docs/deploy-server-checklist.md：web/server workspaces 结构、构建产物 web/dist、JWT_SECRET/限流环境变量、pm2 ecosystem.config.cjs、默认 admin 强制改密验收、Nginx 流式支持提示、数据库自动迁移说明。推 chore/deploy-checklist。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `171b819` | (see git log) |
+| `94c9b10` | (see git log) |
+
+### Status
+
+[OK] **Completed**
