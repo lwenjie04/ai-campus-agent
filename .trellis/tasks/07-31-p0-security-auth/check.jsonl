@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/api-patterns.md", "reason": "校验路由与中间件模式符合约定"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "校验 401/403/429 错误码与格式"}
+{"file": ".trellis/spec/backend/quality.md", "reason": "后端质量与规范"}
+{"file": ".trellis/spec/frontend/quality.md", "reason": "前端质量与规范"}
+{"file": ".trellis/spec/shared/git-conventions.md", "reason": "校验提交与分支处理"}

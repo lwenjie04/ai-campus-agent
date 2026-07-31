@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/backend/api-patterns.md", "reason": "后端接口/路由模式，新增 change-password 路由与中间件校验需符合既有约定"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "401/403/429 错误对象格式需与现有错误码约定一致"}
+{"file": ".trellis/spec/backend/database.md", "reason": "auth_users/auth_verification_codes 加列迁移需幂等，参考数据库约定"}
+{"file": ".trellis/spec/backend/environment.md", "reason": "新增 JWT_SECRET/JWT_EXPIRES_IN 环境变量"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "auth store 增加 token/mustChangePassword 状态的 Pinia 模式"}
+{"file": ".trellis/spec/shared/git-conventions.md", "reason": "提交与分支规范"}
