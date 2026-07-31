@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "校验后端新目录结构与规范一致"}
+{"file": ".trellis/spec/backend/quality.md", "reason": "校验后端质量/规范"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "校验前端 web/ 结构与规范一致"}
+{"file": ".trellis/spec/frontend/quality.md", "reason": "校验前端质量/规范"}
+{"file": ".trellis/spec/shared/git-conventions.md", "reason": "校验提交与分支处理符合约定"}

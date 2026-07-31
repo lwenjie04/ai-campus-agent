@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "本任务将把后端迁为独立包（server/），目录结构描述需按新结构理解和更新"}
+{"file": ".trellis/spec/backend/environment.md", "reason": "env 加载路径将从 process.cwd() 改为 import.meta.dirname，涉及 .env 加载约定"}
+{"file": ".trellis/spec/backend/quality.md", "reason": "后端质量要求，路径重构后需保持 lint/规范"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "前端迁入 web/，目录与构建配置理解依据"}
+{"file": ".trellis/spec/shared/git-conventions.md", "reason": "提交与分支规范，迁移提交需符合约定"}
