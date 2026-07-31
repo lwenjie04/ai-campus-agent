@@ -48,6 +48,15 @@
 ### Summary
 
 ① 清理 knowledge-base.json 4 条指向已删除附件的 downloadPath（剩 2 条有效）；② mobile-uniapp 删除与 src/ 重复的根目录副本（pages/api/stores/types/utils/App.vue/main.ts/pages.json/env.d.ts），保留 src/ 与构建必需文件；③ 新增 ecosystem.config.cjs（cwd=server）+ 根 pm2:start 脚本。全部验证后推 chore/cleanup-batch。
+## Session 2: RAG 检索日志分析脚本
+
+**Date**: 2026-07-31
+**Task**: RAG 检索日志分析脚本
+**Branch**: `chore/rag-log-analysis`
+
+### Summary
+
+新增 server/scripts/rag-log-analysis.mjs（npm run rag:analyze -w server）：统计命中率、平均命中、平均最高分，输出无命中查询 TOP（知识库缺口）、分类/路由分布、被引用最多命中；支持 --top/--json/--log。本地多行模拟验证计算正确，推 chore/rag-log-analysis。
 
 ### Git Commits
 
@@ -60,6 +69,8 @@
 | `c0df676` | (see git log) |
 | `336919c` | (see git log) |
 | `842dbef` | (see git log) |
+| `3cc5049` | (see git log) |
+| `7f4ce9d` | (see git log) |
 
 ### Status
 

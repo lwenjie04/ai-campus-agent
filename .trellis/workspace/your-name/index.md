@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~54 | Active |
+| `journal-1.md` | ~52 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,7 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
-| 2 | 2026-07-31 | 小任务批量：KB 失效引用清理 + mobile-uniapp 整理 + pm2 配置 | `98a4578`, `c0df676`, `336919c`, `842dbef` | `chore/cleanup-batch` |
+| 2 | 2026-07-31 | RAG 检索日志分析脚本 | `3cc5049`, `7f4ce9d` | `chore/rag-log-analysis` |
 | 1 | 2026-07-31 | 前后端分离重构（web/server workspaces）+ 分支方案落地 | `f434517`, `a66958c`, `9d09a20` | `feat/workspaces-split` |
 <!-- @@@/auto:session-history -->
 
