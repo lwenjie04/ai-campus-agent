@@ -28,3 +28,27 @@
 ### Status
 
 [OK] **Completed**
+
+
+## Session 2: 小任务批量：KB 失效引用清理 + mobile-uniapp 整理 + pm2 配置
+
+**Date**: 2026-07-31
+**Task**: 小任务批量：KB 失效引用清理 + mobile-uniapp 整理 + pm2 配置
+**Branch**: `chore/cleanup-batch`
+
+### Summary
+
+① 清理 knowledge-base.json 4 条指向已删除附件的 downloadPath（剩 2 条有效）；② mobile-uniapp 删除与 src/ 重复的根目录副本（pages/api/stores/types/utils/App.vue/main.ts/pages.json/env.d.ts），保留 src/ 与构建必需文件；③ 新增 ecosystem.config.cjs（cwd=server）+ 根 pm2:start 脚本。全部验证后推 chore/cleanup-batch。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `98a4578` | (see git log) |
+| `c0df676` | (see git log) |
+| `336919c` | (see git log) |
+| `842dbef` | (see git log) |
+
+### Status
+
+[OK] **Completed**
