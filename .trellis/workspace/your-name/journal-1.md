@@ -28,3 +28,25 @@
 ### Status
 
 [OK] **Completed**
+
+
+## Session 2: RAG 检索日志分析脚本
+
+**Date**: 2026-07-31
+**Task**: RAG 检索日志分析脚本
+**Branch**: `chore/rag-log-analysis`
+
+### Summary
+
+新增 server/scripts/rag-log-analysis.mjs（npm run rag:analyze -w server）：统计命中率、平均命中、平均最高分，输出无命中查询 TOP（知识库缺口）、分类/路由分布、被引用最多命中；支持 --top/--json/--log。本地多行模拟验证计算正确，推 chore/rag-log-analysis。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3cc5049` | (see git log) |
+| `7f4ce9d` | (see git log) |
+
+### Status
+
+[OK] **Completed**
