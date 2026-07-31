@@ -20,7 +20,8 @@
     "ingest:browser-json": "npm run ingest:browser-json -w server",
     "kb:repair": "npm run kb:repair -w server",
     "kb:repair:dry": "npm run kb:repair:dry -w server",
-    "dev:all": "run-p dev server"
+    "dev:all": "run-p dev server",
+    "pm2:start": "pm2 start ecosystem.config.cjs"
   },
   "devDependencies": {
     "npm-run-all2": "^8.0.4"
