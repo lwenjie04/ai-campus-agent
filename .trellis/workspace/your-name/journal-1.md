@@ -57,6 +57,15 @@
 ### Summary
 
 新增 server/scripts/rag-log-analysis.mjs（npm run rag:analyze -w server）：统计命中率、平均命中、平均最高分，输出无命中查询 TOP（知识库缺口）、分类/路由分布、被引用最多命中；支持 --top/--json/--log。本地多行模拟验证计算正确，推 chore/rag-log-analysis。
+## Session 2: CI workflow：GitHub Actions 自动 type-check/lint/build + server 冒烟
+
+**Date**: 2026-07-31
+**Task**: CI workflow：GitHub Actions 自动 type-check/lint/build + server 冒烟
+**Branch**: `chore/ci-workflow`
+
+### Summary
+
+新增 .github/workflows/ci.yml：web 跑 type-check/lint/build，server 跑 mjs 语法检查与 /health 冒烟（不依赖 MySQL），master/dev/feat/chore 分支与 PR 触发。本地命令全绿；推 chore/ci-workflow 后 GitHub Actions 首跑成功（web+server 双 job 全过）。
 
 ### Git Commits
 
@@ -71,6 +80,8 @@
 | `842dbef` | (see git log) |
 | `3cc5049` | (see git log) |
 | `7f4ce9d` | (see git log) |
+| `70f53ea` | (see git log) |
+| `fae2474` | (see git log) |
 
 ### Status
 

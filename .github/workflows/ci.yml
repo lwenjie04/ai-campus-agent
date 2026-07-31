@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [master, dev-frontend, dev-backend, 'feat/**', 'chore/**']
+  pull_request:
+
+jobs:
+  web:
+    name: Web (type-check / lint / build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run type-check -w web
+      - run: npm run lint -w web
+      - run: npm run build -w web
+
+  server:
+    name: Server (syntax check + /health smoke)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Syntax check all mjs
+        run: |
+          set -e
+          for f in server/*.mjs server/scripts/*.mjs; do
+            node --check "$f"
+          done
+      - name: Boot server and hit /health
+        run: |
+          set -e
+          (npm run server -w server > /tmp/server.log 2>&1 &)
+          for i in $(seq 1 20); do
+            if curl -sf http://localhost:3000/health >/dev/null 2>&1; then
+              break
+            fi
+            sleep 1
+          done
+          curl -fsS http://localhost:3000/health
