@@ -1,8 +1,8 @@
 {
-  "runAt": "2026-03-27T03:18:00.798Z",
-  "input": "server/data/knowledge-base.json",
-  "output": "server/data/knowledge-base.json",
-  "dryRun": false,
+  "runAt": "2026-07-31T08:57:19.793Z",
+  "input": "data/knowledge-base.json",
+  "output": "data/knowledge-base.json",
+  "dryRun": true,
   "scanned": 396,
   "kept": 396,
   "removedByDedupe": 0,

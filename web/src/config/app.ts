@@ -1,4 +1,4 @@
-﻿const rawApiBaseUrl = typeof import.meta.env.VITE_API_BASE_URL === 'string' ? import.meta.env.VITE_API_BASE_URL.trim() : ''
+const rawApiBaseUrl = typeof import.meta.env.VITE_API_BASE_URL === 'string' ? import.meta.env.VITE_API_BASE_URL.trim() : ''
 
 const resolveApiBaseUrl = () => {
   if (rawApiBaseUrl) return rawApiBaseUrl

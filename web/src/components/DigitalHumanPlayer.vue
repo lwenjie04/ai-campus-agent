@@ -248,7 +248,7 @@ const playAudioBlob = async (blob: Blob, token: number) => {
   }
   activeAudioUrl.value = audioUrl
 
-  await new Promise<void>(async (resolve) => {
+  await new Promise<void>((resolve) => {
     const finish = () => {
       audioEl.onended = null
       audioEl.onerror = null
@@ -259,11 +259,8 @@ const playAudioBlob = async (blob: Blob, token: number) => {
     audioEl.onerror = finish
     audioEl.src = audioUrl
 
-    try {
-      await audioEl.play()
-    } catch {
-      finish()
-    }
+    // play() 成功则等 onended；失败则立即收尾，避免 async executor 反模式。
+    audioEl.play().catch(() => finish())
   })
 }
 

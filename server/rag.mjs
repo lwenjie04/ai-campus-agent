@@ -2,8 +2,8 @@
 import { resolve } from 'node:path'
 import { isMySqlConfigured, query } from './mysql.mjs'
 
-const KB_PATH = resolve(process.cwd(), 'server/data/knowledge-base.json')
-const LOG_DIR = resolve(process.cwd(), 'server/logs')
+const KB_PATH = resolve(import.meta.dirname, 'data/knowledge-base.json')
+const LOG_DIR = resolve(import.meta.dirname, 'logs')
 const LOG_PATH = resolve(LOG_DIR, 'rag-search.log.ndjson')
 
 let kbCache = null

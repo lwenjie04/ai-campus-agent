@@ -16,6 +16,18 @@ export interface StreamChatHandlers {
   onMeta?: (payload: ChatApiResponse) => void
 }
 
+// 后端 NDJSON 流式事件的结构（字段全部可选，逐事件按需使用）。
+interface StreamEvent {
+  type?: string
+  requestId?: string
+  delta?: string
+  content?: string
+  intent?: string
+  videoCue?: string
+  sources?: MessageSource[]
+  error?: { message?: string; code?: string }
+}
+
 // Mock 回复用于后端未启动或演示模式下的前端联调。
 const mockReply = (messages: Message[]): ChatApiResponse => {
   const lastUser = [...messages].reverse().find((msg) => msg.role === 'user')?.content ?? ''
@@ -105,14 +117,14 @@ export const streamChat = async (
   })
 
   if (!resp.ok || !resp.body) {
-    let errData: any = null
+    let errData: { error?: { message?: string; code?: string } } | null = null
     try {
       errData = await resp.json()
     } catch {
       // ignore
     }
-    const err = new Error(errData?.error?.message || `HTTP ${resp.status}`)
-    ;(err as any).code = errData?.error?.code || 'HTTP_ERROR'
+    const err = new Error(errData?.error?.message || `HTTP ${resp.status}`) as Error & { code?: string }
+    err.code = errData?.error?.code || 'HTTP_ERROR'
     throw err
   }
 
@@ -126,7 +138,7 @@ export const streamChat = async (
     const line = lineRaw.trim()
     if (!line) return
 
-    let event: any
+    let event: StreamEvent
     try {
       event = JSON.parse(line)
     } catch {
@@ -153,8 +165,8 @@ export const streamChat = async (
       return
     }
     if (event.type === 'error') {
-      const err = new Error(event?.error?.message || '流式请求失败')
-      ;(err as any).code = event?.error?.code || 'STREAM_ERROR'
+      const err = new Error(event?.error?.message || '流式请求失败') as Error & { code?: string }
+      err.code = event?.error?.code || 'STREAM_ERROR'
       throw err
     }
   }

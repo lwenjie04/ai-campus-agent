@@ -35,8 +35,8 @@ const loadEnvFile = (filePath) => {
   }
 }
 
-loadEnvFile(resolve(process.cwd(), 'server/.env'))
-loadEnvFile(resolve(process.cwd(), '.env.server'))
+loadEnvFile(resolve(import.meta.dirname, '.env'))
+loadEnvFile(resolve(import.meta.dirname, '..', '.env.server'))
 
 let mysqlModulePromise = null
 let poolPromise = null

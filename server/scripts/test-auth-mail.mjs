@@ -29,8 +29,8 @@ const loadEnvFile = (filePath) => {
   }
 }
 
-loadEnvFile(resolve(process.cwd(), 'server/.env'))
-loadEnvFile(resolve(process.cwd(), '.env.server'))
+loadEnvFile(resolve(import.meta.dirname, '..', '.env'))
+loadEnvFile(resolve(import.meta.dirname, '..', '.env.server'))
 
 const requiredKeys = ['MAIL_HOST', 'MAIL_PORT', 'MAIL_USER', 'MAIL_PASS']
 const missingKeys = requiredKeys.filter((key) => !String(process.env[key] || '').trim())

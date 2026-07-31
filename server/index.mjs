@@ -37,8 +37,11 @@ const loadEnvFile = (filePath) => {
   }
 }
 
-loadEnvFile(resolve(process.cwd(), 'server/.env'))
-loadEnvFile(resolve(process.cwd(), '.env.server'))
+// 以模块自身所在目录为基准定位资源，保证后端从任意目录启动都正确。
+const SERVER_ROOT = import.meta.dirname
+const REPO_ROOT = resolve(SERVER_ROOT, '..')
+loadEnvFile(resolve(SERVER_ROOT, '.env'))
+loadEnvFile(resolve(REPO_ROOT, '.env.server'))
 
 // 后端运行时配置。
 // 这里集中定义服务端口、模型提供商地址、模型名称和 CORS 来源。
@@ -472,7 +475,7 @@ const handleKnowledgeBaseDownload = (req, res) => {
     return json(res, 404, { error: { code: 'KB_FILE_NOT_FOUND', message: '知识库文件不存在' } })
   }
 
-  const absolutePath = resolve(process.cwd(), item.downloadPath)
+  const absolutePath = resolve(REPO_ROOT, item.downloadPath)
   if (!existsSync(absolutePath)) {
     return json(res, 404, { error: { code: 'KB_FILE_MISSING', message: '知识库源文件缺失' } })
   }

@@ -1,0 +1,22 @@
+{
+  "name": "ai-campus-agent-server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "server": "node index.mjs",
+    "mail:test": "node scripts/test-auth-mail.mjs",
+    "ingest:local": "node scripts/batch-ingest-local.mjs",
+    "ingest:browser-json": "node scripts/import-browser-export-json.mjs",
+    "kb:repair": "node scripts/kb-clean-tag-qc.mjs",
+    "kb:repair:dry": "node scripts/kb-clean-tag-qc.mjs --dry-run"
+  },
+  "dependencies": {
+    "mysql2": "^3.20.0",
+    "nodemailer": "^8.0.4",
+    "tencentcloud-sdk-nodejs-tts": "^4.1.182"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  }
+}

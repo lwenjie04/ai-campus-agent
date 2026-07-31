@@ -101,7 +101,7 @@ const props = defineProps<{
   postId: string
 }>()
 
-const emit = defineEmits<{
+defineEmits<{
   (e: 'back-list'): void
 }>()
 

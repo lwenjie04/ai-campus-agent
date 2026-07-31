@@ -1,4 +1,4 @@
-﻿import { defineStore } from 'pinia'
+import { defineStore } from 'pinia'
 import { loginByPassword, registerUserAccount, type AuthUser } from '@/api/auth'
 
 type AuthRole = 'guest' | 'user' | 'admin'

@@ -36,7 +36,7 @@ const TENCENTCLOUD_TTS_POLL_INTERVAL_MS = Number(process.env.TENCENTCLOUD_TTS_PO
 const TENCENTCLOUD_TTS_POLL_TIMEOUT_MS = Number(process.env.TENCENTCLOUD_TTS_POLL_TIMEOUT_MS || 180000)
 
 // 本地 Windows 语音引擎配置。保留它只是为了你本机开发时更方便，不作为正式部署方案。
-const WINDOWS_TTS_SCRIPT = resolve(process.cwd(), 'server/scripts/tts-synthesize.ps1')
+const WINDOWS_TTS_SCRIPT = resolve(import.meta.dirname, 'scripts/tts-synthesize.ps1')
 const WINDOWS_POWERSHELL =
   process.env.WINDOWS_POWERSHELL_PATH || 'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe'
 const WINDOWS_TTS_DEFAULT_VOICE = process.env.WINDOWS_TTS_DEFAULT_VOICE || ''

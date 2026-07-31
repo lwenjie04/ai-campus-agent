@@ -2,9 +2,9 @@ import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { extname, relative, resolve } from 'node:path'
 
-const cwd = process.cwd()
-const DEFAULT_INPUT_DIRS = ['src/project-text']
-const DEFAULT_OUTPUT = 'server/data/knowledge-base.json'
+const cwd = resolve(import.meta.dirname, '..')
+const DEFAULT_INPUT_DIRS = ['data/project-text']
+const DEFAULT_OUTPUT = 'data/knowledge-base.json'
 
 const TEXT_EXTS = new Set(['.txt', '.md', '.markdown', '.json'])
 

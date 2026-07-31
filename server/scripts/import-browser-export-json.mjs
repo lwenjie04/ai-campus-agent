@@ -2,12 +2,12 @@ import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { extname, resolve } from 'node:path'
 
-const cwd = process.cwd()
+const cwd = resolve(import.meta.dirname, '..')
 
 const parseArgs = (argv) => {
   const args = {
-    input: 'src/project-text',
-    out: 'server/data/knowledge-base.json',
+    input: 'data/project-text',
+    out: 'data/knowledge-base.json',
     dryRun: false,
     replace: false,
   }

@@ -2,8 +2,8 @@ import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-const DEFAULT_INPUT = 'server/data/knowledge-base.json'
-const DEFAULT_REPORT = 'server/data/knowledge-base.qc-report.json'
+const DEFAULT_INPUT = 'data/knowledge-base.json'
+const DEFAULT_REPORT = 'data/knowledge-base.qc-report.json'
 
 const CATEGORY_RULES = [
   { category: 'scholarship', keywords: ['奖学金', '助学金', '资助', '国家励志', '国家奖学金', '竞赛奖学金'] },
@@ -269,9 +269,10 @@ const runQualityCheck = (entries) => {
 
 const main = () => {
   const args = parseArgs(process.argv.slice(2))
-  const inputPath = resolve(process.cwd(), args.input)
-  const outputPath = resolve(process.cwd(), args.output)
-  const reportPath = resolve(process.cwd(), args.report)
+  const base = resolve(import.meta.dirname, '..')
+  const inputPath = resolve(base, args.input)
+  const outputPath = resolve(base, args.output)
+  const reportPath = resolve(base, args.report)
 
   if (!existsSync(inputPath)) {
     throw new Error(`知识库文件不存在: ${inputPath}`)
