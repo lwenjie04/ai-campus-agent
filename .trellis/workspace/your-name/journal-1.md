@@ -28,3 +28,26 @@
 ### Status
 
 [OK] **Completed**
+
+
+## Session 2: P0 安全加固：JWT 鉴权 + 管理员接口防护 + 限流 + 强制改密
+
+**Date**: 2026-07-31
+**Task**: P0 安全加固：JWT 鉴权 + 管理员接口防护 + 限流 + 强制改密
+**Branch**: `feat/security-auth`
+
+### Summary
+
+完成前后端分离（上一任务）后实施 P0 安全加固：登录/注册签发 JWT，requireAuth/requireAdmin 中间件保护问答与社区接口；发帖/回复作者强制取登录用户；登录失败/验证码发送/验证码尝试三重限流；默认 admin 强制改密；修复 DB 不可用时进程崩溃 bug；前端 token 持久化、401 自动登出、改密弹窗。前端 type-check/build/lint 全绿，本地无库验证 7/7 通过；登录发 token/改密/429 待服务器 MySQL 环境验证。3 提交推至 feat/security-auth
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `253de33` | (see git log) |
+| `2bd7f4f` | (see git log) |
+| `2ce0873` | (see git log) |
+
+### Status
+
+[OK] **Completed**

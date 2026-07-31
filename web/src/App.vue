@@ -73,7 +73,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { ElMessage } from 'element-plus'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import AgentChat from './views/AgentChat.vue'
 import CommunityView from './views/CommunityView.vue'
 import PostDetailView from './views/PostDetailView.vue'
@@ -132,11 +133,23 @@ const logout = () => {
   currentPostId.value = ''
 }
 
+// 任一接口返回 401（token 缺失/过期）时统一登出回登录页。
+const handleUnauthorized = () => {
+  if (!authStore.loggedIn) return
+  logout()
+  ElMessage.warning('登录已过期，请重新登录')
+}
+
 onMounted(() => {
   authStore.hydrate()
   if (authStore.loggedIn) {
     activeSection.value = authStore.isAdmin ? 'admin' : 'home'
   }
+  window.addEventListener('auth:unauthorized', handleUnauthorized)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('auth:unauthorized', handleUnauthorized)
 })
 </script>
 

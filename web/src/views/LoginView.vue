@@ -120,6 +120,44 @@
           </div>
         </el-tab-pane>
       </el-tabs>
+
+      <el-dialog
+        v-model="showChangePassword"
+        title="修改初始密码"
+        width="420px"
+        :close-on-click-modal="false"
+        :show-close="false"
+        append-to-body
+      >
+        <el-alert title="为保障账号安全，首次登录后必须修改初始密码。" type="warning" :closable="false" show-icon />
+        <el-form label-position="top" class="login-form">
+          <el-form-item label="原密码">
+            <el-input v-model="changeForm.oldPassword" type="password" show-password placeholder="请输入当前密码" />
+          </el-form-item>
+          <el-form-item label="新密码">
+            <el-input
+              v-model="changeForm.newPassword"
+              type="password"
+              show-password
+              placeholder="请设置至少 6 位新密码"
+            />
+          </el-form-item>
+          <el-form-item label="确认新密码">
+            <el-input
+              v-model="changeForm.confirmPassword"
+              type="password"
+              show-password
+              placeholder="请再次输入新密码"
+              @keyup.enter="submitChangePassword"
+            />
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <el-button type="primary" round :loading="submittingChange" @click="submitChangePassword">
+            确认修改
+          </el-button>
+        </template>
+      </el-dialog>
     </div>
   </div>
 </template>
@@ -155,6 +193,14 @@ const registerForm = ref({
   email: '',
   verifyCode: '',
   password: '',
+  confirmPassword: '',
+})
+
+const showChangePassword = ref(false)
+const submittingChange = ref(false)
+const changeForm = ref({
+  oldPassword: '',
+  newPassword: '',
   confirmPassword: '',
 })
 
@@ -211,6 +257,14 @@ const submitLogin = async () => {
       password: loginForm.value.password,
     })
 
+    // 首次登录（默认管理员 admin123）需先改密才能进入系统。
+    if (authStore.mustChangePassword) {
+      changeForm.value.oldPassword = loginForm.value.password
+      showChangePassword.value = true
+      ElMessage.warning('出于安全考虑，请先修改初始密码')
+      return
+    }
+
     ElMessage.success(role === 'admin' ? '管理员登录成功' : '登录成功')
     emit('login-success', role)
   } catch (error) {
@@ -220,10 +274,36 @@ const submitLogin = async () => {
   }
 }
 
+const submitChangePassword = async () => {
+  if (changeForm.value.newPassword.length < 6) {
+    ElMessage.error('新密码长度至少为 6 位')
+    return
+  }
+  if (changeForm.value.newPassword !== changeForm.value.confirmPassword) {
+    ElMessage.error('两次输入的新密码不一致')
+    return
+  }
+
+  submittingChange.value = true
+  try {
+    await authStore.changePassword({
+      oldPassword: changeForm.value.oldPassword,
+      newPassword: changeForm.value.newPassword,
+    })
+    ElMessage.success('密码修改成功')
+    showChangePassword.value = false
+    emit('login-success', authStore.role as LoginRole)
+  } catch (error) {
+    ElMessage.error(extractErrorMessage(error, '密码修改失败'))
+  } finally {
+    submittingChange.value = false
+  }
+}
+
 const submitRegister = async () => {
   submittingRegister.value = true
   try {
-    await authStore.register({
+    const role = await authStore.register({
       displayName: registerForm.value.displayName,
       email: registerForm.value.email,
       verifyCode: registerForm.value.verifyCode,
@@ -231,24 +311,8 @@ const submitRegister = async () => {
       confirmPassword: registerForm.value.confirmPassword,
     })
 
-    loginForm.value.account = registerForm.value.email
-    loginForm.value.password = registerForm.value.password
-
-    registerForm.value = {
-      displayName: '',
-      email: '',
-      verifyCode: '',
-      password: '',
-      confirmPassword: '',
-    }
-
-    if (countdownTimer) {
-      window.clearInterval(countdownTimer)
-      countdownTimer = null
-    }
-    countdown.value = 0
-    activeTab.value = 'login'
-    ElMessage.success('注册成功，请使用邮箱和密码登录')
+    ElMessage.success('注册成功，已自动登录')
+    emit('login-success', role)
   } catch (error) {
     ElMessage.error(extractErrorMessage(error, '注册失败'))
   } finally {

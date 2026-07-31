@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { requireAdmin, requireAuth } from './auth-middleware.mjs'
 import { isMySqlConfigured, query } from './mysql.mjs'
 
 // 社区模块的定位：
@@ -72,7 +73,7 @@ const normalizeTags = (value) => {
 }
 
 const validatePostPayload = (body) => {
-  if (!isNonEmptyString(body.authorName)) return 'authorName 不能为空'
+  // authorName/authorRole 一律以登录用户为准，不再校验前端传值。
   if (!isNonEmptyString(body.title)) return 'title 不能为空'
   if (!isNonEmptyString(body.content)) return 'content 不能为空'
   if (!isNonEmptyString(body.category)) return 'category 不能为空'
@@ -80,7 +81,7 @@ const validatePostPayload = (body) => {
 }
 
 const validateReplyPayload = (body) => {
-  if (!isNonEmptyString(body.authorName)) return 'authorName 不能为空'
+  // authorName/authorRole 一律以登录用户为准，不再校验前端传值。
   if (!isNonEmptyString(body.content)) return 'content 不能为空'
   return null
 }
@@ -420,10 +421,10 @@ const getReviewPostDetail = (postId) => {
   }
 }
 
-const createPostInMySql = async (body) => {
+const createPostInMySql = async (body, author) => {
   const id = `post_${randomUUID().slice(0, 8)}`
-  const authorName = body.authorName.trim()
-  const authorRole = body.authorRole === 'teacher' ? 'teacher' : 'student'
+  const authorName = author.name
+  const authorRole = author.role
   const title = body.title.trim()
   const content = body.content.trim()
   const category = body.category.trim()
@@ -456,21 +457,27 @@ const createPostInMySql = async (body) => {
   }
 }
 
-const createPost = async (req, res) => {
+const createPost = async (req, res, auth) => {
   const body = await parseJsonBody(req)
   const validationError = validatePostPayload(body)
   if (validationError) return badRequest(res, validationError)
 
+  // 作者信息一律以登录用户为准，忽略前端传值，杜绝身份伪造。
+  const author = {
+    name: auth?.displayName || auth?.username || '匿名用户',
+    role: auth?.role === 'admin' ? 'teacher' : 'student',
+  }
+
   if (await shouldUseMySql()) {
-    const result = await createPostInMySql(body)
+    const result = await createPostInMySql(body, author)
     return ok(res, result, '发布成功')
   }
 
   const now = new Date().toISOString()
   const post = {
     id: `post_${randomUUID().slice(0, 8)}`,
-    authorName: body.authorName.trim(),
-    authorRole: body.authorRole === 'teacher' ? 'teacher' : 'student',
+    authorName: author.name,
+    authorRole: author.role,
     title: body.title.trim(),
     content: body.content.trim(),
     category: body.category.trim(),
@@ -495,7 +502,7 @@ const createPost = async (req, res) => {
   )
 }
 
-const createReplyInMySql = async (postId, body) => {
+const createReplyInMySql = async (postId, body, author) => {
   const postRows = await query(
     `
       SELECT id
@@ -513,8 +520,8 @@ const createReplyInMySql = async (postId, body) => {
   }
 
   const id = `reply_${randomUUID().slice(0, 8)}`
-  const authorName = body.authorName.trim()
-  const authorRole = body.authorRole === 'teacher' ? 'teacher' : 'student'
+  const authorName = author.name
+  const authorRole = author.role
   const content = body.content.trim()
 
   await query(
@@ -539,14 +546,20 @@ const createReplyInMySql = async (postId, body) => {
   }
 }
 
-const createReply = async (req, res, postId) => {
+const createReply = async (req, res, postId, auth) => {
   const body = await parseJsonBody(req)
   const validationError = validateReplyPayload(body)
   if (validationError) return badRequest(res, validationError)
 
+  // 作者信息以登录用户为准。
+  const author = {
+    name: auth?.displayName || auth?.username || '匿名用户',
+    role: auth?.role === 'admin' ? 'teacher' : 'student',
+  }
+
   if (await shouldUseMySql()) {
     try {
-      const result = await createReplyInMySql(postId, body)
+      const result = await createReplyInMySql(postId, body, author)
       return ok(res, result, '回复成功')
     } catch (error) {
       if (error?.code === 'POST_NOT_FOUND') {
@@ -563,8 +576,8 @@ const createReply = async (req, res, postId) => {
   const reply = {
     id: `reply_${randomUUID().slice(0, 8)}`,
     postId,
-    authorName: body.authorName.trim(),
-    authorRole: body.authorRole === 'teacher' ? 'teacher' : 'student',
+    authorName: author.name,
+    authorRole: author.role,
     content: body.content.trim(),
     status: 'pending',
     likeCount: 0,
@@ -1312,6 +1325,8 @@ export const handleCommunityRoute = async (req, res, requestUrl, tools) => {
 
   const reviewPostDetailMatch = path.match(/^\/community\/review\/posts\/([^/]+)\/detail$/)
   if (req.method === 'GET' && reviewPostDetailMatch) {
+    const auth = requireAdmin(req, res, tools)
+    if (!auth) return
     const detail = (await shouldUseMySql())
       ? await getReviewPostDetailFromMySql(reviewPostDetailMatch[1])
       : getReviewPostDetail(reviewPostDetailMatch[1])
@@ -1320,15 +1335,21 @@ export const handleCommunityRoute = async (req, res, requestUrl, tools) => {
   }
 
   if (req.method === 'POST' && path === '/community/posts') {
-    return createPost(req, res)
+    const auth = requireAuth(req, res, tools)
+    if (!auth) return
+    return createPost(req, res, auth)
   }
 
   const replyMatch = path.match(/^\/community\/posts\/([^/]+)\/replies$/)
   if (req.method === 'POST' && replyMatch) {
-    return createReply(req, res, replyMatch[1])
+    const auth = requireAuth(req, res, tools)
+    if (!auth) return
+    return createReply(req, res, replyMatch[1], auth)
   }
 
   if (req.method === 'GET' && path === '/community/review/posts') {
+    const auth = requireAdmin(req, res, tools)
+    if (!auth) return
     if (await shouldUseMySql()) {
       return ok(res, await listPendingPostsFromMySql())
     }
@@ -1336,6 +1357,8 @@ export const handleCommunityRoute = async (req, res, requestUrl, tools) => {
   }
 
   if (req.method === 'GET' && path === '/community/review/replies') {
+    const auth = requireAdmin(req, res, tools)
+    if (!auth) return
     if (await shouldUseMySql()) {
       return ok(res, await listPendingRepliesFromMySql())
     }
@@ -1343,6 +1366,8 @@ export const handleCommunityRoute = async (req, res, requestUrl, tools) => {
   }
 
   if (req.method === 'GET' && path === '/community/knowledge/candidates') {
+    const auth = requireAdmin(req, res, tools)
+    if (!auth) return
     if (await shouldUseMySql()) {
       return ok(res, await listKnowledgeCandidatesFromMySql())
     }
@@ -1350,6 +1375,8 @@ export const handleCommunityRoute = async (req, res, requestUrl, tools) => {
   }
 
   if (req.method === 'GET' && path === '/community/knowledge') {
+    const auth = requireAdmin(req, res, tools)
+    if (!auth) return
     if (await shouldUseMySql()) {
       return ok(res, await listKnowledgeItemsFromMySql(requestUrl))
     }
@@ -1358,6 +1385,8 @@ export const handleCommunityRoute = async (req, res, requestUrl, tools) => {
 
   const approvePostMatch = path.match(/^\/community\/review\/posts\/([^/]+)\/approve$/)
   if (req.method === 'POST' && approvePostMatch) {
+    const auth = requireAdmin(req, res, tools)
+    if (!auth) return
     if (await shouldUseMySql()) {
       try {
         const result = await updatePostStatusInMySql(
@@ -1379,6 +1408,8 @@ export const handleCommunityRoute = async (req, res, requestUrl, tools) => {
 
   const rejectPostMatch = path.match(/^\/community\/review\/posts\/([^/]+)\/reject$/)
   if (req.method === 'POST' && rejectPostMatch) {
+    const auth = requireAdmin(req, res, tools)
+    if (!auth) return
     if (await shouldUseMySql()) {
       try {
         const result = await updatePostStatusInMySql(
@@ -1400,6 +1431,8 @@ export const handleCommunityRoute = async (req, res, requestUrl, tools) => {
 
   const approveReplyMatch = path.match(/^\/community\/review\/replies\/([^/]+)\/approve$/)
   if (req.method === 'POST' && approveReplyMatch) {
+    const auth = requireAdmin(req, res, tools)
+    if (!auth) return
     if (await shouldUseMySql()) {
       try {
         const result = await updateReplyStatusInMySql(
@@ -1421,6 +1454,8 @@ export const handleCommunityRoute = async (req, res, requestUrl, tools) => {
 
   const rejectReplyMatch = path.match(/^\/community\/review\/replies\/([^/]+)\/reject$/)
   if (req.method === 'POST' && rejectReplyMatch) {
+    const auth = requireAdmin(req, res, tools)
+    if (!auth) return
     if (await shouldUseMySql()) {
       try {
         const result = await updateReplyStatusInMySql(
@@ -1441,11 +1476,15 @@ export const handleCommunityRoute = async (req, res, requestUrl, tools) => {
   }
 
   if (req.method === 'POST' && path === '/community/knowledge/generate') {
+    const auth = requireAdmin(req, res, tools)
+    if (!auth) return
     return generateKnowledge(req, res)
   }
 
   const approveKnowledgeMatch = path.match(/^\/community\/knowledge\/([^/]+)\/approve$/)
   if (req.method === 'POST' && approveKnowledgeMatch) {
+    const auth = requireAdmin(req, res, tools)
+    if (!auth) return
     if (await shouldUseMySql()) {
       try {
         const result = await updateKnowledgeStatusInMySql(
@@ -1469,6 +1508,8 @@ export const handleCommunityRoute = async (req, res, requestUrl, tools) => {
 
   const rejectKnowledgeMatch = path.match(/^\/community\/knowledge\/([^/]+)\/reject$/)
   if (req.method === 'POST' && rejectKnowledgeMatch) {
+    const auth = requireAdmin(req, res, tools)
+    if (!auth) return
     if (await shouldUseMySql()) {
       try {
         const result = await updateKnowledgeStatusInMySql(

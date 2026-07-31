@@ -1,5 +1,11 @@
+import { setAuthToken } from '@/auth/token'
 import { defineStore } from 'pinia'
-import { loginByPassword, registerUserAccount, type AuthUser } from '@/api/auth'
+import {
+  changePassword as changePasswordApi,
+  loginByPassword,
+  registerUserAccount,
+  type AuthUser,
+} from '@/api/auth'
 
 type AuthRole = 'guest' | 'user' | 'admin'
 
@@ -10,9 +16,11 @@ type PersistedAuthState = {
   username?: string
   userId?: string
   email?: string
+  token?: string
+  mustChangePassword?: boolean
 }
 
-const AUTH_STORAGE_KEY = 'ai-campus-agent.auth.v4'
+const AUTH_STORAGE_KEY = 'ai-campus-agent.auth.v5'
 const canUseStorage = () => typeof window !== 'undefined' && !!window.localStorage
 
 const normalizeRole = (role: unknown): AuthRole => {
@@ -29,6 +37,8 @@ export const useAuthStore = defineStore('auth', {
     username: '',
     userId: '',
     email: '',
+    token: '',
+    mustChangePassword: false,
   }),
 
   getters: {
@@ -54,10 +64,15 @@ export const useAuthStore = defineStore('auth', {
         this.username = typeof parsed.username === 'string' ? parsed.username : ''
         this.userId = typeof parsed.userId === 'string' ? parsed.userId : ''
         this.email = typeof parsed.email === 'string' ? parsed.email : ''
+        this.token = typeof parsed.token === 'string' ? parsed.token : ''
+        this.mustChangePassword = Boolean(parsed.mustChangePassword)
 
-        if (!this.loggedIn || this.role === 'guest') {
+        // 无 token 的旧登录态（v4 升级）或游客态一律清空，要求重新登录。
+        if (!this.loggedIn || this.role === 'guest' || !this.token) {
           this.resetAuthState()
+          return
         }
+        setAuthToken(this.token)
       } catch {
         localStorage.removeItem(AUTH_STORAGE_KEY)
         this.resetAuthState()
@@ -75,6 +90,8 @@ export const useAuthStore = defineStore('auth', {
           username: this.username,
           userId: this.userId,
           email: this.email,
+          token: this.token,
+          mustChangePassword: this.mustChangePassword,
         }),
       )
     },
@@ -86,21 +103,27 @@ export const useAuthStore = defineStore('auth', {
       this.username = ''
       this.userId = ''
       this.email = ''
+      this.token = ''
+      this.mustChangePassword = false
+      setAuthToken('')
     },
 
-    applyUser(user: AuthUser) {
+    applyUser(user: AuthUser, token: string) {
       this.loggedIn = true
       this.role = user.role === 'admin' ? 'admin' : 'user'
       this.displayName = user.displayName
       this.username = user.username
       this.userId = user.id
       this.email = user.email || ''
+      this.token = token
+      this.mustChangePassword = user.mustChangePassword === true
+      setAuthToken(token)
       this.persist()
     },
 
     async login(payload: { account: string; password: string }) {
-      const user = await loginByPassword(payload)
-      this.applyUser(user)
+      const session = await loginByPassword(payload)
+      this.applyUser(session.user, session.token)
       return this.role === 'admin' ? 'admin' : 'user'
     },
 
@@ -111,7 +134,15 @@ export const useAuthStore = defineStore('auth', {
       password: string
       confirmPassword: string
     }) {
-      return registerUserAccount(payload)
+      const session = await registerUserAccount(payload)
+      this.applyUser(session.user, session.token)
+      return this.role === 'admin' ? 'admin' : 'user'
+    },
+
+    async changePassword(payload: { oldPassword: string; newPassword: string }) {
+      await changePasswordApi(payload)
+      this.mustChangePassword = false
+      this.persist()
     },
 
     logout() {

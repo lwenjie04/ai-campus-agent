@@ -12,6 +12,7 @@
     "kb:repair:dry": "node scripts/kb-clean-tag-qc.mjs --dry-run"
   },
   "dependencies": {
+    "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.20.0",
     "nodemailer": "^8.0.4",
     "tencentcloud-sdk-nodejs-tts": "^4.1.182"

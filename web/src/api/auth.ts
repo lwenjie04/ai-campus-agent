@@ -1,7 +1,5 @@
-import axios from 'axios'
-import { appConfig } from '@/config/app'
-
-const AUTH_BASE_URL = appConfig.apiBaseUrl
+import { setAuthToken } from '@/auth/token'
+import { http } from '@/api/http'
 
 export type AuthUser = {
   id: string
@@ -9,20 +7,31 @@ export type AuthUser = {
   displayName: string
   role: 'user' | 'admin'
   email?: string
+  mustChangePassword?: boolean
   createdAt?: string
 }
 
+export type AuthSession = {
+  token: string
+  user: AuthUser
+}
+
+const applySession = (session: AuthSession) => {
+  setAuthToken(session.token)
+  return session
+}
+
 export const sendRegisterCode = async (payload: { email: string; displayName?: string }) => {
-  const response = await axios.post<{ message?: string; data?: { expireMinutes: number; resendSeconds: number } }>(
-    `${AUTH_BASE_URL}/auth/send-register-code`,
+  const response = await http.post<{ message?: string; data?: { expireMinutes: number; resendSeconds: number } }>(
+    '/auth/send-register-code',
     payload,
   )
   return response.data
 }
 
-export const loginByPassword = async (payload: { account: string; password: string }) => {
-  const response = await axios.post<{ data: AuthUser }>(`${AUTH_BASE_URL}/auth/login`, payload)
-  return response.data.data
+export const loginByPassword = async (payload: { account: string; password: string }): Promise<AuthSession> => {
+  const response = await http.post<{ data: AuthSession }>('/auth/login', payload)
+  return applySession(response.data.data)
 }
 
 export const registerUserAccount = async (payload: {
@@ -31,7 +40,12 @@ export const registerUserAccount = async (payload: {
   verifyCode: string
   password: string
   confirmPassword: string
-}) => {
-  const response = await axios.post<{ data: AuthUser; message?: string }>(`${AUTH_BASE_URL}/auth/register`, payload)
-  return response.data.data
+}): Promise<AuthSession> => {
+  const response = await http.post<{ data: AuthSession; message?: string }>('/auth/register', payload)
+  return applySession(response.data.data)
+}
+
+export const changePassword = async (payload: { oldPassword: string; newPassword: string }) => {
+  const response = await http.post<{ message?: string }>('/auth/change-password', payload)
+  return response.data
 }
