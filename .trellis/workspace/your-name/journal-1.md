@@ -66,6 +66,15 @@
 ### Summary
 
 新增 .github/workflows/ci.yml：web 跑 type-check/lint/build，server 跑 mjs 语法检查与 /health 冒烟（不依赖 MySQL），master/dev/feat/chore 分支与 PR 触发。本地命令全绿；推 chore/ci-workflow 后 GitHub Actions 首跑成功（web+server 双 job 全过）。
+## Session 2: 更新服务器部署清单
+
+**Date**: 2026-07-31
+**Task**: 更新服务器部署清单
+**Branch**: `chore/deploy-checklist`
+
+### Summary
+
+更新 docs/deploy-server-checklist.md：web/server workspaces 结构、构建产物 web/dist、JWT_SECRET/限流环境变量、pm2 ecosystem.config.cjs、默认 admin 强制改密验收、Nginx 流式支持提示、数据库自动迁移说明。推 chore/deploy-checklist。
 
 ### Git Commits
 
@@ -82,6 +91,8 @@
 | `7f4ce9d` | (see git log) |
 | `70f53ea` | (see git log) |
 | `fae2474` | (see git log) |
+| `171b819` | (see git log) |
+| `94c9b10` | (see git log) |
 
 ### Status
 
