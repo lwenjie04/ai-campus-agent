@@ -42,7 +42,7 @@ export interface Message {
   requestId?: string
   // 创建时间主要用于消息排序和兜底 key。
   createdAt?: number
-  // 预留给 Prism Core 或其他展示逻辑的 cue。
+  // 预留给数字人或其他展示逻辑的 cue。
   videoCue?: string
   // assistant 消息可以附带多个来源依据。
   sources?: MessageSource[]

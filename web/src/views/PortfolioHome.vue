@@ -18,7 +18,7 @@
     </div>
 
     <!-- ====== Hero + Marquee Video Stage ====== -->
-    <section class="hero-stage" aria-label="Prism Studio">
+    <section class="hero-stage" aria-label="数智校答">
       <video
         class="hero-stage__video"
         autoplay
@@ -39,11 +39,11 @@
         <div class="hero__glass">
           <div class="hero__text">
             <h1 class="hero__title">
-              <span class="line" data-reveal>Prism</span>
-              <span class="line" data-reveal>Studio<span class="dot">.</span></span>
+              <span class="line" data-reveal>数智校答</span>
+              <span class="line" data-reveal>智能问答<span class="dot">.</span></span>
             </h1>
             <p class="hero__sub" data-reveal>
-              校园 AI 知识助手&ensp;·&ensp;LightRAG&ensp;·&ensp;Prism Core
+              校园智能服务平台&ensp;·&ensp;LightRAG&ensp;·&ensp;数智校答
             </p>
           </div>
         </div>
@@ -86,7 +86,7 @@
       <div class="cta__glow" />
       <div class="cta__rule" data-reveal />
       <h2 class="cta__title" data-reveal>
-        有问题？<br />直接问 <span class="cta__brand">Prism</span>
+        有问题？<br />直接问 <span class="cta__brand">数智校答</span>
       </h2>
       <div class="cta__input" data-reveal @click="emit('openChat')">
         <span>输入你的校园问题...</span>
@@ -100,8 +100,8 @@
     <footer class="augen-footer">
       <div class="augen-footer__inner">
         <div class="augen-footer__brand">
-          <span class="augen-footer__logo">Prism</span>
-          <span class="augen-footer__tagline">校园 AI 知识助手</span>
+          <span class="augen-footer__logo">数智校答</span>
+          <span class="augen-footer__tagline">校园智能服务平台</span>
         </div>
         <nav class="augen-footer__nav">
           <span class="augen-footer__nav-label">导航</span>
@@ -110,7 +110,7 @@
         </nav>
       </div>
       <div class="augen-footer__bottom">
-        <span>基于 LightRAG · Prism Core</span>
+        <span>基于 LightRAG 智能检索</span>
         <span>广东第二师范学院</span>
         <span>&copy; 2026</span>
       </div>
