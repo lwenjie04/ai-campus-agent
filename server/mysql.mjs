@@ -47,11 +47,24 @@ export const getMySqlConfig = () => ({
   user: process.env.MYSQL_USER || 'root',
   password: process.env.MYSQL_PASSWORD || '',
   database: process.env.MYSQL_DATABASE || 'ai_campus_agent',
+  connectTimeout: Number(process.env.MYSQL_CONNECT_TIMEOUT_MS || 3000),
 })
 
 // 是否已经准备好真实数据库连接信息。
 // 后续社区模块可以用这个标记决定：走 MySQL 还是继续走 mock。
 export const isMySqlConfigured = () => {
+  if ((process.env.MYSQL_ENABLED || '').trim().toLowerCase() === 'false') return false
+
+  const hasExplicitConfig = Boolean(
+    process.env.MYSQL_ENABLED === 'true' ||
+      process.env.MYSQL_HOST ||
+      process.env.MYSQL_PORT ||
+      process.env.MYSQL_USER ||
+      process.env.MYSQL_PASSWORD ||
+      process.env.MYSQL_DATABASE,
+  )
+  if (!hasExplicitConfig) return false
+
   const config = getMySqlConfig()
   return Boolean(config.host && config.user && config.database)
 }
@@ -89,6 +102,7 @@ const getPool = async () => {
     password: config.password,
     database: config.database,
     charset: 'utf8mb4',
+    connectTimeout: config.connectTimeout,
     connectionLimit: 10,
     namedPlaceholders: true,
   })

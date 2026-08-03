@@ -39,3 +39,12 @@ __screenshots__/
 *.timestamp-*-*.mjs
 server/.env
 .env.server
+
+# Generated data (reproducible via server/scripts/build-*.mjs)
+server/data/vector-index.json
+server/data/chunked-knowledge-base.json
+server/data/student-handbook-lightrag.json
+server/data/student-handbook.json
+
+# unplugin-vue-components 自动生成的组件类型声明
+web/components.d.ts

@@ -1,5 +1,5 @@
 // 消息角色定义了这条消息在会话中的身份。
-export type MessageRole = 'user' | 'assistant' | 'system'
+type MessageRole = 'user' | 'assistant' | 'system'
 
 // MessageSource 描述一条回答背后的来源依据。
 // 它通常由后端 RAG 检索结果转换而来，前端据此展示正文链接、附件和可信度。
@@ -42,14 +42,8 @@ export interface Message {
   requestId?: string
   // 创建时间主要用于消息排序和兜底 key。
   createdAt?: number
-  // 预留给数字人或其他展示逻辑的 cue。
+  // 预留给 Prism Core 或其他展示逻辑的 cue。
   videoCue?: string
   // assistant 消息可以附带多个来源依据。
   sources?: MessageSource[]
-}
-
-// AgentState 是 store 里最外层的核心状态结构。
-export interface AgentState {
-  messages: Message[]
-  loading: boolean
 }

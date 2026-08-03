@@ -1,9 +1,6 @@
-﻿<template>
-  <div v-if="!authStore.loggedIn" class="app-auth-shell">
-    <LoginView @login-success="handleLoginSuccess" />
-  </div>
-
-  <div v-else class="app-layout">
+<template>
+  <div class="app-layout">
+    <!-- ====== Top Nav: 首页 | 数字人 ====== -->
     <header class="top-nav">
       <div class="top-nav__inner">
         <div class="top-nav__brand">
@@ -14,123 +11,121 @@
         </div>
 
         <nav class="top-nav__tabs" aria-label="主导航">
-          <button
-            type="button"
-            class="top-nav__tab"
-            :class="{ 'top-nav__tab--active': activeSection === 'home' }"
-            @click="goHome"
-          >
+          <button class="top-nav__tab" :class="{ 'top-nav__tab--active': activeSection === 'home' }" @click="goHome">
             首页
           </button>
-          <button
-            type="button"
-            class="top-nav__tab"
-            :class="{ 'top-nav__tab--active': activeSection === 'community' }"
-            @click="goCommunity"
-          >
-            学生社区
-          </button>
-          <button
-            v-if="authStore.isAdmin"
-            type="button"
-            class="top-nav__tab"
-            :class="{ 'top-nav__tab--active': activeSection === 'admin' }"
-            @click="goAdmin"
-          >
-            管理员页
+          <button class="top-nav__tab" :class="{ 'top-nav__tab--active': activeSection === 'hub' }" @click="goHub">
+            数字人
           </button>
         </nav>
 
         <div class="top-nav__auth">
-          <span class="top-nav__auth-role">{{ authStore.isAdmin ? '管理员' : '普通用户' }}</span>
-          <span class="top-nav__auth-text">{{ authStore.displayName || authStore.username }}</span>
-          <button type="button" class="top-nav__tab" @click="logout">退出</button>
+          <span class="top-nav__auth-role">{{ authStore.loggedIn ? authStore.isAdmin ? '管理员' : '用户' : '访客' }}</span>
+          <span class="top-nav__auth-text">{{ authStore.loggedIn ? authStore.displayName || authStore.username : '未登录' }}</span>
+          <button v-if="!bypassLogin && authStore.loggedIn" type="button" class="top-nav__tab" @click="logout">退出</button>
         </div>
+      </div>
+
+      <!-- ====== Sub Nav (only in hub) ====== -->
+      <div v-if="activeSection === 'hub'" class="sub-nav">
+        <button class="sub-nav__tab" :class="{ 'sub-nav__tab--active': activeHubPage === 'chat' }" @click="activeHubPage = 'chat'">
+          AI 问答
+        </button>
+        <button class="sub-nav__tab" :class="{ 'sub-nav__tab--active': activeHubPage === 'community' }" @click="activeHubPage = 'community'; communityView = 'list'">
+          学生社区
+        </button>
+        <button v-if="authStore.isAdmin" class="sub-nav__tab" :class="{ 'sub-nav__tab--active': activeHubPage === 'admin' }" @click="activeHubPage = 'admin'">
+          管理员
+        </button>
       </div>
     </header>
 
+    <!-- ====== Page Content ====== -->
     <main class="page-content">
-      <AgentChat v-if="activeSection === 'home'" @open-community-post="openPostFromSource" />
+      <Transition name="page" mode="out-in">
+        <!-- Home -->
+        <PortfolioHome v-if="activeSection === 'home'" key="home" @open-chat="goHubAndChat" @open-community="goHubAndCommunity" />
 
-      <AdminReviewView
-        v-else-if="activeSection === 'admin' && authStore.isAdmin"
-        @go-login="goHome"
-        @logout="logout"
-      />
-
-      <CommunityView
-        v-else-if="activeSection === 'community' && communityView === 'list'"
-        @open-post="openPostDetail"
-      />
-
-      <PostDetailView
-        v-else-if="activeSection === 'community' && communityView === 'detail'"
-        :post-id="currentPostId"
-        @back-list="backToCommunityList"
-      />
+        <!-- Hub: digital human + sub-page -->
+        <template v-else-if="activeSection === 'hub'" key="hub">
+          <div v-if="requiresHubLogin" key="hub-login" class="app-auth-shell">
+            <LoginView @login-success="handleLoginSuccess" />
+          </div>
+          <AgentChat v-else-if="activeHubPage === 'chat'" key="chat" @open-community-post="openPostFromSource" />
+          <CommunityView
+            v-else-if="activeHubPage === 'community' && communityView === 'list'"
+            key="comm-list"
+            @open-post="openPostDetail"
+          />
+          <PostDetailView
+            v-else-if="activeHubPage === 'community' && communityView === 'detail'"
+            key="comm-detail"
+            :post-id="currentPostId"
+            @back-list="backToCommunityList"
+          />
+          <div v-else class="hub-layout">
+            <aside class="hub-human">
+              <DigitalHumanPanel />
+            </aside>
+            <section class="hub-main">
+              <AdminReviewView v-if="activeHubPage === 'admin' && authStore.isAdmin" key="admin" @go-login="goHome" @logout="logout" />
+            </section>
+          </div>
+        </template>
+      </Transition>
     </main>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ElMessage } from 'element-plus'
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import AgentChat from './views/AgentChat.vue'
+import DigitalHumanPanel from './views/DigitalHumanPanel.vue'
+import PortfolioHome from './views/PortfolioHome.vue'
 import CommunityView from './views/CommunityView.vue'
 import PostDetailView from './views/PostDetailView.vue'
 import AdminReviewView from './views/AdminReviewView.vue'
 import LoginView from './views/LoginView.vue'
 import { useAuthStore } from './store/auth'
 
-type MainSection = 'home' | 'community' | 'admin'
+type MainSection = 'home' | 'hub'
+type HubPage = 'chat' | 'community' | 'admin'
 type CommunityViewState = 'list' | 'detail'
 type LoginRole = 'user' | 'admin'
 
 const authStore = useAuthStore()
 const activeSection = ref<MainSection>('home')
+const activeHubPage = ref<HubPage>('chat')
 const communityView = ref<CommunityViewState>('list')
 const currentPostId = ref('')
+const bypassLogin = import.meta.env.VITE_BYPASS_LOGIN === 'true'
+const requiresHubLogin = computed(() => activeSection.value === 'hub' && !bypassLogin && !authStore.loggedIn)
 
-const goHome = () => {
-  activeSection.value = 'home'
+const updateCursorGlow = () => {
+  document.body.classList.toggle('has-cursor-glow', activeSection.value === 'home')
 }
 
-const goCommunity = () => {
-  activeSection.value = 'community'
-  communityView.value = 'list'
-}
-
-const goAdmin = () => {
-  if (!authStore.isAdmin) {
-    activeSection.value = 'home'
-    return
-  }
-  activeSection.value = 'admin'
-}
+const goHome = () => { activeSection.value = 'home'; updateCursorGlow() }
+const goHub = () => { activeSection.value = 'hub'; activeHubPage.value = 'chat'; updateCursorGlow() }
+const goHubAndChat = () => { activeSection.value = 'hub'; activeHubPage.value = 'chat'; updateCursorGlow() }
+const goHubAndCommunity = () => { activeSection.value = 'hub'; activeHubPage.value = 'community'; communityView.value = 'list'; updateCursorGlow() }
 
 const openPostDetail = (postId: string) => {
-  currentPostId.value = postId
-  activeSection.value = 'community'
-  communityView.value = 'detail'
+  currentPostId.value = postId; communityView.value = 'detail'
 }
+const openPostFromSource = (postId: string) => { openPostDetail(postId) }
+const backToCommunityList = () => { communityView.value = 'list' }
 
-const openPostFromSource = (postId: string) => {
-  openPostDetail(postId)
+const handleLoginSuccess = (_role: LoginRole) => {
+  activeSection.value = 'hub'
+  if (!activeHubPage.value) activeHubPage.value = 'chat'
+  updateCursorGlow()
 }
-
-const backToCommunityList = () => {
-  communityView.value = 'list'
-}
-
-const handleLoginSuccess = (role: LoginRole) => {
-  activeSection.value = role === 'admin' ? 'admin' : 'home'
-}
-
 const logout = () => {
   authStore.logout()
-  activeSection.value = 'home'
-  communityView.value = 'list'
-  currentPostId.value = ''
+  if (bypassLogin) authStore.enterGuestUser()
+  activeSection.value = 'home'; communityView.value = 'list'; currentPostId.value = ''
 }
 
 // 任一接口返回 401（token 缺失/过期）时统一登出回登录页。
@@ -142,9 +137,9 @@ const handleUnauthorized = () => {
 
 onMounted(() => {
   authStore.hydrate()
-  if (authStore.loggedIn) {
-    activeSection.value = authStore.isAdmin ? 'admin' : 'home'
-  }
+  if (bypassLogin && !authStore.loggedIn) authStore.enterGuestUser()
+  if (authStore.loggedIn) activeSection.value = 'home'
+  updateCursorGlow()
   window.addEventListener('auth:unauthorized', handleUnauthorized)
 })
 
@@ -154,140 +149,121 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.app-auth-shell {
-  min-height: 100vh;
-}
+.app-auth-shell { min-height: 100vh; }
 
 .app-layout {
   min-height: 100vh;
-  background:
-    radial-gradient(circle at top left, rgba(241, 255, 238, 0.98), rgba(216, 248, 206, 0.92) 42%, rgba(137, 223, 98, 0.95) 100%);
+  background: #faf9f7;
+  font-family: var(--font-sans);
 }
 
+/* ====== Top Nav — Apple text-only style ====== */
 .top-nav {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  padding: 14px 18px 0;
-  backdrop-filter: blur(16px);
+  position: sticky; top: 0; z-index: 50;
+  padding: 0 var(--space-6);
+  background: rgba(250,249,247,0.85);
+  backdrop-filter: blur(1.5rem);
+  -webkit-backdrop-filter: blur(1.5rem);
+  border-bottom: 0.5px solid rgba(0,0,0,0.06);
 }
 
 .top-nav__inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  max-width: 1680px;
-  margin: 0 auto;
-  padding: 14px 20px;
-  border: 1px solid rgba(103, 167, 94, 0.2);
-  border-radius: 24px;
-  background: rgba(251, 255, 248, 0.82);
-  box-shadow: 0 14px 36px rgba(55, 116, 63, 0.12);
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  max-width: 92rem; margin: 0 auto;
+  height: 3rem;
 }
 
 .top-nav__brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: #184e30;
+  position: absolute; left: 0;
+  display: flex; align-items: center; gap: 0.5rem;
+  color: #1a1a18; text-decoration: none;
 }
-
-.top-nav__brand strong,
-.top-nav__brand span {
-  display: block;
-}
-
 .top-nav__brand strong {
-  font-size: 20px;
+  font-size: 1rem; font-weight: 600; letter-spacing: -0.01em;
 }
-
-.top-nav__brand span {
-  margin-top: 2px;
-  color: rgba(24, 78, 48, 0.72);
-  font-size: 13px;
-}
+.top-nav__brand span { display: none; } /* hide subtitle on desktop */
 
 .top-nav__tabs {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  display: flex; align-items: center; gap: 0.125rem;
 }
 
-.top-nav__auth {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
+.top-nav__auth { position: absolute; right: 0; display: flex; align-items: center; gap: var(--space-3); }
 .top-nav__auth-role {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: rgba(97, 167, 92, 0.14);
-  color: #2a6b3f;
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 0.75rem; color: rgba(26,26,24,0.4); font-weight: 500;
 }
-
 .top-nav__auth-text {
-  color: rgba(24, 78, 48, 0.74);
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 0.8125rem; color: rgba(26,26,24,0.6); font-weight: 500;
 }
 
 .top-nav__tab {
-  border: 1px solid rgba(86, 157, 90, 0.18);
-  border-radius: 999px;
-  padding: 10px 18px;
-  background: rgba(255, 255, 255, 0.74);
-  color: rgba(23, 77, 46, 0.72);
-  font-size: 15px;
-  font-weight: 700;
+  all: unset;
+  padding: 0.375rem 0.875rem;
+  font-size: 0.875rem; font-weight: 500;
+  color: rgba(26,26,24,0.5);
   cursor: pointer;
-  transition: all 0.2s ease;
+  border-radius: 0.25rem;
+  transition: color 0.15s;
 }
-
-.top-nav__tab:hover {
-  transform: translateY(-1px);
-  color: #1b5a37;
-  box-shadow: 0 10px 22px rgba(55, 116, 63, 0.1);
-}
-
+.top-nav__tab:hover { color: #1a1a18; }
 .top-nav__tab--active {
-  border-color: rgba(85, 169, 86, 0.32);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(223, 250, 214, 0.92));
-  color: #20653d;
+  color: #1a1a18;
+  font-weight: 600;
 }
 
-.page-content {
-  padding-top: 10px;
+/* ====== Sub Nav ====== */
+.sub-nav {
+  display: flex; align-items: center; justify-content: center; gap: 0.25rem;
+  padding: 0.375rem 0 0.5rem;
+  border-bottom: 0.5px solid rgba(0,0,0,0.04);
 }
 
-@media (max-width: 900px) {
-  .top-nav {
-    padding: 12px 12px 0;
-  }
+.sub-nav__tab {
+  all: unset;
+  padding: 0.375rem 1rem;
+  font-size: 0.8125rem; font-weight: 500;
+  color: rgba(26,26,24,0.4);
+  cursor: pointer;
+  border-radius: 0.25rem;
+  transition: color 0.15s;
+}
+.sub-nav__tab:hover { color: #1a1a18; }
+.sub-nav__tab--active {
+  color: #1a1a18;
+  font-weight: 600;
+}
 
-  .top-nav__inner {
-    flex-direction: column;
-    align-items: stretch;
-  }
+/* ====== Hub Layout ====== */
+.hub-layout {
+  display: grid;
+  grid-template-columns: 16.5rem 1fr;
+  height: calc(100vh - 6rem);
+  overflow: hidden;
+}
+.hub-human {
+  border-right: 0.5px solid rgba(255,255,255,0.08);
+  background: #0a0a0a;
+  padding: var(--space-4);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.hub-main { min-width: 0; overflow-y: auto; background: var(--dark-bg); }
 
-  .top-nav__tabs {
-    width: 100%;
-  }
+.page-content { padding-top: 0; }
 
-  .top-nav__auth {
-    width: 100%;
-    justify-content: space-between;
-    flex-wrap: wrap;
-  }
+/* ====== Page Transition ====== */
+.page-enter-active { transition: opacity 0.2s ease-out, transform 0.25s cubic-bezier(0,0,0.2,1); }
+.page-leave-active { transition: opacity 0.15s ease-in; }
+.page-enter-from { opacity: 0; transform: translateY(0.5rem); }
+.page-leave-to { opacity: 0; }
 
-  .top-nav__tab {
-    flex: 1 1 0;
-  }
+@media (max-width: 860px) {
+  .hub-layout { grid-template-columns: 1fr; }
+  .hub-human { display: none; }
+  .top-nav__inner { flex-wrap: wrap; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter-active, .page-leave-active { transition: none; }
 }
 </style>

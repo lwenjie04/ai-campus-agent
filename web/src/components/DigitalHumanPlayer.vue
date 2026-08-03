@@ -1,55 +1,43 @@
 <template>
-  <section class="digital-human">
-    <div class="stage-shell">
-      <video
-        v-show="!showPlaceholder"
-        ref="videoRef"
-        class="video"
-        :class="{ 'is-visible': videoVisible, 'is-switching': videoSwitching }"
-        autoplay
-        muted
-        :loop="isIdleLoop"
-        playsinline
-        preload="metadata"
-        :src="currentVideoSrc"
-        @loadeddata="onLoadedData"
-        @ended="onEnded"
-        @error="onError"
-      />
+  <section class="digital-human" :class="`is-${normalizedCue}`">
+    <video
+      v-show="!showFallback"
+      ref="videoRef"
+      class="digital-human__video"
+      :class="{ 'is-ready': videoReady }"
+      :src="currentVideoSrc"
+      :loop="normalizedCue !== 'greeting'"
+      autoplay
+      muted
+      playsinline
+      preload="auto"
+      @loadeddata="handleLoaded"
+      @ended="handleEnded"
+      @error="handleVideoError"
+    />
 
-      <div v-if="showPlaceholder" class="placeholder-stage">
-        <div class="reserve-frame">
-          <div class="reserve-icon">🎥</div>
-          <div class="reserve-title">数字人展示区（预留）</div>
-          <div class="reserve-hint">请检查视频文件是否存在：</div>
-          <div class="reserve-path">public/videos/digital-human/</div>
-          <div class="reserve-list">
-            <span>greeting.mp4</span>
-            <span>idle.mp4</span>
-            <span>teaching.mp4</span>
-          </div>
-        </div>
-      </div>
+    <div v-if="showFallback" class="digital-human__fallback" role="status">
+      <span class="digital-human__fallback-mark">AI</span>
+      <strong>数字人资源暂不可用</strong>
+      <span>请检查视频文件后重试</span>
+    </div>
 
-      <div v-if="showDebug" class="debug-box">
-        <div>cue: {{ normalizedCue }}</div>
-        <div>src: {{ currentVideoSrc }}</div>
-        <div>readyState: {{ debugState.readyState }}</div>
-        <div>networkState: {{ debugState.networkState }}</div>
-        <div>paused: {{ debugState.paused }}</div>
-        <div>error: {{ debugState.error || '-' }}</div>
-        <div>lastAction: {{ debugState.lastAction || '-' }}</div>
-        <div>resourceChecked: {{ debugState.resourceChecked }}</div>
-        <div>missingVideos: {{ debugState.missingVideos.join(', ') || '-' }}</div>
-      </div>
+    <div class="digital-human__shade" aria-hidden="true" />
+
+    <div class="digital-human__status">
+      <span class="digital-human__pulse" aria-hidden="true" />
+      <span>{{ statusLabel }}</span>
+      <strong>{{ sourceLabel }}</strong>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { appConfig } from '@/config/app'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { requestBackendTts } from '@/api/tts'
+import { normalizeNarrationText } from '@/utils/text'
+
+const VIDEO_BASE_PATH = '/videos/digital-human'
 
 const props = defineProps<{
   cueKey: string
@@ -57,527 +45,319 @@ const props = defineProps<{
   narrationText?: string
   narrationSignal?: number
   stopSignal?: number
+  sourceCount?: number
 }>()
 
 const emit = defineEmits<{
-  (e: 'request-idle'): void
-  (e: 'narration-ended'): void
+  (event: 'request-idle'): void
+  (event: 'narration-ended'): void
 }>()
 
-// 视频和语音分开管理：mp4 负责画面，TTS 负责朗读文本。
 const videoRef = ref<HTMLVideoElement | null>(null)
-const showPlaceholder = ref(false)
-const videoVisible = ref(false)
-const narrationAudioRef = ref<HTMLAudioElement | null>(null)
-const narrationToken = ref(0)
+const audioRef = ref<HTMLAudioElement | null>(null)
 const activeAudioUrl = ref('')
-const narrationQueue = ref<string[]>([])
-const narrationProcessing = ref(false)
-const lastVideoSrc = ref('')
-const videoSwitching = ref(false)
+const playbackToken = ref(0)
+const narrationQueue: string[] = []
+let narrationQueueRunning = false
+let activePlaybackResolve: (() => void) | null = null
+const videoReady = ref(false)
+const showFallback = ref(false)
 
-const debugState = ref({
-  readyState: 0,
-  networkState: 0,
-  paused: true,
-  error: '',
-  lastAction: '',
-  resourceChecked: false,
-  missingVideos: [] as string[],
+const normalizedCue = computed(() => {
+  const cue = (props.cueKey || 'idle').trim()
+  return ['idle', 'greeting', 'teaching'].includes(cue) ? cue : 'idle'
 })
 
-const TTS_SEGMENT_MAX_LENGTH = 140
-
-// 腾讯云 TextToVoice 基础语音合成接口对中文长度限制较严，
-// 官方文档给出的上限是 150 个汉字左右。这里保守收紧到 140，
-// 避免长回答第一段就因为超限失败，导致讲解视频瞬间回到待机状态。
-const normalizedCue = computed(() => (props.cueKey || 'idle').trim() || 'idle')
-const isIdleLoop = computed(() => normalizedCue.value === 'idle')
 const currentVideoSrc = computed(
-  () => `${appConfig.digitalHumanVideoBasePath}/${normalizedCue.value}.mp4`,
+  () => `${VIDEO_BASE_PATH}/${normalizedCue.value}.mp4`,
 )
-const showDebug = computed(() => appConfig.videoDebug)
 
-const setDebugAction = (text: string) => {
-  debugState.value.lastAction = text
-}
+const statusLabel = computed(() => {
+  if (normalizedCue.value === 'teaching') return '正在为你讲解'
+  if (normalizedCue.value === 'greeting') return '数字人已唤醒'
+  return '数字人在线'
+})
 
-const syncVideoDebugState = () => {
-  const el = videoRef.value
-  if (!el) return
-  debugState.value.readyState = el.readyState
-  debugState.value.networkState = el.networkState
-  debugState.value.paused = el.paused
-  if (!el.error) {
-    debugState.value.error = ''
-    return
-  }
-  const codeMap: Record<number, string> = {
-    1: 'MEDIA_ERR_ABORTED',
-    2: 'MEDIA_ERR_NETWORK',
-    3: 'MEDIA_ERR_DECODE',
-    4: 'MEDIA_ERR_SRC_NOT_SUPPORTED',
-  }
-  debugState.value.error = codeMap[el.error.code] || `UNKNOWN(${el.error.code})`
-}
+const sourceLabel = computed(() => {
+  const count = Math.max(0, Math.round(props.sourceCount || 0))
+  return count > 0 ? `${count} 个参考来源` : '等待提问'
+})
 
-// 先探测视频资源是否存在，避免缺文件时页面只表现为“黑屏”。
-const probeVideoByMetadata = (src: string, timeoutMs = 4000) =>
-  new Promise<boolean>((resolve) => {
-    const v = document.createElement('video')
-    let done = false
-    const finish = (ok: boolean) => {
-      if (done) return
-      done = true
-      v.src = ''
-      resolve(ok)
-    }
-    const timer = window.setTimeout(() => finish(false), timeoutMs)
-    v.preload = 'metadata'
-    v.muted = true
-    v.onloadedmetadata = () => {
-      window.clearTimeout(timer)
-      finish(true)
-    }
-    v.onerror = () => {
-      window.clearTimeout(timer)
-      finish(false)
-    }
-    v.src = src
-    v.load()
-  })
-
-const checkRequiredVideos = async () => {
-  const names = ['greeting', 'idle', 'teaching']
-  const missing: string[] = []
-  for (const name of names) {
-    const src = `${appConfig.digitalHumanVideoBasePath}/${name}.mp4`
-    const ok = await probeVideoByMetadata(src)
-    if (!ok) missing.push(`${name}.mp4`)
-  }
-  debugState.value.resourceChecked = true
-  debugState.value.missingVideos = missing
-  if (missing.length > 0) {
-    setDebugAction(`resource-missing: ${missing.join(', ')}`)
-  } else {
-    setDebugAction('resource-check-ok')
-  }
-}
-
-// 同时停止后端 TTS 音频和浏览器语音合成兜底播放。
-const stopNarration = () => {
-  narrationToken.value += 1
-  narrationQueue.value = []
-  narrationProcessing.value = false
-  const audioEl = narrationAudioRef.value
-  if (audioEl) {
-    audioEl.pause()
-    audioEl.removeAttribute('src')
-    audioEl.load()
+const releaseCurrentAudio = () => {
+  const audio = audioRef.value
+  if (audio) {
+    audio.pause()
+    audio.onended = null
+    audio.onerror = null
+    audio.removeAttribute('src')
+    audio.load()
   }
   if (activeAudioUrl.value) {
     URL.revokeObjectURL(activeAudioUrl.value)
     activeAudioUrl.value = ''
   }
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel()
+  activePlaybackResolve?.()
+  activePlaybackResolve = null
 }
 
-// 清理 markdown 痕迹，避免 TTS 把符号也读出来。
-const normalizeNarrationText = (raw: string) =>
-  raw
-    .replace(/[`*_#>-]/g, ' ')
-    .replace(/\[(.*?)\]\((.*?)\)/g, '$1')
-    .replace(/\s+/g, ' ')
-    .trim()
+const stopAudio = () => {
+  playbackToken.value += 1
+  narrationQueue.length = 0
+  releaseCurrentAudio()
+}
 
-// 当前端一次请求整段长文本失败时，退回到按句子分段的保守策略。
-// 这样可以兼容腾讯云长文本任务超时、资源包限制或偶发失败等场景。
-const splitNarrationText = (raw: string, maxLength = TTS_SEGMENT_MAX_LENGTH) => {
-  const normalized = normalizeNarrationText(raw)
-  if (!normalized) return []
-  if (normalized.length <= maxLength) return [normalized]
-
-  const coarseParts = normalized
-    .split(/(?<=[。！？；;.!?\n])/)
-    .map((part) => part.trim())
-    .filter(Boolean)
-
-  const result: string[] = []
-  let buffer = ''
-
-  const flushBuffer = () => {
-    const text = buffer.trim()
-    if (text) result.push(text)
-    buffer = ''
+const speakWithBrowser = (text: string, token: number) => new Promise<void>((resolve) => {
+  if (!('speechSynthesis' in window)) {
+    resolve()
+    return
   }
 
-  for (const part of coarseParts) {
-    if (!part) continue
+  const utterance = new SpeechSynthesisUtterance(text)
+  utterance.lang = 'zh-CN'
+  utterance.rate = 0.96
+  utterance.pitch = 1
+  const finish = () => {
+    if (activePlaybackResolve === finish) activePlaybackResolve = null
+    resolve()
+  }
+  utterance.onend = finish
+  utterance.onerror = finish
+  activePlaybackResolve = finish
+  window.speechSynthesis.cancel()
+  if (token === playbackToken.value) window.speechSynthesis.speak(utterance)
+  else finish()
+})
 
-    if (part.length > maxLength) {
-      flushBuffer()
-      let start = 0
-      while (start < part.length) {
-        result.push(part.slice(start, start + maxLength).trim())
-        start += maxLength
+const playNarrationChunk = async (text: string, token: number) => {
+  try {
+    const blob = await requestBackendTts({ text })
+    if (token !== playbackToken.value) return
+
+    const url = URL.createObjectURL(blob)
+    const audio = audioRef.value || new Audio()
+    audioRef.value = audio
+    activeAudioUrl.value = url
+    audio.src = url
+    await new Promise<void>((resolve, reject) => {
+      const finish = () => {
+        if (activePlaybackResolve === finish) activePlaybackResolve = null
+        resolve()
       }
-      continue
-    }
-
-    const next = buffer ? `${buffer} ${part}`.trim() : part
-    if (next.length > maxLength) {
-      flushBuffer()
-      buffer = part
-    } else {
-      buffer = next
-    }
+      activePlaybackResolve = finish
+      audio.onended = finish
+      audio.onerror = () => reject(new Error('TTS_AUDIO_PLAYBACK_FAILED'))
+      audio.play().catch(reject)
+    })
+  } catch {
+    if (token === playbackToken.value) await speakWithBrowser(text, token)
+  } finally {
+    releaseCurrentAudio()
   }
-
-  flushBuffer()
-  return result
 }
 
-const playAudioBlob = async (blob: Blob, token: number) => {
-  if (token !== narrationToken.value) return
-
-  const audioUrl = URL.createObjectURL(blob)
-  const audioEl = narrationAudioRef.value || new Audio()
-  narrationAudioRef.value = audioEl
-
-  if (activeAudioUrl.value) {
-    URL.revokeObjectURL(activeAudioUrl.value)
-  }
-  activeAudioUrl.value = audioUrl
-
-  await new Promise<void>((resolve) => {
-    const finish = () => {
-      audioEl.onended = null
-      audioEl.onerror = null
-      resolve()
-    }
-
-    audioEl.onended = finish
-    audioEl.onerror = finish
-    audioEl.src = audioUrl
-
-    // play() 成功则等 onended；失败则立即收尾，避免 async executor 反模式。
-    audioEl.play().catch(() => finish())
-  })
-}
-
-const playNarrationBySegments = async (content: string, token: number) => {
-  const segments = splitNarrationText(content)
-  if (segments.length === 0) return false
-
-  let playedAtLeastOneSegment = false
-  for (const segment of segments) {
-    if (token !== narrationToken.value) return playedAtLeastOneSegment
-    const blob = await requestBackendTts({ text: segment })
-    if (token !== narrationToken.value) return playedAtLeastOneSegment
-    await playAudioBlob(blob, token)
-    playedAtLeastOneSegment = true
-  }
-
-  return playedAtLeastOneSegment
-}
-
-const drainNarrationQueue = async (token: number) => {
-  if (narrationProcessing.value) return
-  narrationProcessing.value = true
+const drainNarrationQueue = async () => {
+  if (narrationQueueRunning) return
+  narrationQueueRunning = true
+  const token = playbackToken.value
 
   try {
-    while (token === narrationToken.value && narrationQueue.value.length > 0) {
-      const nextText = narrationQueue.value.shift() || ''
-      const content = normalizeNarrationText(nextText)
-      if (!content) continue
-
-      try {
-        const blob = await requestBackendTts({ text: content })
-        if (token !== narrationToken.value) return
-        await playAudioBlob(blob, token)
-      } catch {
-        await playNarrationBySegments(content, token).catch(() => false)
-      }
+    while (token === playbackToken.value && narrationQueue.length > 0) {
+      const text = narrationQueue.shift()
+      if (text) await playNarrationChunk(text, token)
     }
-  } finally {
-    narrationProcessing.value = false
-    if (token === narrationToken.value && narrationQueue.value.length === 0) {
+
+    if (token === playbackToken.value && narrationQueue.length === 0) {
       emit('narration-ended')
     }
+  } finally {
+    narrationQueueRunning = false
+    if (narrationQueue.length > 0) void drainNarrationQueue()
   }
 }
 
-// 讲解文本统一通过后端 TTS 合成。
-// 前端会把多次传入的讲解片段排队顺序播放，从而实现“边生成边讲解”。
-const startNarration = async (text: string) => {
-  const token = narrationToken.value
-  const content = normalizeNarrationText(text || '')
-  if (!content) {
-    return
-  }
-
-  narrationQueue.value.push(content)
-  void drainNarrationQueue(token)
+const enqueueNarration = (rawText: string) => {
+  const text = normalizeNarrationText(rawText)
+  if (!text) return
+  narrationQueue.push(text)
+  void drainNarrationQueue()
 }
 
-// 每次切换 cue 都重新加载对应视频，并配合样式类做淡入效果。
-const playCurrentVideo = async () => {
-  showPlaceholder.value = false
-  const nextSrc = currentVideoSrc.value
-  const isSourceChanged = nextSrc !== lastVideoSrc.value
-  if (isSourceChanged) {
-    videoVisible.value = false
-    videoSwitching.value = true
-  }
+const playVideo = async () => {
+  videoReady.value = false
+  showFallback.value = false
   await nextTick()
 
-  const el = videoRef.value
-  if (!el) return
-  setDebugAction('playCurrentVideo')
+  const video = videoRef.value
+  if (!video) return
+  video.muted = true
+  video.load()
 
   try {
-    el.currentTime = 0
+    await video.play()
   } catch {
-    // ignore
-  }
-  el.load()
-
-  try {
-    el.muted = true
-    el.volume = 1
-    await el.play()
-    lastVideoSrc.value = nextSrc
-    syncVideoDebugState()
-  } catch {
-    setDebugAction('muted-play-failed')
-    syncVideoDebugState()
+    showFallback.value = true
   }
 }
 
-const stopVideo = () => {
-  const el = videoRef.value
-  if (!el) return
-  setDebugAction('stopVideo')
-  el.pause()
-  try {
-    el.currentTime = 0
-  } catch {
-    // ignore
-  }
-  syncVideoDebugState()
-}
-
-// 等视频数据真正加载完成后再显示，减少闪白或空帧。
-const onLoadedData = () => {
-  setDebugAction('loadeddata')
-  showPlaceholder.value = false
+const handleLoaded = () => {
+  showFallback.value = false
   requestAnimationFrame(() => {
-    videoVisible.value = true
-    window.setTimeout(() => {
-      videoSwitching.value = false
-    }, 460)
+    videoReady.value = true
   })
-  syncVideoDebugState()
 }
 
-// 欢迎视频只播放一次；待机和讲解状态需要持续可用。
-const onEnded = async () => {
-  setDebugAction('ended')
-  if (normalizedCue.value === 'greeting') {
-    emit('request-idle')
-    return
-  }
-  if (normalizedCue.value === 'idle' || normalizedCue.value === 'teaching') {
-    const el = videoRef.value
-    if (!el) return
-    try {
-      el.currentTime = 0
-      await el.play()
-      syncVideoDebugState()
-    } catch {
-      await playCurrentVideo()
-    }
-  }
+const handleEnded = () => {
+  if (normalizedCue.value === 'greeting') emit('request-idle')
 }
 
-const onError = () => {
-  setDebugAction('error')
-  syncVideoDebugState()
-  if (normalizedCue.value === 'greeting' || normalizedCue.value === 'teaching') {
-    emit('request-idle')
-    return
-  }
-  videoVisible.value = false
-  showPlaceholder.value = true
+const handleVideoError = () => {
+  videoReady.value = false
+  showFallback.value = true
+  if (normalizedCue.value !== 'idle') emit('request-idle')
 }
 
 watch(
-  () => props.playSignal,
-  () => {
-    // 父组件通过递增 playSignal 的方式，强制重播同一个 cue 视频。
-    void playCurrentVideo()
-  },
+  () => [normalizedCue.value, props.playSignal],
+  () => void playVideo(),
   { immediate: true },
 )
 
 watch(
   () => props.narrationSignal,
-  () => {
-    void startNarration(props.narrationText || '')
-  },
-)
-
-watch(
-  () => normalizedCue.value,
-  (cue) => {
-    // 一旦离开 teaching 状态，就立即停止当前讲解语音。
-    if (cue !== 'teaching') stopNarration()
-  },
+  () => enqueueNarration(props.narrationText || ''),
 )
 
 watch(
   () => props.stopSignal,
   () => {
-    stopVideo()
-    stopNarration()
+    videoRef.value?.pause()
+    stopAudio()
   },
 )
 
-onMounted(() => {
-  // 资源检测放在挂载后异步执行，避免阻塞首屏渲染。
-  void checkRequiredVideos()
-})
-
 onBeforeUnmount(() => {
-  stopVideo()
-  stopNarration()
+  videoRef.value?.pause()
+  stopAudio()
 })
 </script>
 
 <style scoped>
 .digital-human {
-  height: 100%;
-}
-
-.stage-shell {
   position: relative;
+  width: 100%;
   height: 100%;
-  border-radius: 20px;
+  min-height: 0;
   overflow: hidden;
-  background:
-    radial-gradient(circle at 50% 6%, rgba(240, 251, 240, 0.55), transparent 40%),
-    linear-gradient(
-      180deg,
-      rgba(206, 228, 206, 0.92) 0%,
-      rgba(184, 227, 185, 0.94) 58%,
-      rgba(146, 211, 148, 0.95) 100%
-    );
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-xl);
+  background: linear-gradient(180deg, #dcefdc 0%, #aedcaf 100%);
+  isolation: isolate;
 }
 
-.video {
+.digital-human__video {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: contain;
-  background: transparent;
+  object-position: center bottom;
   opacity: 0;
-  transition: opacity 420ms ease-in-out;
-  transform: scale(1);
-  transform-origin: center;
+  transform: scale(1.015);
+  transition: opacity 360ms ease, transform 520ms ease;
 }
 
-.video.is-switching {
-  transform: scale(1.01);
-  transition:
-    opacity 420ms ease-in-out,
-    transform 460ms ease-out;
-}
-
-.video.is-visible {
+.digital-human__video.is-ready {
   opacity: 1;
   transform: scale(1);
 }
 
-.placeholder-stage {
+.digital-human__shade {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent 58%, rgba(5, 8, 14, 0.72) 100%);
+}
+
+.digital-human__status {
+  position: absolute;
+  right: 4%;
+  bottom: 3%;
+  left: 4%;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  min-height: 2.75rem;
+  gap: 0.55rem;
+  padding: 0.55rem 0.75rem;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.875rem;
+  background: rgba(10, 14, 22, 0.64);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 0.75rem;
+  backdrop-filter: blur(1rem) saturate(135%);
+}
+
+.digital-human__status strong {
+  margin-left: auto;
+  color: rgba(255, 255, 255, 0.54);
+  font-weight: 500;
+}
+
+.digital-human__pulse {
+  width: 0.45rem;
+  height: 0.45rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #45d483;
+  box-shadow: 0 0 0 0 rgba(69, 212, 131, 0.45);
+  animation: status-pulse 2s ease-out infinite;
+}
+
+.is-teaching .digital-human__pulse {
+  background: #6cb8ff;
+  animation-duration: 1.1s;
+}
+
+.digital-human__fallback {
   position: absolute;
   inset: 0;
   display: grid;
-  place-items: center;
-  padding: 18px;
-  box-sizing: border-box;
-}
-
-.reserve-frame {
-  width: min(92%, 420px);
-  height: min(78%, 520px);
-  border-radius: 22px;
-  border: 2px dashed rgba(39, 121, 46, 0.35);
-  background: rgba(255, 255, 255, 0.25);
-  backdrop-filter: blur(4px);
-  display: grid;
-  align-content: center;
+  place-content: center;
   justify-items: center;
-  gap: 8px;
+  gap: 0.65rem;
+  color: rgba(255, 255, 255, 0.88);
   text-align: center;
-  padding: 20px;
-  box-sizing: border-box;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+  background: #0a0e17;
 }
 
-.reserve-icon {
-  font-size: 34px;
-  line-height: 1;
+.digital-human__fallback span:last-child {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.875rem;
 }
 
-.reserve-title {
-  color: #14371b;
-  font-size: 18px;
+.digital-human__fallback-mark {
+  display: grid;
+  width: 3.25rem;
+  aspect-ratio: 1;
+  place-items: center;
+  color: #08111f;
   font-weight: 800;
+  border-radius: 50%;
+  background: #9fd7ff;
 }
 
-.reserve-hint {
-  color: #285533;
-  font-size: 13px;
+@keyframes status-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(69, 212, 131, 0.45); }
+  70%, 100% { box-shadow: 0 0 0 0.55rem rgba(69, 212, 131, 0); }
 }
 
-.reserve-path {
-  color: #2f6d3d;
-  font-size: 12px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.65);
-}
-
-.reserve-list {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.reserve-list span {
-  font-size: 11px;
-  color: #285c34;
-  padding: 2px 7px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-}
-
-.debug-box {
-  position: absolute;
-  left: 10px;
-  bottom: 10px;
-  z-index: 3;
-  max-width: calc(100% - 20px);
-  padding: 8px 10px;
-  border-radius: 10px;
-  font-size: 11px;
-  line-height: 1.35;
-  color: #15321a;
-  background: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(21, 50, 26, 0.2);
-  backdrop-filter: blur(4px);
+@media (prefers-reduced-motion: reduce) {
+  .digital-human__video,
+  .digital-human__pulse {
+    transition: none;
+    animation: none;
+  }
 }
 </style>

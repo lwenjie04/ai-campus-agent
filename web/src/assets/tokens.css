@@ -1,0 +1,228 @@
+/* ==========================================================================
+   Design Token System — Prism
+   Linear / Vercel 风格：暖白底色、极致简约、字体驱动、微妙阴影
+   深色聊天 + 浅色社区/管理/认证
+   ========================================================================== */
+
+:root {
+  /* ==========================================================================
+     Typography — SF Pro + PingFang SC
+     ========================================================================== */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+  --font-mono: "SF Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --font-size-caption: 0.6875rem;   /* 11px */
+  --font-size-footnote: 0.75rem;     /* 12px */
+  --font-size-subhead: 0.8125rem;    /* 13px */
+  --font-size-callout: 0.875rem;     /* 14px */
+  --font-size-body: 1.0625rem;       /* 17px — Apple body */
+  --font-size-title3: 1.25rem;       /* 20px */
+  --font-size-title2: 1.375rem;      /* 22px */
+  --font-size-title1: 1.75rem;       /* 28px */
+  --font-size-large-title: 2.125rem; /* 34px */
+  --font-size-hero: clamp(3rem, 8vw, 5.5rem); /* hero */
+
+  /* Compatibility aliases */
+  --font-size-xs: 0.6875rem;
+  --font-size-sm: 0.75rem;
+  --font-size-lg: 1.25rem;
+  --font-size-xl: 1.375rem;
+  --font-size-2xl: 1.75rem;
+
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-black: 800;
+
+  --line-height-tight: 1.1;
+  --line-height-normal: 1.4;
+  --line-height-relaxed: 1.6;
+  --letter-spacing-tight: -0.02em;
+  --letter-spacing-normal: -0.01em;
+  --letter-spacing-wide: 0.02em;
+
+  /* ==========================================================================
+     Spacing — Apple generous whitespace
+     ========================================================================== */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* ==========================================================================
+     Border Radius — big and smooth
+     ========================================================================== */
+  --radius-sm: 0.5rem;      /* 8px */
+  --radius-md: 0.75rem;     /* 12px */
+  --radius-lg: 1.125rem;    /* 18px — messages */
+  --radius-xl: 1.375rem;    /* 22px — cards */
+  --radius-2xl: 1.75rem;    /* 28px — panels */
+  --radius-pill: 62.5rem;   /* 1000px — buttons, inputs, chips */
+
+  /* ==========================================================================
+     Color — Dark Canvas (Black + Blue)
+     ========================================================================== */
+  --dark-bg: #000000;                      /* pure black */
+  --dark-canvas: #0a0a0a;                  /* slightly lifted */
+  --dark-surface: rgba(255, 255, 255, 0.06); /* glass panel */
+  --dark-surface-hover: rgba(255, 255, 255, 0.1);
+  --dark-card: rgba(255, 255, 255, 0.08);
+  --dark-line: rgba(255, 255, 255, 0.1);
+  --dark-ink: #f5f5f7;                     /* Apple light text */
+  --dark-muted: rgba(245, 245, 247, 0.56);
+
+  /* ==========================================================================
+     Color — Light Canvas (Silver + White)
+     ========================================================================== */
+  --light-bg: #f5f5f7;                     /* Apple silver */
+  --light-bg-elevated: #ffffff;
+  --light-surface: rgba(255, 255, 255, 0.8);
+  --light-card: rgba(255, 255, 255, 0.92);
+  --light-line: rgba(0, 0, 0, 0.08);
+  --light-ink: #1d1d1f;                    /* Apple dark text */
+  --light-muted: rgba(29, 29, 31, 0.56);
+
+  /* ==========================================================================
+     Accent — Apple Blue + Purple
+     ========================================================================== */
+  --apple-blue: #0071e3;         /* primary action */
+  --apple-blue-hover: #0077ed;
+  --apple-blue-pressed: #006edb;
+  --apple-purple: #ac39ff;       /* secondary / AI glow */
+  --apple-cyan: #5ac8fa;         /* AI status */
+  --apple-green: #34c759;        /* success, speaking */
+  --apple-orange: #ff9500;       /* warning, pending */
+  --apple-red: #ff3b30;          /* error, rejected */
+
+  /* Compatibility aliases — used by community / admin pages */
+  --primary-500: #0071e3;
+  --accent-violet: #ac39ff;
+  --warning-amber: #ff9500;
+  --accent-cyan: #5ac8fa;
+
+  --gradient-blue-purple: linear-gradient(135deg, #0071e3, #ac39ff);
+  --gradient-blue-cyan: linear-gradient(135deg, #0071e3, #5ac8fa);
+  --gradient-purple-pink: linear-gradient(135deg, #ac39ff, #ff375f);
+  --gradient-cyan-green: linear-gradient(135deg, #5ac8fa, #34c759);
+
+  /* ==========================================================================
+     Shadows — subtle depth
+     ========================================================================== */
+  --shadow-elevated: 0 0 0 0.5px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.06),
+                     0 8px 32px rgba(0,0,0,0.08);
+  --shadow-floating: 0 0 0 0.5px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.08),
+                     0 16px 48px rgba(0,0,0,0.12);
+  --shadow-modal: 0 0 0 1px rgba(0,0,0,0.08), 0 8px 32px rgba(0,0,0,0.12),
+                  0 32px 80px rgba(0,0,0,0.2);
+
+  --shadow-glow-blue: 0 0 2rem rgba(0, 113, 227, 0.3);
+  --shadow-glow-purple: 0 0 2rem rgba(172, 57, 255, 0.25);
+  --shadow-glow-cyan: 0 0 1.5rem rgba(90, 200, 250, 0.35);
+
+  /* Compatibility shadow */
+  --shadow-light-sm: 0 0 0 0.5px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.06);
+
+  /* Compatibility surfaces */
+  --light-surface-soft: rgba(255,255,255,0.55);
+
+  /* ==========================================================================
+     Transitions — spring-like
+     ========================================================================== */
+  --transition-micro: 120ms cubic-bezier(0, 0, 0.2, 1);
+  --transition-fast: 200ms cubic-bezier(0, 0, 0.2, 1);
+  --transition-base: 300ms cubic-bezier(0, 0, 0.2, 1);
+  --transition-slow: 500ms cubic-bezier(0, 0, 0.2, 1);
+  --transition-spring: 400ms cubic-bezier(0.15, 1.2, 0.35, 1);
+
+  /* ==========================================================================
+     Glass — heavy blur
+     ========================================================================== */
+  --glass-blur-sm: blur(0.625rem);
+  --glass-blur: blur(1.25rem);
+  --glass-blur-lg: blur(2rem);
+}
+
+/* ==========================================================================
+   Light Surface — for community, admin, auth pages
+   ========================================================================== */
+.light-surface {
+  --color-bg: var(--light-bg);
+  --color-surface: var(--light-surface);
+  --color-card: var(--light-card);
+  --color-line: var(--light-line);
+  --color-ink: var(--light-ink);
+  --color-muted: var(--light-muted);
+}
+
+/* ==========================================================================
+   Accessibility
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================================================
+   Global
+   ========================================================================== */
+body {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-relaxed);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: var(--letter-spacing-normal);
+}
+
+::selection {
+  background: rgba(0, 113, 227, 0.3);
+  color: #fff;
+}
+
+/* ==========================================================================
+   Global Animations — reusable keyframes
+   ========================================================================== */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(1.5rem); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(2rem); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0.5rem rgba(0,113,227,0.2); }
+  50%      { box-shadow: 0 0 2rem rgba(0,113,227,0.4); }
+}
+@keyframes breathe {
+  0%, 100% { opacity: 0.7; }
+  50%      { opacity: 1; }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
