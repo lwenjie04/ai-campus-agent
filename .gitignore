@@ -39,3 +39,12 @@ __screenshots__/
 *.timestamp-*-*.mjs
 server/.env
 .env.server
+
+# Generated RAG data (reproducible via server/scripts/build-*.mjs)
+server/data/chunked-knowledge-base.json
+server/data/combined-knowledge.json
+server/data/handbook-chunked.json
+server/data/student-handbook.json
+server/data/student-handbook-lightrag.json
+server/data/vector-index.json
+server/data/knowledge-base.qc-report.json
