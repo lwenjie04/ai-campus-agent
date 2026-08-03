@@ -108,3 +108,24 @@
 ### Status
 
 [OK] **Completed**
+
+
+## Session: 合并 codex/raycast-lightrag-redesign 到 feat/workspaces-split
+
+**Date**: 2026-08-03
+**Task**: 合并 codex/raycast-lightrag-redesign (a4c2611) 到 feat/workspaces-split
+**Branch**: `feat/workspaces-split`
+
+### Summary
+
+将 codex 分支（首页重构 / LightRAG 主用 / 数字人稳定化）的功能改动手动搬移到 wssplit 的 npm workspaces 布局，以 wssplit 结构为主、保持前后端分离。前端 8 个新增文件搬入 `web/src/`（PortfolioHome / DigitalHumanPanel / AdminLightRagView / SourcePanel / RobotAvatar / assets token），17 个修改文件以 wssplit 版为基础整合、品牌统一为「数智校答」，删除 VoiceOrb.vue；后端 index.mjs 搬入 LightRAG 主用 + 健康检查缓存 + /lightrag 反向代理，rag.mjs 加向量混合检索，mysql.mjs 加 MYSQL_ENABLED/connectTimeout，auth.mjs 加邮件错误细节，保留 wssplit 的 JWT 鉴权 / 限流 / 强制改密；vite.config.ts 加 ElementPlus 自动导入与分包；server/data/*.json 生成物 gitignore。验证：vue-tsc + vite build 通过、server 全部 .mjs node --check 通过、启动 smoke test 正常。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `e4f476d` | (see git log) |
+
+### Status
+
+[OK] **Completed**
