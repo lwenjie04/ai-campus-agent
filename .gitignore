@@ -40,6 +40,9 @@ __screenshots__/
 server/.env
 .env.server
 
+# LightRAG runtime data (contains keys, rebuildable)
+rag_storage/
+
 # Generated RAG data (reproducible via server/scripts/build-*.mjs)
 server/data/chunked-knowledge-base.json
 server/data/combined-knowledge.json
