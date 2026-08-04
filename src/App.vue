@@ -1,10 +1,5 @@
 ﻿<template>
-  <div v-if="!authStore.loggedIn" class="app-auth-shell">
-    <LoginView @login-success="handleLoginSuccess" />
-  </div>
-
   <div
-    v-else
     class="app-layout"
     :class="{ 'app-layout--agent': activeSection === 'home' }"
   >
@@ -46,9 +41,12 @@
         </nav>
 
         <div class="top-nav__auth">
-          <span class="top-nav__auth-role">{{ authStore.isAdmin ? '管理员' : '普通用户' }}</span>
-          <span class="top-nav__auth-text">{{ authStore.displayName || authStore.username }}</span>
-          <button type="button" class="top-nav__tab" @click="logout">退出</button>
+          <template v-if="authStore.loggedIn">
+            <span class="top-nav__auth-role">{{ authStore.isAdmin ? '管理员' : '普通用户' }}</span>
+            <span class="top-nav__auth-text">{{ authStore.displayName || authStore.username }}</span>
+            <button type="button" class="top-nav__tab" @click="logout">退出</button>
+          </template>
+          <button v-else type="button" class="top-nav__tab" @click="openLogin">登录</button>
         </div>
       </div>
     </header>
@@ -57,7 +55,7 @@
       class="page-content"
       :class="{ 'page-content--agent': activeSection === 'home' }"
     >
-      <AgentChat v-if="activeSection === 'home'" @open-community-post="openPostFromSource" />
+      <AgentChat v-if="activeSection === 'home'" @open-community-post="openPostFromSource" @require-login="openLogin" />
 
       <AdminReviewView
         v-else-if="activeSection === 'admin' && authStore.isAdmin"
@@ -77,6 +75,18 @@
       />
     </main>
   </div>
+
+  <!-- 登录弹窗：未登录访问受限入口时弹出 -->
+  <el-dialog
+    v-model="loginDialogVisible"
+    :show-close="false"
+    width="440px"
+    append-to-body
+    :close-on-click-modal="true"
+    class="login-dialog"
+  >
+    <LoginView @login-success="handleLoginSuccess" />
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -97,11 +107,29 @@ const activeSection = ref<MainSection>('home')
 const communityView = ref<CommunityViewState>('list')
 const currentPostId = ref('')
 
+// 登录弹窗：登录成功后执行的回调（用于「登录后回到刚才的操作」）
+const loginDialogVisible = ref(false)
+let pendingLoginAction: (() => void) | null = null
+
+const openLogin = () => {
+  loginDialogVisible.value = true
+}
+
+const requestLogin = (afterLogin?: () => void) => {
+  pendingLoginAction = afterLogin || null
+  loginDialogVisible.value = true
+}
+
 const goHome = () => {
   activeSection.value = 'home'
 }
 
 const goCommunity = () => {
+  // 未登录访问学生社区 → 弹登录弹窗，不切换页面
+  if (!authStore.loggedIn) {
+    openLogin()
+    return
+  }
   activeSection.value = 'community'
   communityView.value = 'list'
 }
@@ -128,8 +156,15 @@ const backToCommunityList = () => {
   communityView.value = 'list'
 }
 
-const handleLoginSuccess = (role: LoginRole) => {
-  activeSection.value = role === 'admin' ? 'admin' : 'home'
+const handleLoginSuccess = (_role: LoginRole) => {
+  loginDialogVisible.value = false
+  if (pendingLoginAction) {
+    const action = pendingLoginAction
+    pendingLoginAction = null
+    action()
+    return
+  }
+  // 默认保持当前页面（如登录前在首页发消息，登录后停留原处，由 AgentChat 自动补发）
 }
 
 const logout = () => {
@@ -141,9 +176,6 @@ const logout = () => {
 
 onMounted(() => {
   authStore.hydrate()
-  if (authStore.loggedIn) {
-    activeSection.value = authStore.isAdmin ? 'admin' : 'home'
-  }
 })
 </script>
 
@@ -289,6 +321,23 @@ onMounted(() => {
     min-height: 0;
     overflow: hidden;
   }
+}
+
+/* ====== 登录弹窗 ====== */
+.login-dialog :deep(.el-dialog) {
+  border-radius: 24px;
+  padding: 0;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 24px 64px rgba(30, 80, 40, 0.22);
+}
+
+.login-dialog :deep(.el-dialog__header) {
+  display: none;
+}
+
+.login-dialog :deep(.el-dialog__body) {
+  padding: 0;
 }
 
 @media (max-width: 900px) {

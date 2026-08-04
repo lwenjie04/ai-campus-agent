@@ -1,6 +1,5 @@
 ﻿<template>
-  <div class="login-page">
-    <div class="login-card">
+  <div class="login-card login-card--dialog">
       <div class="login-card__head">
         <div class="login-kicker">账号入口</div>
         <h1>数智校答</h1>
@@ -120,7 +119,6 @@
           </div>
         </el-tab-pane>
       </el-tabs>
-    </div>
   </div>
 </template>
 
@@ -268,24 +266,98 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.login-page {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background:
-    radial-gradient(circle at top, rgba(243, 255, 240, 0.98), rgba(222, 249, 214, 0.92) 42%, rgba(135, 223, 99, 0.96) 100%);
+/* 登录弹窗模式：不再需要全屏背景 */
+.login-card {
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.login-card {
-  width: min(680px, 100%);
-  padding: 30px;
-  border: 1px solid rgba(103, 167, 94, 0.2);
-  border-radius: 28px;
-  background: rgba(251, 255, 248, 0.88);
-  box-shadow: 0 20px 42px rgba(55, 116, 63, 0.14);
-  backdrop-filter: blur(18px);
+.login-card--dialog {
+  padding: 30px 32px 32px;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* 弹窗内隐藏装饰性高亮，专注登录表单 */
+.login-card--dialog .login-highlights {
+  display: none;
+}
+
+/* 品牌头部：居中、清爽 */
+.login-card--dialog .login-kicker {
+  display: none;
+}
+
+.login-card--dialog .login-card__head {
+  text-align: center;
+  margin-bottom: 6px;
+}
+
+.login-card--dialog .login-card__head h1 {
+  margin: 4px 0 6px;
+  font-size: 26px;
+  color: #1a5c33;
+  letter-spacing: 0.02em;
+}
+
+.login-card--dialog .login-card__head p {
+  font-size: 13px;
+  color: rgba(24, 78, 48, 0.58);
+}
+
+/* tabs 居中、紧凑 */
+.login-card--dialog .login-tabs {
+  margin-top: 4px;
+}
+
+.login-card--dialog :deep(.el-tabs__header) {
+  margin-bottom: 6px;
+}
+
+/* 表单舒适 */
+.login-card--dialog .login-form {
+  margin-top: 16px;
+}
+
+.login-card--dialog :deep(.el-input__wrapper) {
+  border-radius: 10px;
+  padding: 3px 12px;
+  box-shadow: 0 0 0 1px rgba(103, 167, 94, 0.18) inset;
+}
+
+.login-card--dialog :deep(.el-input__wrapper:hover),
+.login-card--dialog :deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 1px rgba(63, 140, 82, 0.35) inset;
+}
+
+.login-card--dialog :deep(.el-form-item) {
+  margin-bottom: 16px;
+}
+
+.login-card--dialog :deep(.el-form-item__label) {
+  font-weight: 600;
+  color: #2a5c3c;
+}
+
+/* 按钮 */
+.login-card--dialog .login-actions {
+  margin-top: 14px;
+}
+
+.login-card--dialog .login-actions .el-button {
+  min-height: 42px;
+  padding: 0 22px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.login-card--dialog .login-actions--single {
+  justify-content: stretch;
+}
+
+.login-card--dialog .login-actions--single .el-button {
+  width: 100%;
 }
 
 .login-kicker {

@@ -102,7 +102,7 @@
               也就是说：
               页面本身不处理发消息细节，真正的发送逻辑统一放在 store 中。
             -->
-            <InputBox :loading="store.loading" @send="store.sendMessage" />
+            <InputBox :loading="store.loading" @send="handleSend" />
           </footer>
         </div>
       </section>
@@ -193,7 +193,7 @@
 // ref 用于定义基础响应式变量
 // computed 用于定义依赖其他状态自动更新的计算属性
 // onMounted 用于在页面挂载后执行初始化逻辑
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 
 // 引入右侧聊天列表组件
 import ChatWindow from '@/components/ChatWindow.vue'
@@ -206,10 +206,16 @@ import DigitalHumanPlayer from '@/components/DigitalHumanPlayer.vue'
 
 // 引入全局智能体 store
 import { useAgentStore } from '@/store/agent'
+import { useAuthStore } from '@/store/auth'
 
 const emit = defineEmits<{
   (e: 'openCommunityPost', postId: string): void
+  (e: 'require-login'): void
 }>()
+
+const authStore = useAuthStore()
+// 未登录时拦截的待发送消息；登录成功后自动补发，实现「回到刚才那条消息」
+const pendingDraft = ref('')
 
 // 用户身份的允许值。
 // 通过联合类型约束，避免传入不受支持的角色字符串。
@@ -222,6 +228,27 @@ type GradeValue = '' | '大一' | '大二' | '大三' | '大四' | '大五' | '�
 // 获取 Pinia store 实例。
 // 页面中的业务状态大多都由 store 维护。
 const store = useAgentStore()
+
+// 发送前登录守卫：未登录时拦截并弹出登录，登录成功后自动补发刚才的消息。
+const handleSend = (text: string) => {
+  if (!authStore.loggedIn) {
+    pendingDraft.value = text
+    emit('require-login')
+    return
+  }
+  store.sendMessage(text)
+}
+
+watch(
+  () => authStore.loggedIn,
+  (loggedIn) => {
+    if (loggedIn && pendingDraft.value) {
+      const draft = pendingDraft.value
+      pendingDraft.value = ''
+      store.sendMessage(draft)
+    }
+  },
+)
 
 // 校徽是否加载失败。
 // 如果失败，模板里会从图片切换为“广二师”文字兜底。
