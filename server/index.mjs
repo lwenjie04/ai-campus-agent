@@ -962,8 +962,10 @@ const server = createServer(async (req, res) => {
         headers: { ...req.headers, host: targetUrl.host },
       },
       (proxyRes) => {
-        // 复制响应头
+        // 复制响应头；先删除上游的 CORS 头，避免与 ALLOW_ORIGIN 冲突导致浏览器拦截
         const headers = { ...proxyRes.headers }
+        delete headers['access-control-allow-origin']
+        delete headers['Access-Control-Allow-Origin']
         headers['Access-Control-Allow-Origin'] = ALLOW_ORIGIN
         res.writeHead(proxyRes.statusCode, headers)
         proxyRes.pipe(res)

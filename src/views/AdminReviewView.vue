@@ -15,6 +15,27 @@
       </div>
     </header>
 
+    <!-- 二级导航 -->
+    <nav class="admin-subnav">
+      <button
+        type="button"
+        class="admin-subnav__tab"
+        :class="{ 'is-active': activeTab === 'review' }"
+        @click="activeTab = 'review'"
+      >
+        内容审核
+      </button>
+      <button
+        type="button"
+        class="admin-subnav__tab"
+        :class="{ 'is-active': activeTab === 'lightrag' }"
+        @click="activeTab = 'lightrag'"
+      >
+        LightRAG 管理
+      </button>
+    </nav>
+
+    <section v-show="activeTab === 'review'">
     <section class="stats-grid">
       <article class="stat-card stat-card--candidate">
         <span class="stat-card__label">待入库候选</span>
@@ -362,6 +383,50 @@
         </template>
       </el-skeleton>
     </el-dialog>
+    </section>
+
+    <!-- LightRAG 管理面板 -->
+    <section v-show="activeTab === 'lightrag'" class="lightrag-panel">
+      <div class="lightrag-hero">
+        <h2>LightRAG 知识图谱管理</h2>
+        <p>查看 LightRAG 服务状态与知识库建图情况。图谱用于聊天时的语义检索，命中优先于关键词检索。</p>
+      </div>
+
+      <div class="lightrag-status-grid">
+        <article class="lr-card">
+          <span class="lr-card__label">服务状态</span>
+          <strong class="lr-card__value" :class="lrHealthOk ? 'lr-card__value--ok' : 'lr-card__value--bad'">
+            {{ lrHealthOk ? '运行中' : '未连接' }}
+          </strong>
+          <span class="lr-card__hint">LightRAG 核心 v{{ lrVersion || '-' }}</span>
+        </article>
+        <article class="lr-card">
+          <span class="lr-card__label">已建图文档</span>
+          <strong class="lr-card__value">{{ lrProcessed }}</strong>
+          <span class="lr-card__hint">已成功构建图谱</span>
+        </article>
+        <article class="lr-card">
+          <span class="lr-card__label">待处理</span>
+          <strong class="lr-card__value">{{ lrPending }}</strong>
+          <span class="lr-card__hint">pending / parsing / analyzing</span>
+        </article>
+        <article class="lr-card">
+          <span class="lr-card__label">失败</span>
+          <strong class="lr-card__value" :class="lrFailed > 0 ? 'lr-card__value--bad' : ''">{{ lrFailed }}</strong>
+          <span class="lr-card__hint">建图失败文档数</span>
+        </article>
+      </div>
+
+      <div class="lightrag-actions">
+        <el-button type="primary" round @click="openLightragWebui">打开 LightRAG 知识图谱</el-button>
+        <el-button round @click="openLightragDocs">API 文档</el-button>
+        <el-button round @click="refreshLightrag">刷新状态</el-button>
+      </div>
+
+      <p class="lightrag-tip">
+        提示：LightRAG 将知识库（学校通知 + 学生手册）构建为知识图谱，聊天时优先从图谱检索，失败回退关键词 + 向量。
+      </p>
+    </section>
   </div>
 </template>
 
@@ -369,6 +434,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useCommunityStore } from '@/store/community'
+import { appConfig } from '@/config/app'
 
 defineEmits<{
   (e: 'go-login'): void
@@ -378,6 +444,51 @@ defineEmits<{
 const store = useCommunityStore()
 const detailDialogVisible = ref(false)
 const detailDialogTitle = ref('帖子详情')
+
+// 二级导航：内容审核 | LightRAG 管理
+const activeTab = ref<'review' | 'lightrag'>('review')
+
+const lrHealthOk = ref(false)
+const lrVersion = ref('')
+const lrProcessed = ref(0)
+const lrPending = ref(0)
+const lrFailed = ref(0)
+
+const lrApiBase = () => `${appConfig.apiBaseUrl}/api/lightrag`
+const listLen = (arr: unknown) => (Array.isArray(arr) ? arr.length : 0)
+
+const refreshLightrag = async () => {
+  try {
+    const health = await fetch(`${lrApiBase()}/health`).then((r) => r.json())
+    lrHealthOk.value = health?.status === 'healthy'
+    lrVersion.value = health?.core_version || ''
+  } catch {
+    lrHealthOk.value = false
+  }
+  try {
+    const docs = await fetch(`${lrApiBase()}/documents`).then((r) => r.json())
+    const s = docs?.statuses || {}
+    lrProcessed.value = listLen(s.processed)
+    lrFailed.value = listLen(s.failed)
+    lrPending.value =
+      listLen(s.pending) + listLen(s.parsing) + listLen(s.analyzing) + listLen(s.processing)
+  } catch {
+    /* 忽略统计失败 */
+  }
+}
+
+// LightRAG WebUI/API 需直连 LightRAG 服务本身（经后端代理时其相对路径 API 会指向后端根路径而 404）
+const openLightragDocs = () => {
+  window.open('http://127.0.0.1:9621/docs', '_blank')
+}
+
+const openLightragWebui = () => {
+  window.open('http://127.0.0.1:9621/webui/', '_blank')
+}
+
+onMounted(() => {
+  refreshLightrag()
+})
 
 const categoryLabelMap = computed(() =>
   Object.fromEntries(store.meta.categories.map((item) => [item.value, item.label])),
@@ -854,6 +965,131 @@ onMounted(async () => {
   .board-grid--knowledge,
   .board-grid--content {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ====== 二级导航 ====== */
+.admin-subnav {
+  display: flex;
+  gap: 8px;
+  max-width: 1380px;
+  margin: 0 auto 18px;
+  padding: 6px;
+  border: 1px solid rgba(46, 113, 53, 0.16);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.admin-subnav__tab {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 11px;
+  background: transparent;
+  color: rgba(23, 77, 46, 0.66);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.admin-subnav__tab:hover {
+  background: rgba(97, 167, 92, 0.1);
+  color: #2a6b3f;
+}
+
+.admin-subnav__tab.is-active {
+  background: linear-gradient(135deg, #2f8a4b, #46b26a);
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(38, 122, 66, 0.24);
+}
+
+/* ====== LightRAG 管理面板 ====== */
+.lightrag-panel {
+  max-width: 1380px;
+  margin: 0 auto;
+  padding: 24px 28px;
+  border: 1px solid rgba(46, 113, 53, 0.14);
+  border-radius: 24px;
+  background: rgba(251, 255, 248, 0.78);
+  box-shadow: 0 18px 38px rgba(52, 118, 66, 0.1);
+  backdrop-filter: blur(16px);
+}
+
+.lightrag-hero h2 {
+  margin: 0 0 6px;
+  color: #173f24;
+  font-size: 22px;
+}
+
+.lightrag-hero p {
+  margin: 0 0 20px;
+  color: rgba(23, 77, 46, 0.68);
+  line-height: 1.7;
+}
+
+.lightrag-status-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.lr-card {
+  padding: 16px;
+  border: 1px solid rgba(46, 113, 53, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.lr-card__label {
+  display: block;
+  color: rgba(23, 77, 46, 0.55);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.lr-card__value {
+  display: block;
+  margin-top: 8px;
+  color: #173f24;
+  font-size: 28px;
+  line-height: 1.1;
+}
+
+.lr-card__value--ok {
+  color: #2f8a4b;
+}
+
+.lr-card__value--bad {
+  color: #d64545;
+}
+
+.lr-card__hint {
+  display: block;
+  margin-top: 8px;
+  color: rgba(23, 77, 46, 0.55);
+  font-size: 12px;
+}
+
+.lightrag-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.lightrag-tip {
+  margin: 18px 0 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(97, 167, 92, 0.1);
+  color: rgba(23, 77, 46, 0.72);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+@media (max-width: 900px) {
+  .lightrag-status-grid {
+    grid-template-columns: 1fr 1fr;
   }
 }
 </style>
