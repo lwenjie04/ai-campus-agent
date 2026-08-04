@@ -161,6 +161,15 @@ node server/scripts/import-kb-to-lightrag.mjs
 
 > LightRAG 未部署时保持 `LIGHTRAG_PRIMARY=false`，系统自动用「关键词 + bge-m3 向量」混合检索，功能不受影响。
 
+### ⚠️ 实战要点（部署踩过的坑）
+
+1. **后端必须从仓库根启动**：`index.mjs` 用 `process.cwd()` 定位 `.env`（`resolve(process.cwd(), 'server/.env')`）。从 `server/` 目录启动会读不到 `.env` → `LIGHTRAG_PRIMARY` 变 false。启动：根目录 `node server/index.mjs`（即 `npm run server`）。
+2. **LightRAG 的 LLM key**：`start-lightrag.mjs` 读 `server/.env` 的 `LIGHTRAG_LLM_BINDING_API_KEY`（**不是** `rag_storage/.../ .env`），此值必须是真实 DeepSeek key，否则建图报 401（`****_key is invalid`）。
+3. **LightRAG 认证**：用 fully open 模式（`server/.env` 的 `LIGHTRAG_API_KEY` 留空）。设了无效值会 `Invalid token`，留空且服务以无认证启动即可。
+4. **建图失败的文档**：LightRAG 建图偶发 LLM 调用失败（`statuses.failed`），用 `POST /documents/reprocess_failed` 一键重试，无需清空重导。
+5. **curl 传中文会乱码**（Git Bash GBK 编码）：测试接口用 `node -e "fetch(...)"`，不要在 curl 命令行直接带中文。
+6. **建图时间**：429 条文档 LLM 建图约 2 小时；期间 `LIGHTRAG_PRIMARY=false` 时系统用混合检索兜底，功能不受影响。
+
 ## 7. 常用脚本
 
 | 脚本 | 用途 |
