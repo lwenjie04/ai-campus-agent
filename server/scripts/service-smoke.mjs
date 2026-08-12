@@ -1,5 +1,5 @@
-const baseUrl = String(process.env.COMPETITION_BASE_URL || 'http://127.0.0.1:3000').replace(/\/$/, '')
-const timeoutMs = Number.parseInt(process.env.COMPETITION_SMOKE_TIMEOUT_MS || '5000', 10)
+const baseUrl = String(process.env.SERVICE_BASE_URL || 'http://127.0.0.1:3000').replace(/\/$/, '')
+const timeoutMs = Number.parseInt(process.env.SERVICE_SMOKE_TIMEOUT_MS || '5000', 10)
 
 const request = async (path, options = {}) => {
   const controller = new AbortController()
@@ -50,13 +50,13 @@ try {
 }
 
 for (const check of checks) {
-  console.log(`[competition-smoke] ${check.passed ? 'PASS' : 'FAIL'} ${check.name}: ${check.detail}`)
+  console.log(`[service-smoke] ${check.passed ? 'PASS' : 'FAIL'} ${check.name}: ${check.detail}`)
 }
 
 const failed = checks.filter((check) => !check.passed)
 if (failed.length > 0) {
-  console.error(`[competition-smoke] NOT READY: ${failed.map((check) => check.name).join(', ')}`)
+  console.error(`[service-smoke] NOT READY: ${failed.map((check) => check.name).join(', ')}`)
   process.exitCode = 1
 } else {
-  console.log(`[competition-smoke] READY: ${checks.length} live HTTP checks passed`)
+  console.log(`[service-smoke] READY: ${checks.length} live HTTP checks passed`)
 }

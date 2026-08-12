@@ -2,28 +2,34 @@
   <div class="admin-page">
     <header class="admin-hero">
       <div class="admin-hero__content">
-        <div class="admin-kicker">管理员工作台</div>
-        <h1>学生社区审核中心</h1>
+        <div class="admin-kicker">KNOWLEDGE OPERATIONS</div>
+        <h1 data-testid="knowledge-ops-title">知识运营后台</h1>
         <p>
-          这里负责处理帖子、回复和社区知识条目。我们把“候选筛选、知识沉淀、内容审核”拆开，方便你快速定位当前该处理的工作。
+          把分散的校园经验变成可追溯、可审核、可发布的知识，让服务台的下一次回答更可靠。
         </p>
+        <ol class="admin-pipeline" aria-label="知识运营流程">
+          <li><span>01</span>发现候选</li>
+          <li><span>02</span>生成草稿</li>
+          <li><span>03</span>人工审核</li>
+          <li><span>04</span>发布检索</li>
+        </ol>
       </div>
 
       <div class="admin-actions">
-        <el-button round @click="$emit('go-login')">切换账号</el-button>
+        <el-button round @click="$emit('go-login')">切换身份</el-button>
         <el-button type="danger" plain round @click="$emit('logout')">退出登录</el-button>
       </div>
     </header>
 
     <!-- 二级导航 -->
-    <nav class="admin-subnav">
+    <nav class="admin-subnav" aria-label="知识运营后台导航">
       <button
         type="button"
         class="admin-subnav__tab"
         :class="{ 'is-active': activeTab === 'review' }"
         @click="activeTab = 'review'"
       >
-        内容审核
+        知识运营
       </button>
       <button
         type="button"
@@ -31,20 +37,20 @@
         :class="{ 'is-active': activeTab === 'lightrag' }"
         @click="activeTab = 'lightrag'"
       >
-        LightRAG 管理
+        检索运行
       </button>
     </nav>
 
     <section v-show="activeTab === 'review'">
     <section class="stats-grid">
       <article class="stat-card stat-card--candidate">
-        <span class="stat-card__label">待入库候选</span>
+        <span class="stat-card__label">候选知识</span>
         <strong class="stat-card__value">{{ store.knowledgeCandidates.length }}</strong>
         <span class="stat-card__hint">系统自动筛出的高价值帖子</span>
       </article>
 
       <article class="stat-card stat-card--knowledge">
-        <span class="stat-card__label">待审核知识</span>
+        <span class="stat-card__label">待发布知识</span>
         <strong class="stat-card__value">{{ store.knowledgeItems.length }}</strong>
         <span class="stat-card__hint">已生成但尚未进入 RAG 的社区知识</span>
       </article>
@@ -74,8 +80,8 @@
     <section class="board-section">
       <div class="board-section__header">
         <div>
-          <div class="board-section__eyebrow">知识沉淀</div>
-          <h2>先筛候选，再决定能不能进入问答系统</h2>
+          <div class="board-section__eyebrow">知识入库流水线</div>
+          <h2>从高价值内容到可信答案</h2>
         </div>
         <div class="board-section__actions">
           <el-button text @click="reloadCandidates">刷新候选池</el-button>
@@ -87,7 +93,7 @@
         <article class="panel-card">
           <div class="panel-card__header">
             <div>
-              <h3>待入库候选帖子</h3>
+              <h3>候选知识</h3>
               <p>系统根据分类、浏览、回复和点赞自动筛出的高价值帖子。</p>
             </div>
             <el-tag type="success" round>{{ store.knowledgeCandidates.length }} 条</el-tag>
@@ -132,7 +138,7 @@
                         查看详情
                       </el-button>
                       <el-button size="small" type="primary" :loading="store.submitting" @click="buildKnowledge(post.id)">
-                        生成社区知识
+                        生成知识草稿
                       </el-button>
                     </div>
                   </div>
@@ -146,8 +152,8 @@
         <article class="panel-card">
           <div class="panel-card__header">
             <div>
-              <h3>待审核社区知识</h3>
-              <p>这里通过后，社区知识才会真正参与 RAG。</p>
+              <h3>待发布知识</h3>
+              <p>人工核对来源与表述后，内容才会参与服务台检索。</p>
             </div>
             <el-tag type="warning" round>{{ store.knowledgeItems.length }} 条</el-tag>
           </div>
@@ -176,7 +182,7 @@
                         查看来源帖子
                       </el-button>
                       <el-button size="small" type="success" :loading="store.submitting" @click="approveKnowledge(item.id)">
-                        通过
+                        审核并发布
                       </el-button>
                       <el-button size="small" type="danger" plain :loading="store.submitting" @click="rejectKnowledge(item.id)">
                         拒绝
@@ -195,8 +201,8 @@
     <section class="board-section">
       <div class="board-section__header">
         <div>
-          <div class="board-section__eyebrow">内容审核</div>
-          <h2>社区展示内容的最终入口</h2>
+          <div class="board-section__eyebrow">社区内容治理</div>
+          <h2>审核公开内容，并沉淀可信经验</h2>
         </div>
         <div class="board-section__actions">
           <el-button text @click="reloadReviews">刷新审核列表</el-button>
@@ -354,7 +360,7 @@
               <div class="detail-block__head">
                 <div>
                   <h3>关联回复</h3>
-                  <p>管理员在这里可以一起查看主帖和回复，再决定是否通过或入库。</p>
+                  <p>知识运营员可一起核对主帖和回复，再决定是否公开或沉淀为知识。</p>
                 </div>
                 <el-tag round>{{ store.currentReplies.length }} 条</el-tag>
               </div>
@@ -385,11 +391,11 @@
     </el-dialog>
     </section>
 
-    <!-- LightRAG 管理面板 -->
+    <!-- 检索运行面板 -->
     <section v-show="activeTab === 'lightrag'" class="lightrag-panel">
       <div class="lightrag-hero">
-        <h2>LightRAG 知识图谱管理</h2>
-        <p>查看 LightRAG 服务状态与知识库建图情况。图谱用于聊天时的语义检索，命中优先于关键词检索。</p>
+        <h2>知识检索运行中心</h2>
+        <p>查看语义检索服务和知识文档处理状态。LightRAG 是当前检索引擎，异常时系统会回退到本地向量与关键词检索。</p>
       </div>
 
       <div class="lightrag-status-grid">
@@ -418,13 +424,17 @@
       </div>
 
       <div class="lightrag-actions">
-        <el-button type="primary" round @click="openLightragWebui">打开 LightRAG 知识图谱</el-button>
-        <el-button round @click="openLightragDocs">API 文档</el-button>
+        <el-button type="primary" round :disabled="!lightragConsoleEnabled" @click="openLightragWebui">
+          打开检索控制台
+        </el-button>
+        <el-button round :disabled="!lightragConsoleEnabled" @click="openLightragDocs">API 文档</el-button>
         <el-button round @click="refreshLightrag">刷新状态</el-button>
       </div>
 
       <p class="lightrag-tip">
-        提示：LightRAG 将知识库（学校通知 + 学生手册）构建为知识图谱，聊天时优先从图谱检索，失败回退关键词 + 向量。
+        {{ lightragConsoleEnabled
+          ? '检索服务会优先使用知识图谱，失败时回退到本地向量与关键词检索。'
+          : '当前未配置外部检索控制台地址；状态检查仍通过受管理员保护的后端代理完成。' }}
       </p>
     </section>
   </div>
@@ -454,6 +464,7 @@ const lrVersion = ref('')
 const lrProcessed = ref(0)
 const lrPending = ref(0)
 const lrFailed = ref(0)
+const lightragConsoleEnabled = computed(() => Boolean(appConfig.lightragConsoleUrl))
 
 const lrApiBase = () => `${appConfig.apiBaseUrl}/api/lightrag`
 const listLen = (arr: unknown) => (Array.isArray(arr) ? arr.length : 0)
@@ -482,13 +493,14 @@ const refreshLightrag = async () => {
   }
 }
 
-// LightRAG WebUI/API 需直连 LightRAG 服务本身（经后端代理时其相对路径 API 会指向后端根路径而 404）
 const openLightragDocs = () => {
-  window.open('http://127.0.0.1:9621/docs', '_blank')
+  if (!appConfig.lightragConsoleUrl) return
+  window.open(`${appConfig.lightragConsoleUrl}/docs`, '_blank', 'noopener,noreferrer')
 }
 
 const openLightragWebui = () => {
-  window.open('http://127.0.0.1:9621/webui/', '_blank')
+  if (!appConfig.lightragConsoleUrl) return
+  window.open(`${appConfig.lightragConsoleUrl}/webui/`, '_blank', 'noopener,noreferrer')
 }
 
 onMounted(() => {
@@ -697,6 +709,41 @@ onMounted(async () => {
   color: rgba(23, 77, 46, 0.72);
 }
 
+.admin-pipeline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-pipeline li {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 6px 11px 6px 7px;
+  border: 1px solid rgba(68, 145, 79, 0.15);
+  border-radius: 999px;
+  color: #2b633a;
+  background: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.admin-pipeline span {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  color: #fff;
+  background: #32884e;
+  font-size: 10px;
+  font-weight: 900;
+}
+
 .admin-actions,
 .board-section__actions,
 .panel-card__header,
@@ -714,6 +761,20 @@ onMounted(async () => {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
+}
+
+.item-card__actions,
+.board-section__actions,
+.admin-actions,
+.lightrag-actions {
+  flex-wrap: wrap;
+}
+
+:deep(.item-card__actions .el-button),
+:deep(.board-section__actions .el-button),
+:deep(.admin-actions .el-button),
+:deep(.lightrag-actions .el-button) {
+  min-height: 44px;
 }
 
 .stats-grid {
@@ -987,6 +1048,7 @@ onMounted(async () => {
 
 .admin-subnav__tab {
   flex: 1;
+  min-height: 44px;
   padding: 10px 16px;
   border: none;
   border-radius: 11px;
@@ -1095,6 +1157,54 @@ onMounted(async () => {
 @media (max-width: 900px) {
   .lightrag-status-grid {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .lightrag-actions :deep(.el-button) {
+    flex: 1 1 12rem;
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 520px) {
+  .admin-page {
+    padding: 12px;
+  }
+
+  .admin-hero,
+  .board-section,
+  .lightrag-panel {
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  .admin-pipeline {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .admin-pipeline li {
+    border-radius: 14px;
+  }
+
+  .item-card__actions,
+  .board-section__actions,
+  .admin-actions,
+  .lightrag-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  :deep(.item-card__actions .el-button),
+  :deep(.board-section__actions .el-button),
+  :deep(.admin-actions .el-button),
+  :deep(.lightrag-actions .el-button) {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .lightrag-status-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

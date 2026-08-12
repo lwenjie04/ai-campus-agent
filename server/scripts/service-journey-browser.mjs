@@ -5,14 +5,14 @@ import { writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
-const targetUrl = process.env.REHEARSAL_TARGET_URL || 'http://127.0.0.1:4173'
-const adminAccount = String(process.env.REHEARSAL_ADMIN_ACCOUNT || '').trim()
-const adminPassword = String(process.env.REHEARSAL_ADMIN_PASSWORD || '').trim()
-const rounds = Math.max(1, Number.parseInt(process.env.REHEARSAL_ROUNDS || '10', 10))
-const resultPath = String(process.env.REHEARSAL_RESULT_PATH || '').trim()
+const targetUrl = process.env.JOURNEY_TARGET_URL || 'http://127.0.0.1:4173'
+const adminAccount = String(process.env.JOURNEY_ADMIN_ACCOUNT || '').trim()
+const adminPassword = String(process.env.JOURNEY_ADMIN_PASSWORD || '').trim()
+const rounds = Math.max(1, Number.parseInt(process.env.JOURNEY_ROUNDS || '10', 10))
+const resultPath = String(process.env.JOURNEY_RESULT_PATH || '').trim()
 
 if (!adminAccount || !adminPassword) {
-  console.error('[browser-rehearsal] REHEARSAL_ADMIN_ACCOUNT and REHEARSAL_ADMIN_PASSWORD are required')
+  console.error('[service-journey] JOURNEY_ADMIN_ACCOUNT and JOURNEY_ADMIN_PASSWORD are required')
   process.exit(1)
 }
 
@@ -24,7 +24,7 @@ const chromeCandidates = [
 ].filter(Boolean)
 const chromePath = chromeCandidates.find((candidate) => existsSync(candidate))
 if (!chromePath) {
-  console.error('[browser-rehearsal] Chrome not found. Set CHROME_PATH and retry.')
+  console.error('[service-journey] Chrome not found. Set CHROME_PATH and retry.')
   process.exit(1)
 }
 
@@ -39,7 +39,7 @@ const waitFor = async (check, label, timeoutMilliseconds = 12_000) => {
   throw new Error(`Timed out waiting for ${label}`)
 }
 
-const profilePath = await mkdtemp(path.join(tmpdir(), 'campus-rehearsal-'))
+const profilePath = await mkdtemp(path.join(tmpdir(), 'campus-service-journey-'))
 const chrome = spawn(
   chromePath,
   [
@@ -113,6 +113,7 @@ try {
 
   const roundResults = []
   let communityClosureVerified = false
+  let pendingQuestionRecoveryVerified = false
   const targetOrigin = new URL(targetUrl).origin
   for (let round = 1; round <= rounds; round += 1) {
     const startedAt = Date.now()
@@ -134,7 +135,7 @@ try {
         `(() => {
           const text = document.body.innerText
           const userQuestions = [...document.querySelectorAll('.message-row.is-user .content')]
-          return text.includes('体验问答已完成')
+          return text.includes('免登录试问已完成')
             && text.includes('后端 Mock 回复')
             && text.includes('关于2025年普通本科生转专业工作的通知')
             && userQuestions.some((item) => item.textContent?.includes(${JSON.stringify(firstQuestion)}))
@@ -159,10 +160,36 @@ try {
       `round ${round} login dialog`,
     )
 
+    if (round === 1) {
+      await command('Page.navigate', { url: targetUrl })
+      await waitForExpression(
+        `(() => {
+          const card = document.querySelector('.resume-draft')
+          return Boolean(card?.textContent?.includes(${JSON.stringify(secondQuestion)}))
+            && [...document.querySelectorAll('.resume-draft button')]
+              .some((item) => item.textContent?.trim() === '登录后继续')
+        })()`,
+        'round 1 pending question restored after reload',
+      )
+      const resumeClicked = await evaluate(`(() => {
+        const button = [...document.querySelectorAll('.resume-draft button')]
+          .find((item) => item.textContent?.trim() === '登录后继续')
+        button?.click()
+        return Boolean(button)
+      })()`)
+      if (!resumeClicked) throw new Error('round 1: restored question action is unavailable')
+      await waitForExpression(
+        `Boolean(document.querySelector('.el-dialog.login-dialog input'))`,
+        'round 1 login dialog after restored question confirmation',
+      )
+      pendingQuestionRecoveryVerified = true
+      console.log('[service-journey] PASS pending question survives reload and waits for confirmation')
+    }
+
     const loginSubmitted = await evaluate(`(() => {
       const inputs = [...document.querySelectorAll('.el-dialog.login-dialog input')]
       const button = [...document.querySelectorAll('.el-dialog.login-dialog button')]
-        .find((item) => item.textContent?.includes('登录并进入系统'))
+        .find((item) => item.textContent?.includes('登录并继续'))
       if (inputs.length < 2 || !button) return false
       const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set
       setter.call(inputs[0], ${JSON.stringify(adminAccount)})
@@ -182,10 +209,11 @@ try {
             .filter((item) => item.textContent?.includes(${JSON.stringify(secondQuestion)}))
           const assistantTexts = [...document.querySelectorAll('.message-row.is-assistant .content')]
             .map((item) => item.textContent || '')
-          return role === '管理员'
+          return role === '知识运营员'
             && secondQuestions.length === 1
             && assistantTexts.length >= 3
             && assistantTexts.at(-1).includes('后端 Mock 回复')
+            && !document.querySelector('.resume-draft')
         })()`,
         `round ${round} authenticated auto-resume`,
         15_000,
@@ -205,34 +233,33 @@ try {
 
     if (round === 1) {
       const adminOpened = await evaluate(`(() => {
-        const button = [...document.querySelectorAll('.top-nav__tabs button')]
-          .find((item) => item.textContent?.trim() === '管理员页')
+        const button = document.querySelector('[data-testid="nav-knowledge-ops"]')
         if (!button) return false
         button.click()
         return true
       })()`)
       if (!adminOpened) throw new Error('round 1: administrator navigation is unavailable')
       await waitForExpression(
-        `document.body.innerText.includes('学生社区审核中心')
-          && [...document.querySelectorAll('button')].some((item) => item.textContent?.trim() === '生成社区知识')`,
+        `Boolean(document.querySelector('[data-testid="knowledge-ops-title"]'))
+          && [...document.querySelectorAll('button')].some((item) => item.textContent?.trim() === '生成知识草稿')`,
         'round 1 knowledge candidate',
         20_000,
       )
 
       await evaluate(`(() => {
         const button = [...document.querySelectorAll('button')]
-          .find((item) => item.textContent?.trim() === '生成社区知识')
+          .find((item) => item.textContent?.trim() === '生成知识草稿')
         button?.click()
         return Boolean(button)
       })()`)
       await waitForExpression(
-        `[...document.querySelectorAll('button')].some((item) => item.textContent?.trim() === '通过')`,
+        `[...document.querySelectorAll('button')].some((item) => item.textContent?.trim() === '审核并发布')`,
         'round 1 pending community knowledge',
         20_000,
       )
       await evaluate(`(() => {
         const button = [...document.querySelectorAll('button')]
-          .find((item) => item.textContent?.trim() === '通过')
+          .find((item) => item.textContent?.trim() === '审核并发布')
         button?.click()
         return Boolean(button)
       })()`)
@@ -243,8 +270,7 @@ try {
       )
 
       await evaluate(`(() => {
-        const button = [...document.querySelectorAll('.top-nav__tabs button')]
-          .find((item) => item.textContent?.trim() === '首页')
+        const button = document.querySelector('[data-testid="nav-service-desk"]')
         button?.click()
         return Boolean(button)
       })()`)
@@ -264,31 +290,32 @@ try {
         25_000,
       )
       communityClosureVerified = true
-      console.log('[browser-rehearsal] PASS community review -> approval -> RAG source closure')
+      console.log('[service-journey] PASS community review -> approval -> RAG source closure')
     }
 
     const durationMs = Date.now() - startedAt
     roundResults.push({ round, passed: true, durationMs })
-    console.log(`[browser-rehearsal] PASS round ${round}/${rounds} (${(durationMs / 1000).toFixed(2)}s)`)
+    console.log(`[service-journey] PASS round ${round}/${rounds} (${(durationMs / 1000).toFixed(2)}s)`)
   }
 
   socket.close()
   const totalMs = roundResults.reduce((sum, result) => sum + result.durationMs, 0)
   console.log(
-    `[browser-rehearsal] READY: ${roundResults.length}/${rounds} guest-login-resume rounds passed in ${(totalMs / 1000).toFixed(1)}s`,
+    `[service-journey] READY: ${roundResults.length}/${rounds} guest-login-resume rounds passed in ${(totalMs / 1000).toFixed(1)}s`,
   )
   if (resultPath) {
     await writeFile(
       resultPath,
       `${JSON.stringify(
         {
-          version: 1,
+          version: 2,
           completedAt: new Date().toISOString(),
-          mode: process.env.REHEARSAL_PROFILE || 'isolated_mock',
+          mode: process.env.JOURNEY_PROFILE || 'isolated_mock',
           targetUrl,
           requestedRounds: rounds,
           passedRounds: roundResults.length,
           communityClosureVerified,
+          pendingQuestionRecoveryVerified,
           totalDurationMs: totalMs,
           rounds: roundResults,
           assertions: [
@@ -296,16 +323,17 @@ try {
             'first guest answer completes',
             'official transfer notice appears in sources',
             'second question opens login',
-            'administrator session is established',
+            'knowledge operator session is established',
             'saved second question auto-resumes exactly once',
-            'administrator generates and approves community knowledge',
+            'pending second question survives reload and requires explicit resume confirmation',
+            'knowledge operator generates and approves community knowledge',
             'approved community knowledge returns as a labeled RAG source',
           ],
           serviceProfile: {
-            llm: process.env.REHEARSAL_LLM_MODE || 'mock',
-            lightrag: process.env.REHEARSAL_LIGHTRAG_MODE || 'disabled',
-            tts: process.env.REHEARSAL_TTS_MODE || 'disabled',
-            mysql: process.env.REHEARSAL_MYSQL_MODE || 'offline_memory_auth',
+            llm: process.env.JOURNEY_LLM_MODE || 'mock',
+            lightrag: process.env.JOURNEY_LIGHTRAG_MODE || 'disabled',
+            tts: process.env.JOURNEY_TTS_MODE || 'disabled',
+            mysql: process.env.JOURNEY_MYSQL_MODE || 'offline_memory_auth',
           },
         },
         null,
@@ -313,7 +341,7 @@ try {
       )}\n`,
       'utf8',
     )
-    console.log(`[browser-rehearsal] evidence written: ${resultPath}`)
+    console.log(`[service-journey] evidence written: ${resultPath}`)
   }
 } finally {
   chrome.kill()

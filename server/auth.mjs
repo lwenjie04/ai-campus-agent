@@ -175,9 +175,9 @@ const sendMail = async (payload) => {
 const sendRegistrationNotice = async (user) => {
   await sendMail({
     to: AUTH_NOTIFY_EMAIL,
-    subject: '校园智能问答平台有新的普通用户注册',
+    subject: '数智校答有新的校园用户注册',
     text: [
-      '校园智能问答平台收到新的普通用户注册信息。',
+      '数智校答校园智能服务台收到新的校园用户注册信息。',
       `姓名/昵称：${user.displayName}`,
       `邮箱：${user.email}`,
       `注册时间：${user.createdAt}`,
@@ -188,7 +188,7 @@ const sendRegistrationNotice = async (user) => {
 const sendRegisterCodeMail = async ({ email, code, displayName }) => {
   await sendMail({
     to: email,
-    subject: '校园智能问答平台注册验证码',
+    subject: '数智校答校园智能服务台注册验证码',
     text: [
       `你好${displayName ? `，${displayName}` : ''}：`,
       '',

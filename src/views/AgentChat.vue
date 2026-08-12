@@ -16,8 +16,11 @@
         <!-- 顶部品牌栏：校徽、学校名称、装饰图标 -->
         <header class="brand-bar">
           <div class="brand-left">
-            <!-- 学校标题 -->
-            <div class="brand-title">数智校答</div>
+            <div>
+              <div class="brand-kicker">CAMPUS SERVICE DESK</div>
+              <div class="brand-title">校园智能服务台</div>
+              <p class="brand-subtitle">查规则、理材料、找入口，每个答案都有依据。</p>
+            </div>
           </div>
         </header>
 
@@ -50,8 +53,11 @@
             <div class="header-main">
               <!-- 标题区 -->
               <div class="header-title-wrap">
-                <h2>数智校答</h2>
-                <span class="mode-tag">数字人对话</span>
+                <div>
+                  <span class="header-eyebrow">数智校答</span>
+                  <h2>今天想办什么事？</h2>
+                </div>
+                <span class="mode-tag">AI 导办 · 回答附来源</span>
               </div>
 
               <!-- 右上角操作区：用户摘要 + 设置按钮 -->
@@ -69,8 +75,35 @@
 
                 <!-- 点击后打开用户设置弹窗 -->
                 <el-button class="settings-btn" size="small" @click="settingsDialogVisible = true">
-                  用户设置
+                  服务偏好
                 </el-button>
+              </div>
+            </div>
+
+            <div class="service-shortcuts" aria-label="常办事项快捷入口">
+              <span class="service-shortcuts__label">常办事项</span>
+              <button
+                v-for="shortcut in serviceShortcuts"
+                :key="shortcut.label"
+                type="button"
+                class="service-shortcuts__item"
+                :disabled="store.loading"
+                @click="handleShortcut(shortcut.query)"
+              >
+                {{ shortcut.label }}
+              </button>
+            </div>
+
+            <div v-if="pendingDraftRestored && pendingDraft" class="resume-draft" role="status">
+              <div class="resume-draft__copy">
+                <strong>发现一个未完成的问题</strong>
+                <span>{{ pendingDraft }}</span>
+              </div>
+              <div class="resume-draft__actions">
+                <button type="button" class="resume-draft__secondary" @click="discardPendingDraft">放弃</button>
+                <button type="button" class="resume-draft__primary" @click="resumePendingQuestion">
+                  {{ authStore.loggedIn ? '继续提问' : '登录后继续' }}
+                </button>
               </div>
             </div>
           </header>
@@ -92,7 +125,7 @@
             用来中断当前讲解视频和语音播报。
           -->
           <div class="chat-actions-bar">
-            <el-button class="stop-btn" size="small" @click="onStopPlayback">停止播放</el-button>
+            <el-button class="stop-btn" size="small" @click="onStopPlayback">停止讲解</el-button>
           </div>
 
           <div
@@ -104,8 +137,8 @@
           >
             <span class="guest-trial__mark" aria-hidden="true">{{ guestTrialUsed ? '✓' : '1' }}</span>
             <div class="guest-trial__copy">
-              <strong>{{ guestTrialUsed ? '体验问答已完成' : '可免费体验 1 次问答' }}</strong>
-              <span>{{ guestTrialUsed ? '登录后继续追问，并保留当前对话' : '先看真实回答与来源，再决定是否登录' }}</span>
+              <strong>{{ guestTrialUsed ? '免登录试问已完成' : '可免登录试问 1 次' }}</strong>
+              <span>{{ guestTrialUsed ? '登录后继续追问，并保留当前对话' : '先查看带来源的真实回答，再决定是否登录' }}</span>
             </div>
             <button type="button" class="guest-trial__login" @click="emit('require-login')">
               {{ guestTrialUsed ? '登录继续' : '直接登录' }}
@@ -128,7 +161,7 @@
     <!-- 用户设置改为弹窗形式，避免直接挤占右侧聊天区的高度 -->
     <el-dialog
       v-model="settingsDialogVisible"
-      title="用户设置"
+      title="服务偏好"
       width="min(520px, calc(100vw - 32px))"
       class="settings-dialog"
       destroy-on-close
@@ -180,18 +213,6 @@
             />
           </div>
 
-          <div class="setting-field setting-field--full">
-            <div class="demo-switch demo-switch--dialog">
-              <span class="demo-switch-label">演示模式</span>
-              <el-switch
-                v-model="demoModeEnabled"
-                inline-prompt
-                active-text="开"
-                inactive-text="关"
-                @change="onDemoModeChange"
-              />
-            </div>
-          </div>
         </div>
       </div>
 
@@ -231,15 +252,78 @@ const emit = defineEmits<{
 }>()
 
 const authStore = useAuthStore()
-// 未登录时拦截的待发送消息；登录成功后自动补发，实现「回到刚才那条消息」
+// 未登录时拦截的待发送消息：同页登录后自动补发，浏览器重启后由用户确认恢复。
 const pendingDraft = ref('')
+const pendingDraftRestored = ref(false)
+const resumeAfterLoginRequested = ref(false)
 const GUEST_TRIAL_STORAGE_KEY = 'ai-campus-agent.guest-trial.used.v1'
+const PENDING_DRAFT_STORAGE_KEY = 'ai-campus-agent.pending-question.v1'
+const PENDING_DRAFT_TTL_MS = 24 * 60 * 60 * 1000
 const guestTrialUsed = ref(false)
+
+const getLocalStorage = () => {
+  try {
+    return typeof window !== 'undefined' ? window.localStorage : null
+  } catch {
+    return null
+  }
+}
+
+type StoredPendingDraft = {
+  text: string
+  savedAt: number
+}
 
 const persistGuestTrialUsed = () => {
   guestTrialUsed.value = true
-  if (typeof window !== 'undefined') {
-    window.localStorage.setItem(GUEST_TRIAL_STORAGE_KEY, 'true')
+  try {
+    getLocalStorage()?.setItem(GUEST_TRIAL_STORAGE_KEY, 'true')
+  } catch {
+    // 无痕或浏览器禁用存储时，仅保留当前页面状态。
+  }
+}
+
+const clearPendingDraft = () => {
+  pendingDraft.value = ''
+  pendingDraftRestored.value = false
+  resumeAfterLoginRequested.value = false
+  try {
+    getLocalStorage()?.removeItem(PENDING_DRAFT_STORAGE_KEY)
+  } catch {
+    // 存储不可用时无需额外处理。
+  }
+}
+
+const queuePendingDraft = (text: string) => {
+  const normalized = text.trim()
+  if (!normalized) return
+  pendingDraft.value = normalized
+  pendingDraftRestored.value = false
+  try {
+    const storage = getLocalStorage()
+    if (!storage) return
+    const payload: StoredPendingDraft = { text: normalized, savedAt: Date.now() }
+    storage.setItem(PENDING_DRAFT_STORAGE_KEY, JSON.stringify(payload))
+  } catch {
+    // 无痕或禁用存储时仍保留当前标签页内的待问。
+  }
+}
+
+const restorePendingDraft = () => {
+  try {
+    const raw = getLocalStorage()?.getItem(PENDING_DRAFT_STORAGE_KEY)
+    if (!raw) return
+    const parsed = JSON.parse(raw) as Partial<StoredPendingDraft>
+    const text = typeof parsed.text === 'string' ? parsed.text.trim() : ''
+    const savedAt = Number(parsed.savedAt)
+    if (!text || !Number.isFinite(savedAt) || Date.now() - savedAt > PENDING_DRAFT_TTL_MS) {
+      clearPendingDraft()
+      return
+    }
+    pendingDraft.value = text
+    pendingDraftRestored.value = true
+  } catch {
+    clearPendingDraft()
   }
 }
 
@@ -255,10 +339,17 @@ type GradeValue = '' | '大一' | '大二' | '大三' | '大四' | '大五' | '�
 // 页面中的业务状态大多都由 store 维护。
 const store = useAgentStore()
 
+const serviceShortcuts = [
+  { label: '奖助学金', query: '国家助学金怎么申请？' },
+  { label: '教务办理', query: '申请转专业需要什么条件？' },
+  { label: '考试安排', query: '英语四六级什么时候报名？' },
+  { label: '生活服务', query: '宿舍报修怎么申请？' },
+] as const
+
 // 游客可以先完成一次真实问答；第二次保留草稿并登录，成功后自动补发。
 const handleSend = async (text: string) => {
   if (!authStore.loggedIn && guestTrialUsed.value) {
-    pendingDraft.value = text
+    queuePendingDraft(text)
     emit('require-login')
     return
   }
@@ -269,20 +360,58 @@ const handleSend = async (text: string) => {
     return
   }
 
-  if (!authStore.loggedIn && !result.ok && result.errorCode === 'GUEST_LOGIN_REQUIRED') {
+  if (
+    !authStore.loggedIn &&
+    !result.ok &&
+    (result.errorCode === 'GUEST_LOGIN_REQUIRED' || result.errorCode === 'GUEST_RATE_LIMITED')
+  ) {
     persistGuestTrialUsed()
-    pendingDraft.value = text
+    queuePendingDraft(text)
     emit('require-login')
   }
+}
+
+const sendPendingDraft = async () => {
+  const draft = pendingDraft.value.trim()
+  if (!draft || !authStore.loggedIn || store.loading) return
+
+  const result = await store.sendMessage(draft)
+  if (result.ok) {
+    clearPendingDraft()
+    return
+  }
+
+  pendingDraftRestored.value = true
+}
+
+const resumePendingQuestion = () => {
+  if (!authStore.loggedIn) {
+    resumeAfterLoginRequested.value = true
+    emit('require-login')
+    return
+  }
+  void sendPendingDraft()
+}
+
+const discardPendingDraft = () => {
+  clearPendingDraft()
+}
+
+const handleShortcut = (query: string) => {
+  if (store.loading) return
+  void handleSend(query)
 }
 
 watch(
   () => authStore.loggedIn,
   (loggedIn) => {
-    if (loggedIn && pendingDraft.value) {
-      const draft = pendingDraft.value
-      pendingDraft.value = ''
-      store.sendMessage(draft)
+    if (
+      loggedIn &&
+      pendingDraft.value &&
+      (!pendingDraftRestored.value || resumeAfterLoginRequested.value)
+    ) {
+      resumeAfterLoginRequested.value = false
+      void sendPendingDraft()
     }
   },
 )
@@ -302,10 +431,6 @@ const settingsDialogVisible = ref(false)
 // 因为 boolean 连续点击可能值不变，子组件 watch 不到；
 // 数字递增则每次点击都会触发一次变化。
 const stopPlaySignal = ref(0)
-
-// 演示模式开关。
-// 这个值会和 store 同步，但先在页面层保留一个本地响应式状态，方便和表单绑定。
-const demoModeEnabled = ref(true)
 
 // 可见消息列表。
 // store.messages 中包含一条隐藏的 system 消息，它是发给大模型的提示词，不应显示给用户。
@@ -370,7 +495,6 @@ const syncFormFromStore = () => {
   selectedGrade.value = (store.userProfile.grade as GradeValue) || ''
   selectedMajor.value = store.userProfile.major || ''
   draftMajor.value = selectedMajor.value
-  demoModeEnabled.value = store.demoMode
 }
 
 // 身份变化时：
@@ -413,15 +537,10 @@ const clearMajor = () => {
   commitMajorDraft()
 }
 
-// 演示模式切换事件。
-// 页面本身不做额外处理，直接委托给 store。
-const onDemoModeChange = (value: boolean) => {
-  store.setDemoMode(value)
-}
-
 // 重置会话按钮。
 // 由 store 统一清理消息、system prompt、视频状态和持久化缓存。
 const resetChat = () => {
+  clearPendingDraft()
   store.resetSession()
 }
 
@@ -446,9 +565,12 @@ const onNarrationEnded = () => {
 
 // 组件挂载后执行初始化流程。
 onMounted(() => {
-  if (typeof window !== 'undefined') {
-    guestTrialUsed.value = window.localStorage.getItem(GUEST_TRIAL_STORAGE_KEY) === 'true'
+  try {
+    guestTrialUsed.value = getLocalStorage()?.getItem(GUEST_TRIAL_STORAGE_KEY) === 'true'
+  } catch {
+    guestTrialUsed.value = false
   }
+  restorePendingDraft()
 
   // 第一步：恢复本地缓存的会话。
   store.hydrateSession()
@@ -539,6 +661,16 @@ onMounted(() => {
   min-width: 0;
 }
 
+.brand-kicker,
+.header-eyebrow {
+  display: block;
+  color: #347648;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
 /* 学校标题 */
 .brand-title {
   font-size: clamp(18px, 1.8vw, 24px);
@@ -547,6 +679,14 @@ onMounted(() => {
   letter-spacing: 0.5px;
   white-space: nowrap;
   text-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+}
+
+.brand-subtitle {
+  max-width: 24rem;
+  margin: 4px 0 0;
+  color: rgba(15, 64, 34, 0.7);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 /* 数字人舞台区域撑满剩余空间 */
@@ -604,12 +744,22 @@ onMounted(() => {
   min-width: 0;
 }
 
+.header-title-wrap > div {
+  min-width: 0;
+}
+
 /* 主标题 */
 .chat-header h2 {
   margin: 0;
   font-size: 18px;
   color: #16351b;
   font-weight: 800;
+}
+
+.header-eyebrow {
+  margin-bottom: 2px;
+  color: rgba(35, 101, 56, 0.68);
+  letter-spacing: 0.08em;
 }
 
 /* 右上角摘要和设置按钮区域 */
@@ -653,10 +803,117 @@ onMounted(() => {
 /* 设置按钮和停止播放按钮共用胶囊样式 */
 .settings-btn,
 .stop-btn {
+  min-height: 44px;
   border-radius: 999px;
   border-color: rgba(46, 113, 53, 0.18);
   color: #1f6a39;
   background: rgba(255, 255, 255, 0.7);
+}
+
+.service-shortcuts {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  overflow-x: auto;
+  padding: 2px 0 3px;
+  scrollbar-width: none;
+}
+
+.service-shortcuts::-webkit-scrollbar {
+  display: none;
+}
+
+.service-shortcuts__label {
+  flex: 0 0 auto;
+  color: rgba(34, 85, 48, 0.66);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.service-shortcuts__item {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 7px 11px;
+  border: 1px solid rgba(58, 128, 75, 0.14);
+  border-radius: 999px;
+  color: #245f38;
+  background: rgba(255, 255, 255, 0.7);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+
+.service-shortcuts__item:hover:not(:disabled) {
+  border-color: rgba(44, 135, 72, 0.3);
+  background: rgba(250, 255, 247, 0.98);
+  transform: translateY(-1px);
+}
+
+.service-shortcuts__item:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.resume-draft {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(190, 126, 35, 0.22);
+  border-radius: 14px;
+  color: #684515;
+  background: linear-gradient(135deg, rgba(255, 248, 230, 0.97), rgba(255, 253, 245, 0.92));
+}
+
+.resume-draft__copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.resume-draft__copy strong {
+  font-size: 12px;
+}
+
+.resume-draft__copy span {
+  overflow: hidden;
+  color: rgba(104, 69, 21, 0.78);
+  font-size: 12px;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.resume-draft__actions {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 7px;
+}
+
+.resume-draft__actions button {
+  min-height: 40px;
+  padding: 8px 11px;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.resume-draft__secondary {
+  border: 1px solid rgba(128, 86, 27, 0.2);
+  color: #76511d;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.resume-draft__primary {
+  border: 1px solid #ad6c19;
+  color: #fff;
+  background: #b97820;
 }
 
 /* 停止播放按钮所在区域 */
@@ -743,30 +1000,6 @@ onMounted(() => {
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.8);
   box-shadow: inset 0 0 0 1px rgba(46, 113, 53, 0.14) !important;
-}
-
-/* 演示模式开关外壳 */
-.demo-switch {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.7);
-}
-
-.demo-switch--dialog {
-  width: 100%;
-  justify-content: space-between;
-  padding: 10px 12px;
-  box-sizing: border-box;
-}
-
-/* 演示模式文字 */
-.demo-switch-label {
-  font-size: 12px;
-  color: #1f6a39;
-  font-weight: 600;
 }
 
 /* 重置按钮 */
@@ -1034,6 +1267,38 @@ onMounted(() => {
   .header-actions {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .service-shortcuts__item {
+    flex: 1 1 calc(50% - 4px);
+    min-height: 44px;
+  }
+
+  .service-shortcuts {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+
+  .service-shortcuts__label {
+    flex-basis: 100%;
+  }
+
+  .resume-draft {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .resume-draft__copy span {
+    white-space: normal;
+  }
+
+  .resume-draft__actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .resume-draft__actions button {
+    min-height: 44px;
   }
 
   .profile-summary {

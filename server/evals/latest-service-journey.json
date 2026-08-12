@@ -1,62 +1,63 @@
 {
-  "version": 1,
-  "completedAt": "2026-08-09T07:56:21.900Z",
+  "version": 2,
+  "completedAt": "2026-08-12T16:39:16.684Z",
   "mode": "isolated_mock",
   "targetUrl": "http://127.0.0.1:4173",
   "requestedRounds": 10,
   "passedRounds": 10,
   "communityClosureVerified": true,
-  "totalDurationMs": 14552,
+  "pendingQuestionRecoveryVerified": true,
+  "totalDurationMs": 17416,
   "rounds": [
     {
       "round": 1,
       "passed": true,
-      "durationMs": 5038
+      "durationMs": 5588
     },
     {
       "round": 2,
       "passed": true,
-      "durationMs": 1159
+      "durationMs": 1220
     },
     {
       "round": 3,
       "passed": true,
-      "durationMs": 1087
+      "durationMs": 1146
     },
     {
       "round": 4,
       "passed": true,
-      "durationMs": 1036
+      "durationMs": 1358
     },
     {
       "round": 5,
       "passed": true,
-      "durationMs": 982
+      "durationMs": 1465
     },
     {
       "round": 6,
       "passed": true,
-      "durationMs": 1078
+      "durationMs": 1267
     },
     {
       "round": 7,
       "passed": true,
-      "durationMs": 1098
+      "durationMs": 1491
     },
     {
       "round": 8,
       "passed": true,
-      "durationMs": 920
+      "durationMs": 1284
     },
     {
       "round": 9,
       "passed": true,
-      "durationMs": 1116
+      "durationMs": 1322
     },
     {
       "round": 10,
       "passed": true,
-      "durationMs": 1038
+      "durationMs": 1275
     }
   ],
   "assertions": [
@@ -64,9 +65,10 @@
     "first guest answer completes",
     "official transfer notice appears in sources",
     "second question opens login",
-    "administrator session is established",
+    "knowledge operator session is established",
     "saved second question auto-resumes exactly once",
-    "administrator generates and approves community knowledge",
+    "pending second question survives reload and requires explicit resume confirmation",
+    "knowledge operator generates and approves community knowledge",
     "approved community knowledge returns as a labeled RAG source"
   ],
   "serviceProfile": {

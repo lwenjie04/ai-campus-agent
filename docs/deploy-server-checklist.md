@@ -12,10 +12,10 @@
 
 适用于当前这版功能：
 
-- 校园智能问答
+- 校园智能服务台
 - 数字人展示与 TTS
-- 学生社区
-- 管理员审核
+- 校园社区
+- 知识运营后台
 - 邮箱验证码注册 / 登录
 
 ---
@@ -119,7 +119,7 @@ CORS_ORIGIN=https://你的前端域名
 
 # Auth
 AUTH_DEFAULT_ADMIN_USERNAME=admin
-AUTH_DEFAULT_ADMIN_PASSWORD=请设置至少10位的比赛专用强密码
+AUTH_DEFAULT_ADMIN_PASSWORD=请设置至少10位的生产环境专用强密码
 AUTH_DEFAULT_ADMIN_NAME=系统管理员
 AUTH_NOTIFY_EMAIL=管理员通知邮箱
 AUTH_CODE_EXPIRE_MINUTES=10
@@ -128,6 +128,10 @@ AUTH_SESSION_SECRET=请生成至少32位随机字符串
 AUTH_SESSION_TTL_SECONDS=28800
 GUEST_CHAT_LIMIT=1
 GUEST_SESSION_TTL_DAYS=30
+GUEST_IP_CHAT_LIMIT=20
+GUEST_IP_WINDOW_MINUTES=60
+# 只有受信任的 Nginx 会覆盖 X-Forwarded-For 时才设为 true
+GUEST_TRUST_PROXY=true
 COOKIE_SECURE=true
 
 # SMTP
@@ -241,6 +245,18 @@ http://服务器IP:3000/health
 ---
 
 ## 7. 前端构建
+
+先创建生产环境前端配置：
+
+```dotenv
+# 留空时生产包使用同源 API，适合由 Nginx 反向代理。
+VITE_API_BASE_URL=
+VITE_USE_MOCK_CHAT=false
+VITE_VIDEO_DEBUG=false
+
+# 可选。只有需要让知识运营员直达 LightRAG WebUI 时才配置。
+VITE_LIGHTRAG_CONSOLE_URL=
+```
 
 执行：
 
@@ -372,8 +388,8 @@ server {
 - `sources` 正常展示
 - 数字人视频可正常加载
 - TTS 可正常播报
-- 学生社区可查看帖子、发帖、回复
-- 管理员页可审核帖子、回复、社区知识
+- 校园社区可查看帖子、发帖、回复
+- 知识运营后台可审核帖子、回复并发布社区知识
 - `community_knowledge` 已审核数据可进入 RAG
 
 ---

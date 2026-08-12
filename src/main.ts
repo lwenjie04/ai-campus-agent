@@ -38,7 +38,7 @@ import 'element-plus/es/components/tag/style/css'
 // 前端入口文件：
 // 1. 创建 Vue 应用实例
 // 2. 注册 Pinia 做状态管理
-// 3. 只注册项目实际使用的 Element Plus 组件，避免把整套组件库装进比赛首包
+// 3. 只注册项目实际使用的 Element Plus 组件，控制服务台首屏体积
 // 4. 把应用挂载到 index.html 中的 #app 节点
 const app = createApp(App)
 app.use(createPinia())

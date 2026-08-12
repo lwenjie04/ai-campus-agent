@@ -4,14 +4,14 @@ import { existsSync } from 'node:fs'
 import net from 'node:net'
 import { resolve } from 'node:path'
 
-const backendPort = Number.parseInt(process.env.REHEARSAL_BACKEND_PORT || '3000', 10)
-const previewPort = Number.parseInt(process.env.REHEARSAL_PREVIEW_PORT || '4173', 10)
-const rounds = Math.max(1, Number.parseInt(process.env.REHEARSAL_ROUNDS || '10', 10))
+const backendPort = Number.parseInt(process.env.JOURNEY_BACKEND_PORT || '3000', 10)
+const previewPort = Number.parseInt(process.env.JOURNEY_PREVIEW_PORT || '4173', 10)
+const rounds = Math.max(1, Number.parseInt(process.env.JOURNEY_ROUNDS || '10', 10))
 const host = '127.0.0.1'
 const root = process.cwd()
 
 if (!existsSync(resolve(root, 'dist/index.html'))) {
-  console.error('[rehearsal-runner] dist/index.html is missing; run npm run build first')
+  console.error('[service-journey-runner] dist/index.html is missing; run npm run build first')
   process.exit(1)
 }
 
@@ -40,8 +40,8 @@ const waitForUrl = async (url, timeoutMilliseconds = 15_000) => {
 await assertPortAvailable(backendPort)
 await assertPortAvailable(previewPort)
 
-const adminAccount = 'competition-admin'
-const adminPassword = `rehearsal-${randomBytes(18).toString('base64url')}`
+const adminAccount = 'service-journey-admin'
+const adminPassword = `journey-${randomBytes(18).toString('base64url')}`
 const childSecret = () => randomBytes(32).toString('base64url')
 const commonEnv = { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' }
 const backend = spawn(process.execPath, ['server/index.mjs'], {
@@ -55,13 +55,13 @@ const backend = spawn(process.execPath, ['server/index.mjs'], {
     TTS_PROVIDER: 'disabled',
     MYSQL_HOST: host,
     MYSQL_PORT: '1',
-    MYSQL_USER: 'competition-rehearsal',
-    MYSQL_PASSWORD: 'competition-rehearsal',
-    MYSQL_DATABASE: 'competition-rehearsal',
+    MYSQL_USER: 'service-journey',
+    MYSQL_PASSWORD: 'service-journey',
+    MYSQL_DATABASE: 'service-journey',
     AUTH_ALLOW_MEMORY_FALLBACK: 'true',
     AUTH_DEFAULT_ADMIN_USERNAME: adminAccount,
     AUTH_DEFAULT_ADMIN_PASSWORD: adminPassword,
-    AUTH_NOTIFY_EMAIL: 'competition-admin@example.test',
+    AUTH_NOTIFY_EMAIL: 'service-journey-admin@example.test',
     AUTH_SESSION_SECRET: childSecret(),
     GUEST_COOKIE_SECRET: childSecret(),
   },
@@ -107,28 +107,28 @@ try {
     waitForUrl(`http://${host}:${previewPort}`),
   ])
 
-  const rehearsal = spawn(process.execPath, ['server/scripts/competition-browser-rehearsal.mjs'], {
+  const journey = spawn(process.execPath, ['server/scripts/service-journey-browser.mjs'], {
     cwd: root,
     env: {
       ...commonEnv,
-      REHEARSAL_TARGET_URL: `http://${host}:${previewPort}`,
-      REHEARSAL_ADMIN_ACCOUNT: adminAccount,
-      REHEARSAL_ADMIN_PASSWORD: adminPassword,
-      REHEARSAL_ROUNDS: String(rounds),
-      REHEARSAL_RESULT_PATH: resolve(root, 'server/evals/latest-browser-rehearsal.json'),
-      REHEARSAL_PROFILE: 'isolated_mock',
-      REHEARSAL_LLM_MODE: 'mock',
-      REHEARSAL_LIGHTRAG_MODE: 'disabled',
-      REHEARSAL_TTS_MODE: 'disabled',
-      REHEARSAL_MYSQL_MODE: 'offline_memory_auth',
+      JOURNEY_TARGET_URL: `http://${host}:${previewPort}`,
+      JOURNEY_ADMIN_ACCOUNT: adminAccount,
+      JOURNEY_ADMIN_PASSWORD: adminPassword,
+      JOURNEY_ROUNDS: String(rounds),
+      JOURNEY_RESULT_PATH: resolve(root, 'server/evals/latest-service-journey.json'),
+      JOURNEY_PROFILE: 'isolated_mock',
+      JOURNEY_LLM_MODE: 'mock',
+      JOURNEY_LIGHTRAG_MODE: 'disabled',
+      JOURNEY_TTS_MODE: 'disabled',
+      JOURNEY_MYSQL_MODE: 'offline_memory_auth',
     },
     stdio: 'inherit',
     windowsHide: true,
   })
-  const exitCode = await new Promise((resolvePromise) => rehearsal.once('exit', resolvePromise))
-  if (exitCode !== 0) throw new Error(`browser rehearsal exited with code ${exitCode}`)
+  const exitCode = await new Promise((resolvePromise) => journey.once('exit', resolvePromise))
+  if (exitCode !== 0) throw new Error(`service journey exited with code ${exitCode}`)
 } catch (error) {
-  console.error(`[rehearsal-runner] ${error.message}`)
+  console.error(`[service-journey-runner] ${error.message}`)
   if (logs.length > 0) console.error(logs.join(''))
   process.exitCode = 1
 } finally {

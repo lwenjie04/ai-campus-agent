@@ -1,7 +1,9 @@
 # 比赛连续彩排记录
 
+> 历史归档：来自 `feat/backend-rag` 分支，保存点为 `9da3af7`。当前自动化旅程测试使用产品化命令。
+
 **目标**：主演示连续成功 10 次；覆盖 LightRAG、模型网络和 TTS 异常；单点失败不伪造答案。
-**脚本**：`docs/competition-demo-script.md`
+**脚本**：`./competition-demo-script.md`
 **机器证据**：`server/evals/latest-browser-rehearsal.json`
 
 ## 隔离自动彩排（已完成）

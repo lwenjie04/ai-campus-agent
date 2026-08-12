@@ -4,8 +4,8 @@
     <div v-if="messages.length === 0 && !loading" class="empty-state">
       <ChatAvatar role="assistant" />
       <div class="empty-copy">
-        <strong>从校园问题开始</strong>
-        <span>奖学金、选课、转专业或宿舍服务，都可以直接告诉我。</span>
+        <strong>从一件要办的事开始</strong>
+        <span>说清你的事项和疑问，我会整理步骤并给出可核对的来源。</span>
       </div>
     </div>
 
@@ -21,7 +21,7 @@
       <ChatAvatar role="assistant" active />
       <div class="typing-bubble">
         <span>正在整理答案</span>
-        <span class="typing-dots" role="status" aria-label="数智校答正在生成回复" data-testid="loading-indicator">
+        <span class="typing-dots" role="status" aria-label="校园智能服务台正在整理回答" data-testid="loading-indicator">
           <span />
           <span />
           <span />

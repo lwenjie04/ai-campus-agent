@@ -17,7 +17,7 @@ export interface StreamChatHandlers {
   onMeta?: (payload: ChatApiResponse) => void
 }
 
-// Mock 回复用于后端未启动或演示模式下的前端联调。
+// Mock 回复仅用于明确启用的本地前端联调，不代表真实服务回答。
 const mockReply = (messages: Message[]): ChatApiResponse => {
   const lastUser = [...messages].reverse().find((msg) => msg.role === 'user')?.content ?? ''
 

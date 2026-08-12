@@ -4,7 +4,7 @@
     <el-input
       v-model="text"
       :disabled="loading"
-      placeholder="请输入你的问题"
+      placeholder="描述你要查询或办理的校园事项"
       @keyup.enter="send"
     />
     <el-button

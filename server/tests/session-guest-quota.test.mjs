@@ -3,11 +3,15 @@ import test from 'node:test'
 
 process.env.AUTH_SESSION_SECRET = 'competition-test-secret-at-least-32-chars'
 process.env.GUEST_CHAT_LIMIT = '1'
+process.env.GUEST_IP_CHAT_LIMIT = '2'
 
 const { issueSessionToken, readSession, requireAdmin, requireSession } = await import('../session.mjs')
 const { beginChatAccess, resetGuestQuotaForTests } = await import('../guest-quota.mjs')
 
-const requestWith = (headers = {}) => ({ headers })
+const requestWith = (headers = {}, remoteAddress = '') => ({
+  headers,
+  ...(remoteAddress ? { socket: { remoteAddress } } : {}),
+})
 
 const cookieHeaderFrom = (setCookie) => String(setCookie || '').split(';')[0]
 
@@ -63,6 +67,19 @@ test('failed guest chat rolls back and does not consume the trial', () => {
   const retry = beginChatAccess(requestWith({ cookie }))
   assert.equal(retry.kind, 'guest')
   retry.commit()
+})
+
+test('fresh private sessions share a modest per-IP abuse ceiling', () => {
+  const remoteAddress = '203.0.113.18'
+  const first = beginChatAccess(requestWith({}, remoteAddress))
+  first.commit()
+  const second = beginChatAccess(requestWith({}, remoteAddress))
+  second.commit()
+
+  assert.throws(() => beginChatAccess(requestWith({}, remoteAddress)), {
+    code: 'GUEST_RATE_LIMITED',
+    statusCode: 429,
+  })
 })
 
 test('authenticated users bypass guest quota', () => {

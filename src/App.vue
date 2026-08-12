@@ -8,7 +8,7 @@
         <div class="top-nav__brand">
           <div>
             <strong>数智校答</strong>
-            <span>校园智能服务平台</span>
+            <span>校园智能服务台 · 可信校园事项导办</span>
           </div>
         </div>
 
@@ -17,32 +17,35 @@
             type="button"
             class="top-nav__tab"
             :class="{ 'top-nav__tab--active': activeSection === 'home' }"
+            data-testid="nav-service-desk"
             @click="goHome"
           >
-            首页
+            智能服务台
           </button>
           <button
             type="button"
             class="top-nav__tab"
             :class="{ 'top-nav__tab--active': activeSection === 'community' }"
+            data-testid="nav-community"
             @click="goCommunity"
           >
-            学生社区
+            校园社区
           </button>
           <button
             v-if="authStore.isAdmin"
             type="button"
             class="top-nav__tab"
             :class="{ 'top-nav__tab--active': activeSection === 'admin' }"
+            data-testid="nav-knowledge-ops"
             @click="goAdmin"
           >
-            管理员页
+            知识运营后台
           </button>
         </nav>
 
         <div class="top-nav__auth">
           <template v-if="authStore.loggedIn">
-            <span class="top-nav__auth-role">{{ authStore.isAdmin ? '管理员' : '普通用户' }}</span>
+            <span class="top-nav__auth-role">{{ authStore.isAdmin ? '知识运营员' : '校园用户' }}</span>
             <span class="top-nav__auth-text">{{ authStore.displayName || authStore.username }}</span>
             <button type="button" class="top-nav__tab" @click="logout">退出</button>
           </template>
@@ -94,7 +97,7 @@ import { defineAsyncComponent, onMounted, ref } from 'vue'
 import AgentChat from './views/AgentChat.vue'
 import { useAuthStore } from './store/auth'
 
-// 比赛首屏只同步加载主问答，登录、社区和管理后台按进入时再下载。
+// 服务台首屏只同步加载主问答，登录、社区和知识运营后台按进入时再下载。
 const LoginView = defineAsyncComponent(() => import('./views/LoginView.vue'))
 const CommunityView = defineAsyncComponent(() => import('./views/CommunityView.vue'))
 const PostDetailView = defineAsyncComponent(() => import('./views/PostDetailView.vue'))
@@ -127,7 +130,7 @@ const goHome = () => {
 }
 
 const goCommunity = () => {
-  // 未登录访问学生社区 → 弹登录弹窗，不切换页面
+  // 未登录访问校园社区 → 弹登录弹窗，不切换页面
   if (!authStore.loggedIn) {
     openLogin()
     return
@@ -313,7 +316,7 @@ onMounted(() => {
 
 /*
  * 桌面端由应用壳层统一分配“导航 + 页面内容”的视口高度。
- * 只约束数字人首页，社区和管理员页继续使用正常文档滚动。
+ * 只约束智能服务台，社区和知识运营后台继续使用正常文档滚动。
  */
 @media (min-width: 981px) {
   .app-layout--agent {
@@ -347,7 +350,7 @@ onMounted(() => {
   padding: 0;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1120px) {
   .top-nav {
     padding: 12px 12px 0;
   }
@@ -366,7 +369,7 @@ onMounted(() => {
     width: 100%;
     min-width: 0;
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
   }
 
   .top-nav__auth {

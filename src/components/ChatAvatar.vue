@@ -3,7 +3,7 @@
     class="chat-avatar"
     :class="[`chat-avatar--${role}`, { 'is-active': active }]"
     role="img"
-    :aria-label="role === 'assistant' ? '数智校答助手标识' : '用户消息标识'"
+    :aria-label="role === 'assistant' ? '校园智能服务台助手标识' : '用户消息标识'"
   >
     <svg v-if="role === 'assistant'" viewBox="0 0 24 24" aria-hidden="true">
       <path

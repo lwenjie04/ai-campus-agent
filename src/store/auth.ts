@@ -20,7 +20,13 @@ type PersistedAuthState = {
 }
 
 const AUTH_STORAGE_KEY = 'ai-campus-agent.auth.v4'
-const canUseStorage = () => typeof window !== 'undefined' && !!window.localStorage
+const getLocalStorage = () => {
+  try {
+    return typeof window !== 'undefined' ? window.localStorage : null
+  } catch {
+    return null
+  }
+}
 
 const normalizeRole = (role: unknown): AuthRole => {
   if (role === 'admin') return 'admin'
@@ -51,11 +57,12 @@ export const useAuthStore = defineStore('auth', {
 
   actions: {
     hydrate() {
-      if (!canUseStorage()) return
-      const raw = localStorage.getItem(AUTH_STORAGE_KEY)
-      if (!raw) return
+      const storage = getLocalStorage()
+      if (!storage) return
 
       try {
+        const raw = storage.getItem(AUTH_STORAGE_KEY)
+        if (!raw) return
         const parsed = JSON.parse(raw) as PersistedAuthState
         this.loggedIn = Boolean(parsed.loggedIn)
         this.role = normalizeRole(parsed.role)
@@ -73,26 +80,35 @@ export const useAuthStore = defineStore('auth', {
           setAuthAccessToken(this.accessToken)
         }
       } catch {
-        localStorage.removeItem(AUTH_STORAGE_KEY)
+        try {
+          storage.removeItem(AUTH_STORAGE_KEY)
+        } catch {
+          // 存储不可写时仅重置内存认证状态。
+        }
         this.resetAuthState()
       }
     },
 
     persist() {
-      if (!canUseStorage()) return
-      localStorage.setItem(
-        AUTH_STORAGE_KEY,
-        JSON.stringify({
-          loggedIn: this.loggedIn,
-          role: this.role,
-          displayName: this.displayName,
-          username: this.username,
-          userId: this.userId,
-          email: this.email,
-          accessToken: this.accessToken,
-          expiresAt: this.expiresAt,
-        }),
-      )
+      const storage = getLocalStorage()
+      if (!storage) return
+      try {
+        storage.setItem(
+          AUTH_STORAGE_KEY,
+          JSON.stringify({
+            loggedIn: this.loggedIn,
+            role: this.role,
+            displayName: this.displayName,
+            username: this.username,
+            userId: this.userId,
+            email: this.email,
+            accessToken: this.accessToken,
+            expiresAt: this.expiresAt,
+          }),
+        )
+      } catch {
+        // 无痕或禁用存储时，当前标签页内登录仍可继续使用。
+      }
     },
 
     resetAuthState() {

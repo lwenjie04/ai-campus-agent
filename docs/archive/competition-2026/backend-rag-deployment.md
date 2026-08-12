@@ -1,5 +1,7 @@
 # 后端 RAG 部署文档（feat/backend-rag）
 
+> 历史归档：来自 `feat/backend-rag` 分支的比赛期部署方案，保存点为 `9da3af7`。当前产品部署请使用 `../../deploy-server-checklist.md`。
+
 > 面向比赛版（maila.club）的后端 RAG 升级部署说明。
 > **前端已锁定（比赛版），本方案只改 `server/` 后端，前端 `src/` 零改动。**
 

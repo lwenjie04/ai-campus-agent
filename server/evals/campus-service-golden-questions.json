@@ -2,7 +2,7 @@
   "version": 1,
   "updatedAt": "2026-08-09",
   "targetTop1Accuracy": 0.9,
-  "description": "比赛版高频校园事项检索金标。expectedTitleIncludes 仅接受已核对的本地正式来源标题。",
+  "description": "校园智能服务台高频事项检索金标。expectedTitleIncludes 仅接受已核对的本地正式来源标题。",
   "items": [
     {
       "id": "teaching-makeup-registration",

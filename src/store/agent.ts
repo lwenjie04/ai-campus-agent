@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import type { Message, MessageSource } from '@/types/agent'
 import { streamChat } from '@/api/llm'
-import { appConfig } from '@/config/app'
 
 const STORAGE_KEY = 'ai-campus-agent.session.v2'
 
@@ -12,7 +11,6 @@ type PersistedAgentSession = {
     major?: string
   }
   messages?: Message[]
-  demoMode?: boolean
 }
 
 // 创建前端消息对象，便于流式输出时直接在界面上增量更新。
@@ -28,10 +26,16 @@ const createMessage = (role: Message['role'], content: string, extra?: Partial<M
 // 固定欢迎词：页面首次打开或重置会话时直接显示。
 // 这条消息不走大模型，也不参与讲解 TTS。
 const WELCOME_MESSAGE =
-  '你好，我是数智校答助手。你可以直接告诉我想查询的事项，例如奖学金、选课、转专业、宿舍服务等。'
+  '你好，这里是校园智能服务台。告诉我你想查询或办理的事项，我会尽量给出结论、步骤和可核对的来源。'
 
-// 访问 localStorage 前先做环境判断，避免测试环境或非浏览器环境报错。
-const canUseStorage = () => typeof window !== 'undefined' && !!window.localStorage
+// 无痕模式或浏览器策略可能禁止访问 localStorage，此时降级为仅当前页面会话。
+const getLocalStorage = () => {
+  try {
+    return typeof window !== 'undefined' ? window.localStorage : null
+  } catch {
+    return null
+  }
+}
 
 export type SendMessageResult =
   | { ok: true }
@@ -76,29 +80,32 @@ export const useAgentStore = defineStore('agent', {
     videoPlayTick: 0,
     narrationText: '',
     narrationTick: 0,
-    demoMode: appConfig.demoMode,
   }),
 
   actions: {
     persistSession() {
-      if (!canUseStorage()) return
+      const storage = getLocalStorage()
+      if (!storage) return
 
       // 只持久化恢复界面所需的最小状态，避免无关数据写入缓存。
       const payload: PersistedAgentSession = {
         userProfile: this.userProfile,
         messages: this.messages,
-        demoMode: this.demoMode,
       }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload))
+      try {
+        storage.setItem(STORAGE_KEY, JSON.stringify(payload))
+      } catch {
+        // 存储空间不足或被禁用时，保留内存会话继续使用。
+      }
     },
 
     hydrateSession() {
-      if (!canUseStorage()) return
-
-      const raw = localStorage.getItem(STORAGE_KEY)
-      if (!raw) return
+      const storage = getLocalStorage()
+      if (!storage) return
 
       try {
+        const raw = storage.getItem(STORAGE_KEY)
+        if (!raw) return
         const parsed = JSON.parse(raw) as PersistedAgentSession
 
         // 只恢复可信字段，因为 localStorage 本质上是用户可修改的数据。
@@ -120,12 +127,13 @@ export const useAgentStore = defineStore('agent', {
           )
         }
 
-        if (typeof parsed.demoMode === 'boolean') {
-          this.demoMode = parsed.demoMode
-        }
       } catch {
         // 缓存损坏时直接清掉，避免污染后续会话。
-        localStorage.removeItem(STORAGE_KEY)
+        try {
+          storage.removeItem(STORAGE_KEY)
+        } catch {
+          // 存储不可写时忽略清理。
+        }
       }
     },
 
@@ -137,11 +145,6 @@ export const useAgentStore = defineStore('agent', {
       this.persistSession()
     },
 
-    setDemoMode(enabled: boolean) {
-      this.demoMode = !!enabled
-      this.persistSession()
-    },
-
     buildSystemPrompt() {
       // 用户画像会被拼进 system prompt，帮助模型生成更贴合当前用户身份的表达。
       const roleLabelMap: Record<string, string> = {
@@ -150,7 +153,7 @@ export const useAgentStore = defineStore('agent', {
         guest: '访客',
       }
 
-      return `你是数智校答助手。请基于校内真实信息进行回答，语言简洁、直接、易懂。
+      return `你是校园智能服务台的 AI 导办助手。请基于校内真实信息回答办理事项，语言简洁、直接、易懂。
 
 当前用户信息：
 - 身份：${roleLabelMap[this.userProfile.role] || this.userProfile.role}
@@ -358,7 +361,7 @@ export const useAgentStore = defineStore('agent', {
         const errorCode = typeof error?.code === 'string' ? error.code : undefined
         const recoverySources = Array.isArray(error?.sources) ? error.sources : []
 
-        if (errorCode === 'GUEST_LOGIN_REQUIRED') {
+        if (errorCode === 'GUEST_LOGIN_REQUIRED' || errorCode === 'GUEST_RATE_LIMITED') {
           this.messages = this.messages.filter(
             (message) => message.id !== userMessage.id && message.id !== assistantPlaceholder.id,
           )

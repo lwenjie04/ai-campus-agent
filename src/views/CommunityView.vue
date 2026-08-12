@@ -2,7 +2,7 @@
   <div class="community-page">
     <header class="community-hero">
       <div>
-        <div class="hero-kicker">学生社区</div>
+        <div class="hero-kicker">校园社区</div>
         <h1>校园互助交流区</h1>
         <p>同学们可以在这里提问、分享经验，后续高质量内容会经过审核沉淀为社区知识来源。</p>
       </div>

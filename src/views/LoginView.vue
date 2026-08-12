@@ -1,32 +1,32 @@
 ﻿<template>
   <div class="login-card login-card--dialog">
       <div class="login-card__head">
-        <div class="login-kicker">账号入口</div>
-        <h1>数智校答</h1>
+        <div class="login-kicker">数智校答 · 账号入口</div>
+        <h1>登录校园智能服务台</h1>
         <p>
-          管理员使用账号密码直接登录；普通用户使用邮箱验证码完成注册后，再通过邮箱和密码进入系统。
+          校园用户使用邮箱登录服务台；知识运营员使用管理员账号进入运营后台。
         </p>
       </div>
 
       <div class="login-highlights">
         <div class="login-highlight">
-          <strong>数字人问答</strong>
-          <span>支持知识检索、来源追溯和语音讲解。</span>
+          <strong>可信事项导办</strong>
+          <span>查询校园规则、办理步骤和可核对来源。</span>
         </div>
         <div class="login-highlight">
-          <strong>学生社区</strong>
-          <span>普通用户可发帖与回复，管理员负责审核与沉淀知识。</span>
+          <strong>校园经验</strong>
+          <span>校园用户可发帖与回复，审核后可沉淀为辅助知识。</span>
         </div>
         <div class="login-highlight">
-          <strong>邮箱校验</strong>
-          <span>注册需完成邮箱验证码校验，降低恶意注册风险。</span>
+          <strong>知识运营</strong>
+          <span>运营人员审核内容、发布知识并维护检索运行。</span>
         </div>
       </div>
 
       <el-tabs v-model="activeTab" class="login-tabs" stretch>
         <el-tab-pane label="登录" name="login">
           <el-alert
-            title="管理员输入账号登录；普通用户输入注册邮箱登录。"
+            title="知识运营员输入账号；校园用户输入注册邮箱。"
             type="success"
             :closable="false"
             show-icon
@@ -50,7 +50,7 @@
 
           <div class="login-actions login-actions--single">
             <el-button type="primary" round :loading="submittingLogin" @click="submitLogin">
-              登录并进入系统
+              登录并继续
             </el-button>
           </div>
         </el-tab-pane>
@@ -209,7 +209,7 @@ const submitLogin = async () => {
       password: loginForm.value.password,
     })
 
-    ElMessage.success(role === 'admin' ? '管理员登录成功' : '登录成功')
+    ElMessage.success(role === 'admin' ? '知识运营员登录成功' : '登录成功')
     emit('login-success', role)
   } catch (error) {
     ElMessage.error(extractErrorMessage(error, '登录失败'))

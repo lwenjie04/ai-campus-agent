@@ -11,7 +11,7 @@
 
     <div class="bubble-wrap">
       <div class="message-meta">
-        <span class="sender-name">{{ message.role === 'user' ? '你' : '数智校答' }}</span>
+        <span class="sender-name">{{ message.role === 'user' ? '你' : '智能服务台' }}</span>
         <time v-if="formatMessageTime(message.createdAt)" class="message-time" :datetime="formatMessageDateTime(message.createdAt)">
           {{ formatMessageTime(message.createdAt) }}
         </time>
@@ -23,7 +23,7 @@
           v-if="message.role === 'assistant' && message.status === 'pending' && !formatMessageContent(message.content)"
           class="typing-dots"
           role="status"
-          aria-label="数智校答正在生成回复"
+          aria-label="校园智能服务台正在整理回答"
           data-testid="loading-indicator"
         >
           <span />

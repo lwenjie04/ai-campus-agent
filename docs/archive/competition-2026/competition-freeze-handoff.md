@@ -1,6 +1,8 @@
 # 比赛版本冻结交接清单
 
-当前工程验证结果见 `docs/competition-status.md`。以下步骤必须在比赛电脑执行，AI 不代填真实密码或伪造彩排确认。
+> 历史归档：来自 `feat/backend-rag` 分支，保存点为 `9da3af7`。当前产品发布请使用 `../../release-checklist.md`。
+
+当前工程验证结果见 `./competition-status.md`。以下步骤必须在比赛电脑执行，AI 不代填真实密码或伪造彩排确认。
 
 ## 1. 配置比赛环境
 

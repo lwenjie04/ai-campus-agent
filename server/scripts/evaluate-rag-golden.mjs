@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-const DEFAULT_GOLDEN_PATH = 'server/evals/competition-golden-questions.json'
+const DEFAULT_GOLDEN_PATH = 'server/evals/campus-service-golden-questions.json'
 
 const parseArgs = (argv) => {
   const args = {
@@ -105,7 +105,7 @@ const main = async () => {
     }
     console.log('')
     console.log(
-      `[competition-rag] ${summary.status.toUpperCase()} ${summary.passed}/${summary.total} ` +
+      `[rag-golden] ${summary.status.toUpperCase()} ${summary.passed}/${summary.total} ` +
         `top1=${(summary.top1Accuracy * 100).toFixed(1)}% threshold=${(threshold * 100).toFixed(1)}%`,
     )
   }
@@ -114,6 +114,6 @@ const main = async () => {
 }
 
 main().catch((error) => {
-  console.error('[competition-rag] failed:', error)
+  console.error('[rag-golden] failed:', error)
   process.exitCode = 1
 })
