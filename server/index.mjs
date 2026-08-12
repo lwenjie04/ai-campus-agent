@@ -9,6 +9,8 @@ import { buildRuleBasedSources } from './sources-rules.mjs'
 import { buildRagContext, getKnowledgeBaseEntryById, ragHitsToSources, searchKnowledgeBase } from './rag.mjs'
 import { checkLightRagHealth, formatLightragContext, lightragContextToSources, queryLightRag } from './lightrag.mjs'
 import { handleTtsRoute } from './tts.mjs'
+import { beginChatAccess } from './guest-quota.mjs'
+import { requireAdmin } from './session.mjs'
 
 // 读取 .env 文件并注入到 process.env。
 // 这里没有依赖 dotenv，而是自己做了一个极简解析器，便于保持后端零额外依赖。
@@ -46,13 +48,20 @@ loadEnvFile(resolve(process.cwd(), '.env.server'))
 // 这里集中定义服务端口、模型提供商地址、模型名称和 CORS 来源。
 const PORT = Number(process.env.PORT || 3000)
 const HOST = process.env.HOST || '127.0.0.1'
-const PROVIDER_MODE = 'deepseek'
+const PROVIDER_MODE = process.env.LLM_PROVIDER_MODE === 'mock' ? 'mock' : 'deepseek'
 const LLM_API_BASE_URL = process.env.LLM_API_BASE_URL || 'https://api.deepseek.com'
 const LLM_API_KEY = process.env.LLM_API_KEY || ''
 const LLM_MODEL = process.env.LLM_MODEL || 'deepseek-chat'
-const ALLOW_ORIGIN = process.env.CORS_ORIGIN || '*'
+const ALLOW_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:5173'
 const LIGHTRAG_PRIMARY = process.env.LIGHTRAG_PRIMARY === 'true'
 const LIGHTRAG_API_BASE_URL = process.env.LIGHTRAG_API_BASE_URL || 'http://127.0.0.1:9621'
+const toPositiveInteger = (value, fallback) => {
+  const parsed = Number.parseInt(String(value || ''), 10)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
+}
+const LLM_REQUEST_TIMEOUT_MS = toPositiveInteger(process.env.LLM_REQUEST_TIMEOUT_MS, 30_000)
+const LLM_STREAM_IDLE_TIMEOUT_MS = toPositiveInteger(process.env.LLM_STREAM_IDLE_TIMEOUT_MS, 30_000)
+const CHAT_LIGHTRAG_TIMEOUT_MS = toPositiveInteger(process.env.CHAT_LIGHTRAG_TIMEOUT_MS, 6_000)
 
 // LightRAG 健康状态缓存，避免每次聊天请求都做健康检查。
 let lightragIsHealthy = false
@@ -91,11 +100,27 @@ const json = (res, statusCode, data, headers = {}) => {
   res.writeHead(statusCode, {
     'Content-Type': 'application/json; charset=utf-8',
     'Access-Control-Allow-Origin': ALLOW_ORIGIN,
+    'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-User-Id',
+    Vary: 'Origin',
     ...headers,
   })
   res.end(JSON.stringify(data))
+}
+
+const requireAdminOrRespond = (req, res) => {
+  try {
+    return requireAdmin(req)
+  } catch (error) {
+    json(res, error?.statusCode || 401, {
+      error: {
+        code: error?.code || 'AUTH_REQUIRED',
+        message: error?.message || '请先登录',
+      },
+    })
+    return null
+  }
 }
 
 // 生成兼容中文文件名的下载响应头。
@@ -234,6 +259,9 @@ const mockChatResult = (messages) => {
 // 非流式模型调用。
 // 适用于一次性拿完整答案的接口 /chat。
 const requestOpenAICompatibleChat = async (messages, requestId) => {
+  if (PROVIDER_MODE === 'mock') {
+    return mockChatResult(messages).content
+  }
   if (!LLM_API_KEY) {
     const err = new Error('LLM_API_KEY is missing')
     err.code = 'LLM_API_KEY_MISSING'
@@ -241,7 +269,7 @@ const requestOpenAICompatibleChat = async (messages, requestId) => {
   }
 
   const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 30_000)
+  const timeout = setTimeout(() => controller.abort(), LLM_REQUEST_TIMEOUT_MS)
 
   try {
     const resp = await fetch(`${LLM_API_BASE_URL}/chat/completions`, {
@@ -283,6 +311,11 @@ const requestOpenAICompatibleChat = async (messages, requestId) => {
       err.code = 'LLM_TIMEOUT'
       throw err
     }
+    if (!error?.code && (error?.name === 'TypeError' || error?.cause)) {
+      const err = new Error('LLM network request failed')
+      err.code = 'LLM_NETWORK_ERROR'
+      throw err
+    }
     throw error
   } finally {
     clearTimeout(timeout)
@@ -292,6 +325,14 @@ const requestOpenAICompatibleChat = async (messages, requestId) => {
 // 流式模型调用。
 // 这里按 OpenAI 兼容 SSE 流格式逐段读取 delta，并实时回调给外层。
 const requestOpenAICompatibleChatStream = async (messages, requestId, handlers = {}) => {
+  if (PROVIDER_MODE === 'mock') {
+    const content = mockChatResult(messages).content
+    for (const chunk of content.match(/.{1,12}/gs) || [content]) {
+      handlers.onDelta?.(chunk)
+      await new Promise((resolve) => setTimeout(resolve, 2))
+    }
+    return content
+  }
   if (!LLM_API_KEY) {
     const err = new Error('LLM_API_KEY is missing')
     err.code = 'LLM_API_KEY_MISSING'
@@ -299,7 +340,12 @@ const requestOpenAICompatibleChatStream = async (messages, requestId, handlers =
   }
 
   const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 60_000)
+  let timeout
+  const refreshIdleTimeout = () => {
+    clearTimeout(timeout)
+    timeout = setTimeout(() => controller.abort(), LLM_STREAM_IDLE_TIMEOUT_MS)
+  }
+  refreshIdleTimeout()
 
   try {
     const resp = await fetch(`${LLM_API_BASE_URL}/chat/completions`, {
@@ -341,6 +387,7 @@ const requestOpenAICompatibleChatStream = async (messages, requestId, handlers =
     while (!doneSeen) {
       const { value, done } = await reader.read()
       if (done) break
+      refreshIdleTimeout()
 
       buffer += decoder.decode(value, { stream: true })
       let eventBoundary = buffer.indexOf('\n\n')
@@ -392,6 +439,11 @@ const requestOpenAICompatibleChatStream = async (messages, requestId, handlers =
     if (error?.name === 'AbortError') {
       const err = new Error('LLM request timeout')
       err.code = 'LLM_TIMEOUT'
+      throw err
+    }
+    if (!error?.code && (error?.name === 'TypeError' || error?.cause)) {
+      const err = new Error('LLM network request failed')
+      err.code = 'LLM_NETWORK_ERROR'
       throw err
     }
     throw error
@@ -532,6 +584,34 @@ const writeNdjson = (res, payload) => {
   res.write(`${JSON.stringify(payload)}\n`)
 }
 
+const buildChatError = (code, recoverySources = []) => {
+  const hasRecoverySources = recoverySources.length > 0
+  const message =
+    code === 'GUEST_LOGIN_REQUIRED'
+      ? '本次游客体验已使用，请登录后继续提问'
+      : code === 'INVALID_JSON'
+        ? '请求体不是有效 JSON'
+        : code === 'BODY_TOO_LARGE'
+          ? '请求体过大'
+          : code === 'LLM_TIMEOUT'
+            ? hasRecoverySources
+              ? '模型响应超时，本次未生成答案；已保留检索到的官方资料，请先查看来源。本次不消耗游客体验次数。'
+              : '模型响应超时，本次未生成答案，请稍后重试。本次不消耗游客体验次数。'
+            : code.startsWith('LLM_')
+              ? hasRecoverySources
+                ? '模型服务暂时不可用，本次未生成答案；已保留检索到的官方资料，请先查看来源。本次不消耗游客体验次数。'
+                : '模型服务暂时不可用，本次未生成答案，请稍后重试。本次不消耗游客体验次数。'
+              : '服务暂时不可用，请稍后重试。本次不消耗游客体验次数。'
+
+  return {
+    code,
+    message,
+    retryable: !['GUEST_LOGIN_REQUIRED', 'INVALID_JSON', 'BODY_TOO_LARGE'].includes(code),
+    quotaConsumed: false,
+    sources: recoverySources,
+  }
+}
+
 // /chat/stream 主流程：
 // 1. 解析并校验前端消息
 // 2. 从知识库检索相关内容
@@ -541,6 +621,8 @@ const writeNdjson = (res, payload) => {
 const handleChatStream = async (req, res) => {
   const requestId = randomUUID()
   const startedAt = Date.now()
+  let chatAccess = null
+  let recoverySources = []
 
   try {
     const body = await parseJsonBody(req)
@@ -551,6 +633,8 @@ const handleChatStream = async (req, res) => {
         requestId,
       })
     }
+
+    chatAccess = beginChatAccess(req)
 
     // 先确保 system prompt 存在，再提取最后一条用户问题做 RAG 检索。
     const messages = ensureSystemPrompt(body.messages)
@@ -568,7 +652,7 @@ const handleChatStream = async (req, res) => {
           mode: 'hybrid',
           onlyNeedContext: true,
           includeChunkContent: true,
-          timeoutMs: 15_000,
+          timeoutMs: CHAT_LIGHTRAG_TIMEOUT_MS,
         })
         ragContext = formatLightragContext(lightragResult?.response, lightragResult?.mode)
         try {
@@ -610,6 +694,7 @@ const handleChatStream = async (req, res) => {
       ragContext = buildRagContext(ragHits)
       if (ragHits.length > 0) ragUsed = 'keyword'
     }
+    recoverySources = ragSources
 
     // 把 RAG 上下文注入到消息列表
     const messagesForLlm =
@@ -625,9 +710,12 @@ const handleChatStream = async (req, res) => {
       'Cache-Control': 'no-cache, no-transform',
       Connection: 'keep-alive',
       'Access-Control-Allow-Origin': ALLOW_ORIGIN,
+      'Access-Control-Allow-Credentials': 'true',
       'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      Vary: 'Origin',
       'X-Accel-Buffering': 'no',
+      ...chatAccess.responseHeaders,
     })
 
     writeNdjson(res, { type: 'start', requestId })
@@ -653,6 +741,7 @@ const handleChatStream = async (req, res) => {
       requestId,
     })
     writeNdjson(res, { type: 'done' })
+    chatAccess.commit()
     res.end()
 
     const durationMs = Date.now() - startedAt
@@ -669,6 +758,7 @@ const handleChatStream = async (req, res) => {
       }),
     )
   } catch (error) {
+    chatAccess?.rollback()
     // 流式接口分两种错误场景：
     // 1. 还没写响应头：直接返回普通 JSON 错误
     // 2. 已经开始流式输出：继续写一条 error 事件，再结束响应
@@ -694,41 +784,23 @@ const handleChatStream = async (req, res) => {
     if (res.headersSent) {
       writeNdjson(res, {
         type: 'error',
-        error: {
-          code,
-          message:
-            code === 'INVALID_JSON'
-              ? '请求体不是有效JSON'
-              : code === 'BODY_TOO_LARGE'
-                ? '请求体过大'
-                : code === 'LLM_TIMEOUT'
-                  ? '模型响应超时'
-                  : '服务暂时不可用，请稍后重试',
-        },
+        error: buildChatError(code, recoverySources),
         requestId,
       })
       return res.end()
     }
 
     const statusCode =
-      code === 'INVALID_JSON' || code === 'BODY_TOO_LARGE'
+      code === 'GUEST_LOGIN_REQUIRED'
+        ? 401
+        : code === 'INVALID_JSON' || code === 'BODY_TOO_LARGE'
         ? 400
         : code.startsWith('LLM_')
           ? 502
           : 500
 
     return json(res, statusCode, {
-      error: {
-        code,
-        message:
-          code === 'INVALID_JSON'
-            ? '请求体不是有效JSON'
-            : code === 'BODY_TOO_LARGE'
-              ? '请求体过大'
-              : code === 'LLM_TIMEOUT'
-                ? '模型响应超时'
-                : '服务暂时不可用，请稍后重试',
-      },
+      error: buildChatError(code, recoverySources),
       requestId,
     })
   }
@@ -739,6 +811,8 @@ const handleChatStream = async (req, res) => {
 const handleChat = async (req, res) => {
   const requestId = randomUUID()
   const startedAt = Date.now()
+  let chatAccess = null
+  let recoverySources = []
 
   try {
     const body = await parseJsonBody(req)
@@ -749,6 +823,8 @@ const handleChat = async (req, res) => {
         requestId,
       })
     }
+
+    chatAccess = beginChatAccess(req)
 
     // 先做 system prompt 补全，再拿用户问题做检索。
     const messages = ensureSystemPrompt(body.messages)
@@ -766,7 +842,7 @@ const handleChat = async (req, res) => {
           mode: 'hybrid',
           onlyNeedContext: true,
           includeChunkContent: true,
-          timeoutMs: 15_000,
+          timeoutMs: CHAT_LIGHTRAG_TIMEOUT_MS,
         })
         ragContext = formatLightragContext(lightragResult?.response, lightragResult?.mode)
         try {
@@ -790,6 +866,7 @@ const handleChat = async (req, res) => {
       ragSources = ragHitsToSources(ragHits)
       ragContext = buildRagContext(ragHits)
     }
+    recoverySources = ragSources
 
     let content = ''
     let intent = 'general'
@@ -823,14 +900,21 @@ const handleChat = async (req, res) => {
       }),
     )
 
-    return json(res, 200, {
-      content,
-      intent,
-      videoCue,
-      sources,
-      requestId,
-    })
+    chatAccess.commit()
+    return json(
+      res,
+      200,
+      {
+        content,
+        intent,
+        videoCue,
+        sources,
+        requestId,
+      },
+      chatAccess.responseHeaders,
+    )
   } catch (error) {
+    chatAccess?.rollback()
     // 非流式接口的错误处理更简单，统一返回一个 JSON 错误对象即可。
     const durationMs = Date.now() - startedAt
     const code =
@@ -841,7 +925,9 @@ const handleChat = async (req, res) => {
           : error?.code || 'INTERNAL_ERROR'
 
     const statusCode =
-      code === 'INVALID_JSON' || code === 'BODY_TOO_LARGE'
+      code === 'GUEST_LOGIN_REQUIRED'
+        ? 401
+        : code === 'INVALID_JSON' || code === 'BODY_TOO_LARGE'
         ? 400
         : code.startsWith('LLM_')
           ? 502
@@ -859,17 +945,7 @@ const handleChat = async (req, res) => {
     )
 
     return json(res, statusCode, {
-      error: {
-        code,
-        message:
-          code === 'INVALID_JSON'
-            ? '请求体不是有效 JSON'
-            : code === 'BODY_TOO_LARGE'
-              ? '请求体过大'
-              : code === 'LLM_TIMEOUT'
-                ? '模型响应超时'
-                : '服务暂时不可用，请稍后重试',
-      },
+      error: buildChatError(code, recoverySources),
       requestId,
     })
   }
@@ -890,8 +966,10 @@ const server = createServer(async (req, res) => {
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': ALLOW_ORIGIN,
+      'Access-Control-Allow-Credentials': 'true',
       'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-User-Id',
+      Vary: 'Origin',
     })
     return res.end()
   }
@@ -946,12 +1024,14 @@ const server = createServer(async (req, res) => {
 
   // 知识库文件下载接口。
   if (req.method === 'GET' && isPath('/kb/download')) {
+    if (!requireAdminOrRespond(req, res)) return
     return handleKnowledgeBaseDownload(req, res)
   }
 
   // LightRAG 反向代理：让前端管理面板通过后端访问 LightRAG 自带的 Web UI。
   // /lightrag/xxx → http://127.0.0.1:9621/xxx
   if (requestUrl.pathname.startsWith('/lightrag') || requestUrl.pathname.startsWith('/api/lightrag')) {
+    if (!requireAdminOrRespond(req, res)) return
     const targetPath = requestUrl.pathname.replace(/^\/api\/lightrag/, '/lightrag').replace(/^\/lightrag/, '')
     const targetUrl = new URL(targetPath || '/', LIGHTRAG_API_BASE_URL)
 

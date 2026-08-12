@@ -33,6 +33,10 @@ const WELCOME_MESSAGE =
 // 访问 localStorage 前先做环境判断，避免测试环境或非浏览器环境报错。
 const canUseStorage = () => typeof window !== 'undefined' && !!window.localStorage
 
+export type SendMessageResult =
+  | { ok: true }
+  | { ok: false; errorCode?: string }
+
 const looksGarbledText = (value: string) => {
   const text = String(value || '')
   return text.includes('���') || (text.includes('?') && text.replace(/\?/g, '').trim().length <= 4)
@@ -260,9 +264,10 @@ export const useAgentStore = defineStore('agent', {
     async sendMessage(content: string) {
       // 这里串起完整的发送链路：写入用户消息 -> 创建占位回复 -> 流式更新 -> 触发讲解。
       const trimmed = content.trim()
-      if (!trimmed || this.loading) return
+      if (!trimmed || this.loading) return { ok: false, errorCode: 'EMPTY_OR_LOADING' } as SendMessageResult
 
-      this.messages.push(createMessage('user', trimmed))
+      const userMessage = createMessage('user', trimmed)
+      this.messages.push(userMessage)
       const assistantPlaceholder = createMessage('assistant', '', {
         status: 'pending',
         sources: [],
@@ -343,6 +348,7 @@ export const useAgentStore = defineStore('agent', {
           target && (target.videoCue = 'teaching')
         }
         this.persistSession()
+        return { ok: true } as SendMessageResult
       } catch (error: any) {
         // 后端异常也要转成聊天消息，避免界面静默失败。
         const errorReply =
@@ -350,20 +356,37 @@ export const useAgentStore = defineStore('agent', {
             ? `请求失败：${error.message}`
             : '请求失败，请稍后重试。'
         const errorCode = typeof error?.code === 'string' ? error.code : undefined
+        const recoverySources = Array.isArray(error?.sources) ? error.sources : []
+
+        if (errorCode === 'GUEST_LOGIN_REQUIRED') {
+          this.messages = this.messages.filter(
+            (message) => message.id !== userMessage.id && message.id !== assistantPlaceholder.id,
+          )
+          this.clearNarration()
+          this.triggerVideoCue('idle')
+          this.persistSession()
+          return { ok: false, errorCode } as SendMessageResult
+        }
+
         const target = this.messages.find((msg) => msg.id === assistantPlaceholder.id)
         if (target) {
           target.content = errorReply
           target.status = 'error'
-          target.sources = []
+          target.sources = recoverySources
           target.errorCode = errorCode
         } else {
           this.messages.push(
-            createMessage('assistant', errorReply, { status: 'error', sources: [], errorCode }),
+            createMessage('assistant', errorReply, {
+              status: 'error',
+              sources: recoverySources,
+              errorCode,
+            }),
           )
         }
         this.clearNarration()
         this.triggerVideoCue('idle')
         this.persistSession()
+        return { ok: false, errorCode } as SendMessageResult
       } finally {
         this.loading = false
       }

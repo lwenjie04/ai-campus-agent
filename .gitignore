@@ -51,3 +51,8 @@ server/data/student-handbook.json
 server/data/student-handbook-lightrag.json
 server/data/vector-index.json
 server/data/knowledge-base.qc-report.json
+
+# Repository automation must remain trackable even if a developer has a broad
+# `scripts/` rule in .git/info/exclude.
+!server/scripts/
+!server/scripts/*.mjs

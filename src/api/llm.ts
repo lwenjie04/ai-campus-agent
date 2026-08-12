@@ -1,6 +1,7 @@
 import axios from 'axios'
 import type { Message, MessageSource } from '@/types/agent'
 import { appConfig } from '@/config/app'
+import { getAuthRequestHeaders } from '@/api/auth'
 
 export interface ChatApiResponse {
   content: string
@@ -73,9 +74,11 @@ export const sendChat = async (messages: Message[]): Promise<ChatApiResponse> =>
   }
 
   // 非流式接口适合简单请求，直接等待后端一次性返回完整结果。
-  const res = await axios.post<ChatApiResponse>(`${appConfig.apiBaseUrl}/chat`, {
-    messages,
-  })
+  const res = await axios.post<ChatApiResponse>(
+    `${appConfig.apiBaseUrl}/chat`,
+    { messages },
+    { headers: getAuthRequestHeaders(), withCredentials: true },
+  )
 
   return res.data
 }
@@ -100,7 +103,9 @@ export const streamChat = async (
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      ...getAuthRequestHeaders(),
     },
+    credentials: 'include',
     body: JSON.stringify({ messages }),
   })
 
@@ -155,6 +160,9 @@ export const streamChat = async (
     if (event.type === 'error') {
       const err = new Error(event?.error?.message || '流式请求失败')
       ;(err as any).code = event?.error?.code || 'STREAM_ERROR'
+      ;(err as any).sources = Array.isArray(event?.error?.sources) ? event.error.sources : []
+      ;(err as any).retryable = event?.error?.retryable === true
+      ;(err as any).quotaConsumed = event?.error?.quotaConsumed === true
       throw err
     }
   }

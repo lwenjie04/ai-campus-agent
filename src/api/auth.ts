@@ -12,6 +12,22 @@ export type AuthUser = {
   createdAt?: string
 }
 
+export type AuthSession = {
+  user: AuthUser
+  accessToken: string
+  expiresInSeconds: number
+  expiresAt: string
+}
+
+let activeAccessToken = ''
+
+export const setAuthAccessToken = (token: string) => {
+  activeAccessToken = token.trim()
+}
+
+export const getAuthRequestHeaders = (): Record<string, string> =>
+  activeAccessToken ? { Authorization: `Bearer ${activeAccessToken}` } : {}
+
 export const sendRegisterCode = async (payload: { email: string; displayName?: string }) => {
   const response = await axios.post<{ message?: string; data?: { expireMinutes: number; resendSeconds: number } }>(
     `${AUTH_BASE_URL}/auth/send-register-code`,
@@ -21,7 +37,7 @@ export const sendRegisterCode = async (payload: { email: string; displayName?: s
 }
 
 export const loginByPassword = async (payload: { account: string; password: string }) => {
-  const response = await axios.post<{ data: AuthUser }>(`${AUTH_BASE_URL}/auth/login`, payload)
+  const response = await axios.post<{ data: AuthSession }>(`${AUTH_BASE_URL}/auth/login`, payload)
   return response.data.data
 }
 

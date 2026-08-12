@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { isMySqlConfigured, query } from './mysql.mjs'
+import { requireAdmin, requireSession } from './session.mjs'
 
 // 社区模块的定位：
 // 1. 先把接口边界和数据结构稳定下来
@@ -54,9 +55,33 @@ const mockReplies = [
 
 const mockKnowledge = []
 
+// 数据库离线时，RAG 仍可读取管理员已经审核通过的进程内社区知识。
+// 返回副本，避免检索层意外修改审核模块的状态。
+export const getApprovedMockCommunityKnowledge = () =>
+  mockKnowledge
+    .filter((item) => item.status === 'approved')
+    .map((item) => ({
+      id: item.id,
+      postId: item.postId,
+      title: item.title,
+      content: item.content || item.summary || '',
+      category: item.category || 'general',
+      keywords: Array.isArray(item.keywords) ? [...item.keywords] : [],
+      updatedAt: item.updatedAt || '',
+      sourceType: item.sourceType || 'community_summary',
+      sourceStatus: 'approved',
+      confidenceBase: Number(item.confidence || 0.45),
+    }))
+
 const ok = (res, data, message = 'ok') => json(res, 200, { code: 0, message, data })
 const badRequest = (res, message) => json(res, 400, { code: 4001, message, data: null })
 const notFound = (res, message = '未找到对应资源') => json(res, 404, { code: 4044, message, data: null })
+const authFailure = (res, error) =>
+  json(res, error?.statusCode || 401, {
+    code: error?.code || 'AUTH_REQUIRED',
+    message: error?.message || '请先登录',
+    data: null,
+  })
 
 let json = null
 let parseJsonBody = null
@@ -457,7 +482,12 @@ const createPostInMySql = async (body) => {
 }
 
 const createPost = async (req, res) => {
-  const body = await parseJsonBody(req)
+  const input = await parseJsonBody(req)
+  const body = {
+    ...input,
+    authorName: req.authSession.displayName,
+    authorRole: 'student',
+  }
   const validationError = validatePostPayload(body)
   if (validationError) return badRequest(res, validationError)
 
@@ -540,7 +570,12 @@ const createReplyInMySql = async (postId, body) => {
 }
 
 const createReply = async (req, res, postId) => {
-  const body = await parseJsonBody(req)
+  const input = await parseJsonBody(req)
+  const body = {
+    ...input,
+    authorName: req.authSession.displayName,
+    authorRole: 'student',
+  }
   const validationError = validateReplyPayload(body)
   if (validationError) return badRequest(res, validationError)
 
@@ -1289,6 +1324,28 @@ export const handleCommunityRoute = async (req, res, requestUrl, tools) => {
   parseJsonBody = tools.parseJsonBody
 
   const path = requestUrl.pathname.replace(/^\/api/, '')
+
+  const isAdminPath = path.startsWith('/community/review/') || path.startsWith('/community/knowledge')
+  if (isAdminPath) {
+    try {
+      req.authSession = requireAdmin(req)
+    } catch (error) {
+      authFailure(res, error)
+      return true
+    }
+  }
+
+  const isMemberWrite =
+    req.method === 'POST' &&
+    (path === '/community/posts' || /^\/community\/posts\/[^/]+\/replies$/.test(path))
+  if (isMemberWrite) {
+    try {
+      req.authSession = requireSession(req)
+    } catch (error) {
+      authFailure(res, error)
+      return true
+    }
+  }
 
   if (req.method === 'GET' && path === '/community/meta') {
     return ok(res, { categories: COMMUNITY_CATEGORIES, hotTags: HOT_TAGS })

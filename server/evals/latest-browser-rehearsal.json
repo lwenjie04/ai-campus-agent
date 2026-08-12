@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "completedAt": "2026-08-09T07:56:21.900Z",
+  "mode": "isolated_mock",
+  "targetUrl": "http://127.0.0.1:4173",
+  "requestedRounds": 10,
+  "passedRounds": 10,
+  "communityClosureVerified": true,
+  "totalDurationMs": 14552,
+  "rounds": [
+    {
+      "round": 1,
+      "passed": true,
+      "durationMs": 5038
+    },
+    {
+      "round": 2,
+      "passed": true,
+      "durationMs": 1159
+    },
+    {
+      "round": 3,
+      "passed": true,
+      "durationMs": 1087
+    },
+    {
+      "round": 4,
+      "passed": true,
+      "durationMs": 1036
+    },
+    {
+      "round": 5,
+      "passed": true,
+      "durationMs": 982
+    },
+    {
+      "round": 6,
+      "passed": true,
+      "durationMs": 1078
+    },
+    {
+      "round": 7,
+      "passed": true,
+      "durationMs": 1098
+    },
+    {
+      "round": 8,
+      "passed": true,
+      "durationMs": 920
+    },
+    {
+      "round": 9,
+      "passed": true,
+      "durationMs": 1116
+    },
+    {
+      "round": 10,
+      "passed": true,
+      "durationMs": 1038
+    }
+  ],
+  "assertions": [
+    "fresh guest storage each round",
+    "first guest answer completes",
+    "official transfer notice appears in sources",
+    "second question opens login",
+    "administrator session is established",
+    "saved second question auto-resumes exactly once",
+    "administrator generates and approves community knowledge",
+    "approved community knowledge returns as a labeled RAG source"
+  ],
+  "serviceProfile": {
+    "llm": "mock",
+    "lightrag": "disabled",
+    "tts": "disabled",
+    "mysql": "offline_memory_auth"
+  }
+}

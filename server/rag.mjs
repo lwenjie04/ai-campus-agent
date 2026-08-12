@@ -2,6 +2,7 @@
 import { resolve } from 'node:path'
 import { isMySqlConfigured, query } from './mysql.mjs'
 import { searchVectorIndex } from './vector-index.mjs'
+import { getApprovedMockCommunityKnowledge } from './community.mjs'
 
 const KB_PATH = resolve(process.cwd(), 'server/data/knowledge-base.json')
 const LOG_DIR = resolve(process.cwd(), 'server/logs')
@@ -169,7 +170,7 @@ const mapCommunityKnowledgeRow = (row) => ({
 })
 
 const loadCommunityKnowledge = async () => {
-  if (!isMySqlConfigured()) return []
+  if (!isMySqlConfigured()) return getApprovedMockCommunityKnowledge()
 
   try {
     const rows = await query(
@@ -194,7 +195,7 @@ const loadCommunityKnowledge = async () => {
 
     return rows.map(mapCommunityKnowledgeRow)
   } catch {
-    return []
+    return getApprovedMockCommunityKnowledge()
   }
 }
 

@@ -11,13 +11,16 @@ const DEFAULT_PATHS = {
 }
 
 const parseArgs = (argv) => {
-  const args = { ...DEFAULT_PATHS }
+  const args = { ...DEFAULT_PATHS, expectedProvider: '', expectedModel: '', expectedDimension: 0 }
 
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i]
     if (arg === '--kb') args.knowledgeBase = argv[++i] || args.knowledgeBase
     else if (arg === '--chunked') args.chunkedKnowledgeBase = argv[++i] || args.chunkedKnowledgeBase
     else if (arg === '--vector') args.vectorIndex = argv[++i] || args.vectorIndex
+    else if (arg === '--expect-provider') args.expectedProvider = argv[++i] || args.expectedProvider
+    else if (arg === '--expect-model') args.expectedModel = argv[++i] || args.expectedModel
+    else if (arg === '--expect-dimension') args.expectedDimension = Number(argv[++i] || 0)
   }
 
   return args
@@ -86,6 +89,11 @@ const main = () => {
   const chunkedPath = resolve(cwd, args.chunkedKnowledgeBase)
   const vectorPath = resolve(cwd, args.vectorIndex)
   const embedding = getEmbeddingConfig()
+  const expectedEmbedding = {
+    provider: args.expectedProvider || embedding.provider,
+    model: args.expectedModel || (args.expectedProvider === 'hash' ? `hash-${args.expectedDimension || embedding.dimension}` : embedding.model),
+    dimension: args.expectedDimension || embedding.dimension,
+  }
   const checks = []
 
   const kbItems = readJsonArray(kbPath)
@@ -154,12 +162,31 @@ const main = () => {
     pushCheck(checks, 'warn', 'vector-index', `missing file: ${args.vectorIndex}`, ['run: npm run kb:vector'])
   } else {
     const vectorStats = getVectorIndexStats(vectorPath)
+    const providerMatches = vectorStats.provider === expectedEmbedding.provider
+    const modelMatches = expectedEmbedding.provider === 'hash' || vectorStats.model === expectedEmbedding.model
+    const dimensionMatches =
+      expectedEmbedding.provider !== 'hash' || Number(vectorStats.dimension) === Number(expectedEmbedding.dimension)
+    const usesSelfDescribedLocalIndex = vectorStats.provider === 'hash' && dimensionMatches
+    const compatible = providerMatches && modelMatches && dimensionMatches
+    const usable = compatible || usesSelfDescribedLocalIndex
     pushCheck(
       checks,
-      'ok',
+      compatible ? 'ok' : usable ? 'warn' : 'error',
       'vector-index',
-      `loaded ${vectorStats.totalChunks} vector chunks (official=${vectorStats.officialChunks}, community=${vectorStats.communityChunks})`,
-      [`provider=${vectorStats.provider}`, `model=${vectorStats.model || 'n/a'}`],
+      compatible
+        ? `loaded ${vectorStats.totalChunks} compatible vector chunks (official=${vectorStats.officialChunks}, community=${vectorStats.communityChunks})`
+        : usable
+          ? `loaded ${vectorStats.totalChunks} self-described local hash chunks; runtime queries will stay local`
+          : 'vector index is incompatible with the current runtime embedding configuration',
+      [
+        `index=${vectorStats.provider}/${vectorStats.model || 'n/a'}/${vectorStats.dimension || 'n/a'}`,
+        `expected=${expectedEmbedding.provider}/${expectedEmbedding.model || 'n/a'}/${expectedEmbedding.dimension || 'n/a'}`,
+        ...(compatible
+          ? []
+          : usable
+            ? ['semantic quality is lower than a real embedding index; keyword retrieval remains enabled']
+            : ['rebuild the index with the current VECTOR_EMBEDDING_* configuration']),
+      ],
     )
   }
 
@@ -167,6 +194,7 @@ const main = () => {
     JSON.stringify(
       {
         embedding,
+        expectedEmbedding,
         files: args,
         checks,
         nextSteps: [
@@ -180,6 +208,10 @@ const main = () => {
       2,
     ),
   )
+
+  for (const check of checks.filter((item) => item.status === 'warn')) {
+    console.warn(`[vector-readiness] WARN ${check.name}: ${check.detail}`)
+  }
 
   if (checks.some((item) => item.status === 'error')) {
     process.exitCode = 1

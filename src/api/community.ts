@@ -9,28 +9,33 @@
   CommunityReviewListResponse,
 } from '@/types/community'
 import { appConfig } from '@/config/app'
+import { getAuthRequestHeaders } from '@/api/auth'
 
 const API_BASE = appConfig.apiBaseUrl
 
 type ApiEnvelope<T> = {
-  code: number
+  code: number | string
   message: string
   data: T
 }
 
 const request = async <T>(path: string, init?: RequestInit): Promise<T> => {
   const response = await fetch(`${API_BASE}${path}`, {
+    ...init,
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      ...getAuthRequestHeaders(),
       ...(init?.headers || {}),
     },
-    ...init,
   })
 
   const payload = (await response.json().catch(() => null)) as ApiEnvelope<T> | null
 
   if (!response.ok || !payload || payload.code !== 0) {
-    throw new Error(payload?.message || `请求失败：${response.status}`)
+    const error = new Error(payload?.message || `请求失败：${response.status}`)
+    ;(error as Error & { code?: string }).code = String(payload?.code || 'COMMUNITY_REQUEST_FAILED')
+    throw error
   }
 
   return payload.data

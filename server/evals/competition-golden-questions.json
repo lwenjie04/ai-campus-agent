@@ -1,0 +1,128 @@
+{
+  "version": 1,
+  "updatedAt": "2026-08-09",
+  "targetTop1Accuracy": 0.9,
+  "description": "比赛版高频校园事项检索金标。expectedTitleIncludes 仅接受已核对的本地正式来源标题。",
+  "items": [
+    {
+      "id": "teaching-makeup-registration",
+      "category": "teaching",
+      "query": "补考怎么报名？",
+      "expectedTitleIncludes": ["第二学期补考、成绩录入和毕业审核安排"]
+    },
+    {
+      "id": "teaching-transfer-requirements",
+      "category": "teaching",
+      "query": "普通本科生申请转专业需要什么条件？",
+      "expectedTitleIncludes": ["普通本科生转专业工作的通知"]
+    },
+    {
+      "id": "teaching-elective-registration",
+      "category": "teaching",
+      "query": "第二学期选修课怎么网上选课？",
+      "expectedTitleIncludes": ["第2学期选修课网上选课"]
+    },
+    {
+      "id": "teaching-public-elective-guide",
+      "category": "teaching",
+      "query": "公共任选课目录和选课指南在哪里看？",
+      "expectedTitleIncludes": ["公共任选课可供选课课程目录和选课指南"]
+    },
+    {
+      "id": "teaching-academic-warning",
+      "category": "teaching",
+      "query": "收到学业预警后要怎么处理？",
+      "expectedTitleIncludes": ["本科学生学业预警工作的通知"]
+    },
+    {
+      "id": "exam-cet-registration",
+      "category": "exam",
+      "query": "2026年上半年英语四六级什么时候报名？",
+      "expectedTitleIncludes": ["2026年上半年全国大学英语（小语种）四、六级考试报名"]
+    },
+    {
+      "id": "exam-cet-arrangements",
+      "category": "exam",
+      "query": "英语四六级考试有哪些注意事项？",
+      "expectedTitleIncludes": ["全国大学英语四、六级考试有关事项"]
+    },
+    {
+      "id": "exam-discipline",
+      "category": "exam",
+      "query": "学校期末考试纪律有什么要求？",
+      "expectedTitleIncludes": ["期末考试纪律教育工作的通知"]
+    },
+    {
+      "id": "exam-makeup-results",
+      "category": "exam",
+      "query": "第二学期补考成绩什么时候录入？",
+      "expectedTitleIncludes": ["第二学期补考、成绩录入和毕业审核安排"]
+    },
+    {
+      "id": "exam-final-inspection",
+      "category": "exam",
+      "query": "学校期末考试巡考怎么安排？",
+      "expectedTitleIncludes": ["第一学期期末考试巡考工作的通知"]
+    },
+    {
+      "id": "scholarship-national-inspirational",
+      "category": "scholarship",
+      "query": "国家励志奖学金什么时候申请？",
+      "expectedTitleIncludes": ["国家奖学金和国家励志奖学金评审工作的通知"]
+    },
+    {
+      "id": "scholarship-national-materials",
+      "category": "scholarship",
+      "query": "国家奖学金申请表怎么填写和报送？",
+      "expectedTitleIncludes": ["国家奖学金申请审批表填写与报送要求"]
+    },
+    {
+      "id": "scholarship-grant-review",
+      "category": "scholarship",
+      "query": "国家助学金评审怎么申请？",
+      "expectedTitleIncludes": ["国家助学金评审工作的通知"]
+    },
+    {
+      "id": "scholarship-financial-difficulty",
+      "category": "scholarship",
+      "query": "家庭经济困难学生认定怎么办理？",
+      "expectedTitleIncludes": ["家庭经济困难学生认定工作的通知"]
+    },
+    {
+      "id": "scholarship-competition",
+      "category": "scholarship",
+      "query": "学生竞赛奖学金怎么申请？",
+      "expectedTitleIncludes": ["学生竞赛奖学金申请和评审工作的通知"]
+    },
+    {
+      "id": "life-repair",
+      "category": "life",
+      "query": "宿舍报修怎么申请？",
+      "expectedTitleIncludes": ["更换两校区智能报修系统的通知"]
+    },
+    {
+      "id": "life-dorm-change",
+      "category": "life",
+      "query": "学生退宿调宿和复学床位怎么办理？",
+      "expectedTitleIncludes": ["学生宿舍退宿、调宿办理及复学床位申请"]
+    },
+    {
+      "id": "life-winter-dorm",
+      "category": "life",
+      "query": "2026年寒假宿舍什么时候封闭？",
+      "expectedTitleIncludes": ["2026年寒假学生宿舍区封闭管理"]
+    },
+    {
+      "id": "life-shuttle",
+      "category": "life",
+      "query": "第二学期两校区交通车怎么安排？",
+      "expectedTitleIncludes": ["第二学期两校区交通车运行时间安排"]
+    },
+    {
+      "id": "life-qingming",
+      "category": "life",
+      "query": "2026年清明节放假和调课怎么安排？",
+      "expectedTitleIncludes": ["2026年清明节放假期间调停课"]
+    }
+  ]
+}

@@ -263,7 +263,33 @@ export const searchVectorIndex = async (query, options = {}) => {
   const indexItems = Array.isArray(options.indexItems) ? options.indexItems : loadVectorIndex(options.inputPath)
   if (!query || indexItems.length === 0) return []
 
-  const queryEmbedding = await embedText(query, options)
+  // 索引本身记录了生成它的 provider/dimension。查询必须沿用同一套参数，
+  // 否则即使向量长度相同，余弦相似度也没有意义。
+  const indexProviders = Array.from(
+    new Set(indexItems.map((item) => String(item.embeddingProvider || '').trim().toLowerCase()).filter(Boolean)),
+  )
+  const indexDimensions = Array.from(
+    new Set(
+      indexItems
+        .map((item) => Number(item.embeddingDimension || item.embedding?.length || 0))
+        .filter((dimension) => dimension > 0),
+    ),
+  )
+  if (indexProviders.length > 1 || indexDimensions.length > 1) return []
+
+  const indexProvider = indexProviders[0] || ''
+  const indexDimension = Number(indexItems[0]?.embeddingDimension || indexItems[0]?.embedding?.length || 0)
+  const queryProvider = String(options.provider || indexProvider || EMBEDDING_PROVIDER).trim().toLowerCase()
+  const queryDimension = toNumber(options.dimension, indexDimension || HASH_EMBEDDING_DIM)
+  if (options.provider && indexProvider && indexProvider !== queryProvider) return []
+  if (indexDimension > 0 && queryDimension !== indexDimension) return []
+
+  const queryEmbedding = await embedText(query, {
+    ...options,
+    provider: queryProvider,
+    dimension: queryDimension,
+  })
+  if (indexDimension > 0 && queryEmbedding.length !== indexDimension) return []
 
   return indexItems
     .map((item) => ({
@@ -278,11 +304,17 @@ export const searchVectorIndex = async (query, options = {}) => {
 
 export const getVectorIndexStats = (inputPath = DEFAULT_INDEX_PATH) => {
   const items = loadVectorIndex(inputPath)
+  const providers = Array.from(new Set(items.map((item) => item.embeddingProvider).filter(Boolean)))
+  const models = Array.from(new Set(items.map((item) => item.embeddingModel).filter(Boolean)))
+  const dimensions = Array.from(
+    new Set(items.map((item) => Number(item.embeddingDimension || item.embedding?.length || 0)).filter(Boolean)),
+  )
   return {
     totalChunks: items.length,
     officialChunks: items.filter((item) => item.isOfficial).length,
     communityChunks: items.filter((item) => !item.isOfficial).length,
-    provider: getEmbeddingConfig().provider,
-    model: getEmbeddingConfig().model,
+    provider: providers.length === 1 ? providers[0] : providers.join(',') || '',
+    model: models.length === 1 ? models[0] : models.join(',') || '',
+    dimension: dimensions.length === 1 ? dimensions[0] : dimensions.join(',') || 0,
   }
 }

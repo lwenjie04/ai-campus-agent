@@ -95,6 +95,23 @@
             <el-button class="stop-btn" size="small" @click="onStopPlayback">停止播放</el-button>
           </div>
 
+          <div
+            v-if="!authStore.loggedIn"
+            class="guest-trial"
+            :class="{ 'guest-trial--used': guestTrialUsed }"
+            role="status"
+            aria-live="polite"
+          >
+            <span class="guest-trial__mark" aria-hidden="true">{{ guestTrialUsed ? '✓' : '1' }}</span>
+            <div class="guest-trial__copy">
+              <strong>{{ guestTrialUsed ? '体验问答已完成' : '可免费体验 1 次问答' }}</strong>
+              <span>{{ guestTrialUsed ? '登录后继续追问，并保留当前对话' : '先看真实回答与来源，再决定是否登录' }}</span>
+            </div>
+            <button type="button" class="guest-trial__login" @click="emit('require-login')">
+              {{ guestTrialUsed ? '登录继续' : '直接登录' }}
+            </button>
+          </div>
+
           <!-- 输入区 -->
           <footer class="input-area">
             <!--
@@ -216,6 +233,15 @@ const emit = defineEmits<{
 const authStore = useAuthStore()
 // 未登录时拦截的待发送消息；登录成功后自动补发，实现「回到刚才那条消息」
 const pendingDraft = ref('')
+const GUEST_TRIAL_STORAGE_KEY = 'ai-campus-agent.guest-trial.used.v1'
+const guestTrialUsed = ref(false)
+
+const persistGuestTrialUsed = () => {
+  guestTrialUsed.value = true
+  if (typeof window !== 'undefined') {
+    window.localStorage.setItem(GUEST_TRIAL_STORAGE_KEY, 'true')
+  }
+}
 
 // 用户身份的允许值。
 // 通过联合类型约束，避免传入不受支持的角色字符串。
@@ -229,14 +255,25 @@ type GradeValue = '' | '大一' | '大二' | '大三' | '大四' | '大五' | '�
 // 页面中的业务状态大多都由 store 维护。
 const store = useAgentStore()
 
-// 发送前登录守卫：未登录时拦截并弹出登录，登录成功后自动补发刚才的消息。
-const handleSend = (text: string) => {
-  if (!authStore.loggedIn) {
+// 游客可以先完成一次真实问答；第二次保留草稿并登录，成功后自动补发。
+const handleSend = async (text: string) => {
+  if (!authStore.loggedIn && guestTrialUsed.value) {
     pendingDraft.value = text
     emit('require-login')
     return
   }
-  store.sendMessage(text)
+
+  const result = await store.sendMessage(text)
+  if (!authStore.loggedIn && result.ok) {
+    persistGuestTrialUsed()
+    return
+  }
+
+  if (!authStore.loggedIn && !result.ok && result.errorCode === 'GUEST_LOGIN_REQUIRED') {
+    persistGuestTrialUsed()
+    pendingDraft.value = text
+    emit('require-login')
+  }
 }
 
 watch(
@@ -409,6 +446,10 @@ const onNarrationEnded = () => {
 
 // 组件挂载后执行初始化流程。
 onMounted(() => {
+  if (typeof window !== 'undefined') {
+    guestTrialUsed.value = window.localStorage.getItem(GUEST_TRIAL_STORAGE_KEY) === 'true'
+  }
+
   // 第一步：恢复本地缓存的会话。
   store.hydrateSession()
 
@@ -439,6 +480,7 @@ onMounted(() => {
 <style scoped>
 /* 页面大背景：负责铺满整个视口，并给出整体绿色渐变氛围 */
 .page-bg {
+  width: 100%;
   min-height: 100vh;
   min-height: 100dvh;
   display: grid;
@@ -454,10 +496,12 @@ onMounted(() => {
 /* 主体两栏布局：左边数字人，右边聊天 */
 .app-shell {
   width: min(1200px, 100%);
+  max-width: 100%;
   height: calc(100vh - 28px);
   display: grid;
   grid-template-columns: minmax(360px, 44fr) minmax(0, 56fr);
   gap: 14px;
+  box-sizing: border-box;
 }
 
 /* 防止左右两栏在 flex/grid 中因为内容过长被撑破 */
@@ -766,6 +810,92 @@ onMounted(() => {
   padding: 0 2px 2px;
 }
 
+.guest-trial {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  gap: 0.625rem;
+  align-items: center;
+  margin: 0 0.125rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid rgba(42, 127, 72, 0.16);
+  border-radius: 0.875rem;
+  color: #174a2b;
+  background: linear-gradient(135deg, rgba(239, 249, 237, 0.96), rgba(255, 255, 250, 0.9));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.guest-trial--used {
+  border-color: rgba(196, 133, 45, 0.24);
+  color: #684515;
+  background: linear-gradient(135deg, rgba(255, 247, 227, 0.96), rgba(255, 253, 244, 0.92));
+}
+
+.guest-trial__mark {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 800;
+  background: #2b8a50;
+  box-shadow: 0 0.375rem 0.875rem rgba(38, 127, 72, 0.2);
+}
+
+.guest-trial--used .guest-trial__mark {
+  background: #c17b22;
+  box-shadow: 0 0.375rem 0.875rem rgba(166, 103, 25, 0.18);
+}
+
+.guest-trial__copy {
+  min-width: 0;
+  display: grid;
+  gap: 0.125rem;
+}
+
+.guest-trial__copy strong {
+  font-size: 0.875rem;
+  line-height: 1.3;
+}
+
+.guest-trial__copy span {
+  font-size: 0.75rem;
+  line-height: 1.45;
+  opacity: 0.76;
+}
+
+.guest-trial__login {
+  grid-column: 1 / -1;
+  min-height: 2.75rem;
+  padding: 0.625rem 1rem;
+  border: 1px solid currentColor;
+  border-radius: 0.75rem;
+  color: inherit;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.72);
+  cursor: pointer;
+  transition: transform 0.18s ease, background 0.18s ease;
+}
+
+.guest-trial__login:hover {
+  background: rgba(255, 255, 255, 0.96);
+  transform: translateY(-1px);
+}
+
+@media (min-width: 681px) {
+  .guest-trial {
+    grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+  }
+
+  .guest-trial__login {
+    grid-column: auto;
+    min-width: 6.5rem;
+  }
+}
+
 .dialog-footer {
   display: flex;
   justify-content: flex-end;
@@ -824,7 +954,7 @@ onMounted(() => {
 
   .chat-card {
     height: 100%;
-    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    grid-template-rows: auto minmax(0, 1fr) auto auto auto;
     align-content: stretch;
   }
 
@@ -857,16 +987,23 @@ onMounted(() => {
   }
 
   .app-shell {
+    width: 100%;
+    max-width: calc(100vw - 28px);
     grid-template-columns: 1fr;
     height: auto;
   }
 
+  .right-chat {
+    grid-row: 1;
+  }
+
   .left-stage {
-    min-height: 360px;
+    grid-row: 2;
+    min-height: 280px;
   }
 
   .stage-wrap {
-    min-height: 300px;
+    min-height: 220px;
   }
 
   .chat-body {
@@ -922,7 +1059,7 @@ onMounted(() => {
   }
 
   .chat-body {
-    height: 260px;
+    height: clamp(180px, 24dvh, 220px);
   }
 }
 </style>

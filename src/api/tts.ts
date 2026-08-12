@@ -1,4 +1,5 @@
 import { appConfig } from '@/config/app'
+import { getAuthRequestHeaders } from '@/api/auth'
 
 // 发给后端 TTS 接口的最小请求结构。
 type TtsRequest = {
@@ -11,6 +12,7 @@ type TtsRequest = {
 export const requestBackendTts = async ({ text, voiceName }: TtsRequest): Promise<Blob> => {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    ...getAuthRequestHeaders(),
   }
   // 如果前端配置了鉴权 token，就把它带给后端用于权限校验。
   if (appConfig.ttsAuthToken) {
@@ -21,6 +23,7 @@ export const requestBackendTts = async ({ text, voiceName }: TtsRequest): Promis
   const resp = await fetch(`${appConfig.apiBaseUrl}/tts`, {
     method: 'POST',
     headers,
+    credentials: 'include',
     body: JSON.stringify({
       text,
       voiceName,

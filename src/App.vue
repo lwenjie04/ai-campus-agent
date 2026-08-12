@@ -80,7 +80,7 @@
   <el-dialog
     v-model="loginDialogVisible"
     :show-close="false"
-    width="440px"
+    width="min(440px, calc(100vw - 24px))"
     append-to-body
     :close-on-click-modal="true"
     class="login-dialog"
@@ -90,13 +90,15 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { defineAsyncComponent, onMounted, ref } from 'vue'
 import AgentChat from './views/AgentChat.vue'
-import CommunityView from './views/CommunityView.vue'
-import PostDetailView from './views/PostDetailView.vue'
-import AdminReviewView from './views/AdminReviewView.vue'
-import LoginView from './views/LoginView.vue'
 import { useAuthStore } from './store/auth'
+
+// 比赛首屏只同步加载主问答，登录、社区和管理后台按进入时再下载。
+const LoginView = defineAsyncComponent(() => import('./views/LoginView.vue'))
+const CommunityView = defineAsyncComponent(() => import('./views/CommunityView.vue'))
+const PostDetailView = defineAsyncComponent(() => import('./views/PostDetailView.vue'))
+const AdminReviewView = defineAsyncComponent(() => import('./views/AdminReviewView.vue'))
 
 type MainSection = 'home' | 'community' | 'admin'
 type CommunityViewState = 'list' | 'detail'
@@ -184,6 +186,8 @@ onMounted(() => {
 :global(body),
 :global(#app) {
   min-height: 100%;
+  width: 100%;
+  overflow-x: clip;
 }
 
 :global(body) {
@@ -195,7 +199,9 @@ onMounted(() => {
 }
 
 .app-layout {
+  width: 100%;
   min-height: 100vh;
+  overflow-x: clip;
   background:
     radial-gradient(circle at top left, rgba(241, 255, 238, 0.98), rgba(216, 248, 206, 0.92) 42%, rgba(137, 223, 98, 0.95) 100%);
 }
@@ -205,6 +211,7 @@ onMounted(() => {
   top: 0;
   z-index: 50;
   padding: 14px 18px 0;
+  box-sizing: border-box;
   backdrop-filter: blur(16px);
 }
 
@@ -324,7 +331,7 @@ onMounted(() => {
 }
 
 /* ====== 登录弹窗 ====== */
-.login-dialog :deep(.el-dialog) {
+:global(.el-dialog.login-dialog) {
   border-radius: 24px;
   padding: 0;
   overflow: hidden;
@@ -332,11 +339,11 @@ onMounted(() => {
   box-shadow: 0 24px 64px rgba(30, 80, 40, 0.22);
 }
 
-.login-dialog :deep(.el-dialog__header) {
+:global(.el-dialog.login-dialog .el-dialog__header) {
   display: none;
 }
 
-.login-dialog :deep(.el-dialog__body) {
+:global(.el-dialog.login-dialog .el-dialog__body) {
   padding: 0;
 }
 
@@ -346,12 +353,20 @@ onMounted(() => {
   }
 
   .top-nav__inner {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
     flex-direction: column;
     align-items: stretch;
+    gap: 12px;
+    padding: 14px;
   }
 
   .top-nav__tabs {
     width: 100%;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .top-nav__auth {
@@ -362,6 +377,9 @@ onMounted(() => {
 
   .top-nav__tab {
     flex: 1 1 0;
+    min-width: 0;
+    min-height: 44px;
+    padding-inline: 10px;
   }
 }
 </style>

@@ -1,16 +1,19 @@
 ﻿import { randomInt, randomUUID, scryptSync, timingSafeEqual } from 'node:crypto'
 import nodemailer from 'nodemailer'
 import { query } from './mysql.mjs'
+import { issueSessionToken, sessionConfig } from './session.mjs'
 
 const AUTH_NOTIFY_EMAIL = process.env.AUTH_NOTIFY_EMAIL || '3279574698@qq.com'
 const DEFAULT_ADMIN_USERNAME = process.env.AUTH_DEFAULT_ADMIN_USERNAME || 'admin'
-const DEFAULT_ADMIN_PASSWORD = process.env.AUTH_DEFAULT_ADMIN_PASSWORD || 'admin123'
+const DEFAULT_ADMIN_PASSWORD = String(process.env.AUTH_DEFAULT_ADMIN_PASSWORD || '').trim()
 const DEFAULT_ADMIN_NAME = process.env.AUTH_DEFAULT_ADMIN_NAME || '系统管理员'
+const ALLOW_MEMORY_FALLBACK = process.env.AUTH_ALLOW_MEMORY_FALLBACK === 'true'
 const CODE_EXPIRE_MINUTES = Number(process.env.AUTH_CODE_EXPIRE_MINUTES || 10)
 const CODE_RESEND_SECONDS = Number(process.env.AUTH_CODE_RESEND_SECONDS || 60)
 
 let authSchemaReadyPromise = null
 let mailTransporter = null
+let memoryAdmin = null
 
 const hashPassword = (password) => {
   const salt = randomUUID().replace(/-/g, '')
@@ -26,6 +29,27 @@ const verifyPassword = (password, storedHash) => {
   const expectedBuffer = Buffer.from(expected, 'hex')
   if (actual.length !== expectedBuffer.length) return false
   return timingSafeEqual(actual, expectedBuffer)
+}
+
+const ensureMemoryAdmin = () => {
+  if (!ALLOW_MEMORY_FALLBACK) return null
+  if (!DEFAULT_ADMIN_PASSWORD || DEFAULT_ADMIN_PASSWORD === 'admin123' || DEFAULT_ADMIN_PASSWORD.length < 10) {
+    const error = new Error('启用认证内存回退前，请配置至少 10 位的 AUTH_DEFAULT_ADMIN_PASSWORD')
+    error.code = 'AUTH_ADMIN_PASSWORD_REQUIRED'
+    throw error
+  }
+  if (!memoryAdmin) {
+    memoryAdmin = {
+      id: 'memory-admin',
+      username: DEFAULT_ADMIN_USERNAME,
+      password_hash: hashPassword(DEFAULT_ADMIN_PASSWORD),
+      display_name: DEFAULT_ADMIN_NAME,
+      role: 'admin',
+      email: AUTH_NOTIFY_EMAIL,
+      created_at: new Date(),
+    }
+  }
+  return memoryAdmin
 }
 
 const createAuthTables = async () => {
@@ -64,6 +88,12 @@ const ensureDefaultAdmin = async () => {
   const rows = await query('SELECT id FROM auth_users WHERE username = ? LIMIT 1', [DEFAULT_ADMIN_USERNAME])
   if (Array.isArray(rows) && rows.length > 0) return
 
+  if (!DEFAULT_ADMIN_PASSWORD || DEFAULT_ADMIN_PASSWORD === 'admin123' || DEFAULT_ADMIN_PASSWORD.length < 10) {
+    const error = new Error('首次创建管理员前，请配置至少 10 位的 AUTH_DEFAULT_ADMIN_PASSWORD')
+    error.code = 'AUTH_ADMIN_PASSWORD_REQUIRED'
+    throw error
+  }
+
   await query(
     `INSERT INTO auth_users (id, username, password_hash, display_name, role, email)
      VALUES (?, ?, ?, ?, 'admin', ?)`,
@@ -74,8 +104,18 @@ const ensureDefaultAdmin = async () => {
 const ensureAuthSchema = async () => {
   if (!authSchemaReadyPromise) {
     authSchemaReadyPromise = (async () => {
-      await createAuthTables()
-      await ensureDefaultAdmin()
+      try {
+        await createAuthTables()
+        await ensureDefaultAdmin()
+        return 'mysql'
+      } catch (error) {
+        if (!ALLOW_MEMORY_FALLBACK) throw error
+        ensureMemoryAdmin()
+        console.warn(
+          `[auth] MySQL unavailable, using explicit competition memory fallback: ${error?.code || error?.message || 'UNKNOWN_ERROR'}`,
+        )
+        return 'memory'
+      }
     })().catch((error) => {
       authSchemaReadyPromise = null
       throw error
@@ -214,7 +254,12 @@ const handleSendRegisterCode = async (req, res, helpers) => {
     })
   }
 
-  await ensureAuthSchema()
+  const backendMode = await ensureAuthSchema()
+  if (backendMode === 'memory') {
+    return helpers.json(res, 503, {
+      error: { code: 'AUTH_DATABASE_REQUIRED', message: '数据库离线时暂不开放新用户注册' },
+    })
+  }
 
   const duplicateRows = await query('SELECT id FROM auth_users WHERE email = ? LIMIT 1', [email])
   if (Array.isArray(duplicateRows) && duplicateRows.length > 0) {
@@ -268,9 +313,15 @@ const handleLogin = async (req, res, helpers) => {
   const body = await helpers.parseJsonBody(req)
   const { account, password } = validateLoginPayload(body)
 
-  await ensureAuthSchema()
-  const rows = await query('SELECT * FROM auth_users WHERE username = ? OR email = ? LIMIT 1', [account, account])
-  const user = Array.isArray(rows) ? rows[0] : null
+  const backendMode = await ensureAuthSchema()
+  let user
+  if (backendMode === 'memory') {
+    const admin = ensureMemoryAdmin()
+    user = admin && (account === admin.username || account === admin.email) ? admin : null
+  } else {
+    const rows = await query('SELECT * FROM auth_users WHERE username = ? OR email = ? LIMIT 1', [account, account])
+    user = Array.isArray(rows) ? rows[0] : null
+  }
 
   if (!user || !verifyPassword(password, user.password_hash)) {
     return helpers.json(res, 401, {
@@ -278,8 +329,13 @@ const handleLogin = async (req, res, helpers) => {
     })
   }
 
+  const normalizedUser = normalizeUser(user)
   return helpers.json(res, 200, {
-    data: normalizeUser(user),
+    data: {
+      user: normalizedUser,
+      ...issueSessionToken(normalizedUser),
+      expiresAt: new Date(Date.now() + sessionConfig.ttlSeconds * 1000).toISOString(),
+    },
   })
 }
 
@@ -321,7 +377,12 @@ const handleRegister = async (req, res, helpers) => {
     })
   }
 
-  await ensureAuthSchema()
+  const backendMode = await ensureAuthSchema()
+  if (backendMode === 'memory') {
+    return helpers.json(res, 503, {
+      error: { code: 'AUTH_DATABASE_REQUIRED', message: '数据库离线时暂不开放新用户注册' },
+    })
+  }
   const duplicateRows = await query('SELECT id FROM auth_users WHERE email = ? LIMIT 1', [email])
   if (Array.isArray(duplicateRows) && duplicateRows.length > 0) {
     return helpers.json(res, 409, {

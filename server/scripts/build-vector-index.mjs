@@ -60,6 +60,7 @@ const main = async () => {
 
   const provider = args.provider || embeddingConfig.provider
   const dimension = args.dimension || embeddingConfig.dimension
+  const model = provider === 'hash' ? `hash-${dimension}` : embeddingConfig.model
   const limit = Number.isFinite(args.limit) && args.limit > 0 ? Math.min(args.limit, sourceItems.length) : sourceItems.length
 
   const indexItems = []
@@ -72,7 +73,7 @@ const main = async () => {
     indexItems.push({
       ...pickIndexFields(item),
       embeddingProvider: provider,
-      embeddingModel: embeddingConfig.model,
+      embeddingModel: model,
       embeddingDimension: embedding.length,
       embeddingText,
       embedding,
@@ -93,7 +94,7 @@ const main = async () => {
         input: args.input,
         output: args.output,
         provider,
-        model: embeddingConfig.model,
+        model,
         dimension,
         sourceChunks: sourceItems.length,
         indexedChunks: indexItems.length,

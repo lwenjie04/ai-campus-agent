@@ -435,6 +435,7 @@ import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useCommunityStore } from '@/store/community'
 import { appConfig } from '@/config/app'
+import { getAuthRequestHeaders } from '@/api/auth'
 
 defineEmits<{
   (e: 'go-login'): void
@@ -456,17 +457,21 @@ const lrFailed = ref(0)
 
 const lrApiBase = () => `${appConfig.apiBaseUrl}/api/lightrag`
 const listLen = (arr: unknown) => (Array.isArray(arr) ? arr.length : 0)
+const lightragRequestOptions = () => ({
+  headers: getAuthRequestHeaders(),
+  credentials: 'include' as const,
+})
 
 const refreshLightrag = async () => {
   try {
-    const health = await fetch(`${lrApiBase()}/health`).then((r) => r.json())
+    const health = await fetch(`${lrApiBase()}/health`, lightragRequestOptions()).then((r) => r.json())
     lrHealthOk.value = health?.status === 'healthy'
     lrVersion.value = health?.core_version || ''
   } catch {
     lrHealthOk.value = false
   }
   try {
-    const docs = await fetch(`${lrApiBase()}/documents`).then((r) => r.json())
+    const docs = await fetch(`${lrApiBase()}/documents`, lightragRequestOptions()).then((r) => r.json())
     const s = docs?.statuses || {}
     lrProcessed.value = listLen(s.processed)
     lrFailed.value = listLen(s.failed)

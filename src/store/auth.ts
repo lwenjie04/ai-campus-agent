@@ -1,5 +1,10 @@
 ﻿import { defineStore } from 'pinia'
-import { loginByPassword, registerUserAccount, type AuthUser } from '@/api/auth'
+import {
+  loginByPassword,
+  registerUserAccount,
+  setAuthAccessToken,
+  type AuthSession,
+} from '@/api/auth'
 
 type AuthRole = 'guest' | 'user' | 'admin'
 
@@ -10,6 +15,8 @@ type PersistedAuthState = {
   username?: string
   userId?: string
   email?: string
+  accessToken?: string
+  expiresAt?: string
 }
 
 const AUTH_STORAGE_KEY = 'ai-campus-agent.auth.v4'
@@ -29,6 +36,8 @@ export const useAuthStore = defineStore('auth', {
     username: '',
     userId: '',
     email: '',
+    accessToken: '',
+    expiresAt: '',
   }),
 
   getters: {
@@ -54,9 +63,14 @@ export const useAuthStore = defineStore('auth', {
         this.username = typeof parsed.username === 'string' ? parsed.username : ''
         this.userId = typeof parsed.userId === 'string' ? parsed.userId : ''
         this.email = typeof parsed.email === 'string' ? parsed.email : ''
+        this.accessToken = typeof parsed.accessToken === 'string' ? parsed.accessToken : ''
+        this.expiresAt = typeof parsed.expiresAt === 'string' ? parsed.expiresAt : ''
 
-        if (!this.loggedIn || this.role === 'guest') {
+        const expired = !this.expiresAt || new Date(this.expiresAt).getTime() <= Date.now()
+        if (!this.loggedIn || this.role === 'guest' || !this.accessToken || expired) {
           this.resetAuthState()
+        } else {
+          setAuthAccessToken(this.accessToken)
         }
       } catch {
         localStorage.removeItem(AUTH_STORAGE_KEY)
@@ -75,6 +89,8 @@ export const useAuthStore = defineStore('auth', {
           username: this.username,
           userId: this.userId,
           email: this.email,
+          accessToken: this.accessToken,
+          expiresAt: this.expiresAt,
         }),
       )
     },
@@ -86,21 +102,28 @@ export const useAuthStore = defineStore('auth', {
       this.username = ''
       this.userId = ''
       this.email = ''
+      this.accessToken = ''
+      this.expiresAt = ''
+      setAuthAccessToken('')
     },
 
-    applyUser(user: AuthUser) {
+    applySession(session: AuthSession) {
+      const user = session.user
       this.loggedIn = true
       this.role = user.role === 'admin' ? 'admin' : 'user'
       this.displayName = user.displayName
       this.username = user.username
       this.userId = user.id
       this.email = user.email || ''
+      this.accessToken = session.accessToken
+      this.expiresAt = session.expiresAt
+      setAuthAccessToken(session.accessToken)
       this.persist()
     },
 
     async login(payload: { account: string; password: string }) {
-      const user = await loginByPassword(payload)
-      this.applyUser(user)
+      const session = await loginByPassword(payload)
+      this.applySession(session)
       return this.role === 'admin' ? 'admin' : 'user'
     },
 
