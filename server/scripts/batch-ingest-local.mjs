@@ -60,7 +60,7 @@ const parseArgs = (argv) => {
 
 const normalizeText = (text) =>
   String(text || '')
-    .replace(/\u0000/g, '')
+    .replaceAll('\u0000', '')
     .replace(/\r\n/g, '\n')
     .replace(/\s+/g, ' ')
     .trim()

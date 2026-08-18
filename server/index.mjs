@@ -452,77 +452,6 @@ const requestOpenAICompatibleChatStream = async (messages, requestId, handlers =
   }
 }
 
-// 小工具：数组去重。
-const unique = (items) => Array.from(new Set(items.filter(Boolean)))
-
-// 小工具：从一段文本里取第一个符合正则的结果。
-const firstMatch = (text, pattern) => {
-  const m = String(text || '').match(pattern)
-  return m?.[0] || ''
-}
-
-// 根据 RAG 命中的原文，做一层规则型摘要整理。
-// 这个函数的目标是让回答更像“总结”，而不是把原文片段生硬拼接出来。
-const summarizeWithRagHits = (userText, ragHits) => {
-  if (!Array.isArray(ragHits) || ragHits.length === 0) return ''
-
-  const topHit = ragHits[0]
-  const fullText = ragHits.map((h) => h.content || '').join('\n')
-  const snippets = ragHits.map((h) => h.snippet).filter(Boolean).slice(0, 2)
-
-  const isScholarship = /奖学金|助学金|资助/.test(userText)
-  const isTransferMajor = /转专业|补退选|成绩认定|课程认定|学分认定/.test(userText)
-
-  if (isScholarship) {
-    const amounts = unique(fullText.match(/\d{3,5}元\/人\/年/g) || [])
-    const percents = unique(fullText.match(/前\d+%/g) || [])
-    const deadline = firstMatch(fullText, /\d+月\d+日前/)
-
-    const lines = []
-    lines.push('总结：已检索到学校奖学金评审相关通知，当前问题可先按“奖项类型、申请条件、时间节点、材料要求”四项来确认。')
-
-    if (/国家奖学金/.test(fullText) || /国家励志奖学金/.test(fullText)) {
-      lines.push('关键信息：通知包含国家奖学金和国家励志奖学金评审要求。')
-    }
-    if (percents.length > 0) {
-      lines.push(`申请条件（摘录）：成绩/综合排名常见门槛涉及 ${percents.slice(0, 3).join('、')}。`)
-    }
-    if (amounts.length > 0) {
-      lines.push(`资助标准（摘录）：${amounts.slice(0, 3).join('；')}。`)
-    }
-    if (deadline) {
-      lines.push(`时间节点（摘录）：通知提到学院提交材料节点通常为 ${deadline}（以当年通知为准）。`)
-    }
-    lines.push('建议：请先明确你问的是国家奖学金、国家励志奖学金，还是竞赛奖学金，我可以继续按对应类型给你整理申请步骤和材料清单。')
-    return lines.join('\n')
-  }
-
-  if (isTransferMajor) {
-    const dates = unique(fullText.match(/\d{4}年\d{1,2}月\d{1,2}日(?:\s*\d{1,2}:\d{2})?/g) || [])
-    const phone = firstMatch(fullText, /0\d{2,3}-\d{7,8}/)
-
-    const lines = []
-    lines.push('总结：已检索到转专业学生课程补退选与成绩认定通知，问题可以按“补退选时间 + 成绩/学分认定时间 + 办理学院/教务联系方式”来处理。')
-    if (dates.length > 0) {
-      lines.push(`时间节点（摘录）：${dates.slice(0, 4).join('、')}。`)
-    }
-    if (phone) {
-      lines.push(`联系方式（摘录）：${phone}。`)
-    }
-    lines.push('建议：如果你告诉我是“公共任选课补退选”还是“成绩认定/学分认定”，我可以给你更准确的办理步骤。')
-    return lines.join('\n')
-  }
-
-  const brief = snippets.length > 0 ? snippets.map((s, i) => `${i + 1}. ${s}`).join('\n') : ''
-  return [
-    `总结：已检索到 ${ragHits.length} 条相关校内资料，建议优先参考命中通知。`,
-    brief ? `关键信息（摘录）：\n${brief}` : '',
-    '如需我继续整理，我可以按“申请条件 / 材料清单 / 时间节点 / 办理步骤”给出结构化总结。',
-  ]
-    .filter(Boolean)
-    .join('\n')
-}
-
 // 把 RAG 命中的资料拼接成额外的 system 上下文，发送给大模型。
 // 这样模型在生成答案时，就能优先参考知识库内容。
 const appendRagContextToMessages = (messages, ragHits) => {
@@ -689,7 +618,7 @@ const handleChatStream = async (req, res) => {
 
     if (!ragContext) {
       // 回退到关键词 + 向量混合检索
-      ragHits = await searchKnowledgeBase(userText, { limit: 3, minScore: 3 })
+      ragHits = await searchKnowledgeBase(userText, { limit: 3 })
       ragSources = ragHitsToSources(ragHits)
       ragContext = buildRagContext(ragHits)
       if (ragHits.length > 0) ragUsed = 'keyword'
@@ -854,7 +783,7 @@ const handleChat = async (req, res) => {
           ragSources = []
         }
         if (ragContext) ragUsed = 'lightrag'
-      } catch (err) {
+      } catch {
         // LightRAG 查询本身失败，清空 context 触发回退
         ragContext = ''
         ragSources = []
@@ -862,7 +791,7 @@ const handleChat = async (req, res) => {
     }
 
     if (!ragContext) {
-      ragHits = await searchKnowledgeBase(userText, { limit: 3, minScore: 3 })
+      ragHits = await searchKnowledgeBase(userText, { limit: 3 })
       ragSources = ragHitsToSources(ragHits)
       ragContext = buildRagContext(ragHits)
     }

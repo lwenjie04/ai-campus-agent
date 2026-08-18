@@ -369,18 +369,33 @@ const getReviewPostDetailFromMySql = async (postId) => {
   }
 }
 
+// 缓存 MySQL 可用性探测结果，避免每个社区请求都 SELECT 1。
+// 失败后冷却期内继续走 mock，冷却结束再重新探测。
+const MYSQL_PROBE_COOLDOWN_MS = Math.max(10_000, Number(process.env.MYSQL_PROBE_COOLDOWN_MS || 30_000))
+let mySqlAvailability = null
+let mySqlAvailabilityCheckedAt = 0
+
 const shouldUseMySql = async () => {
   if (!isMySqlConfigured()) return false
 
+  const now = Date.now()
+  if (mySqlAvailability !== null && now - mySqlAvailabilityCheckedAt < MYSQL_PROBE_COOLDOWN_MS) {
+    return mySqlAvailability
+  }
+
   try {
     await query('SELECT 1 AS ok')
-    return true
+    mySqlAvailability = true
   } catch (error) {
+    mySqlAvailability = false
     console.warn(
       `[community] MySQL unavailable, fallback to mock: ${error?.code || error?.message || 'UNKNOWN_ERROR'}`,
     )
-    return false
+  } finally {
+    mySqlAvailabilityCheckedAt = Date.now()
   }
+
+  return mySqlAvailability
 }
 
 const listPosts = (requestUrl) => {
@@ -526,28 +541,12 @@ const createPost = async (req, res) => {
 }
 
 const createReplyInMySql = async (postId, body) => {
-  const postRows = await query(
-    `
-      SELECT id
-      FROM community_posts
-      WHERE id = ?
-      LIMIT 1
-    `,
-    [postId],
-  )
-
-  if (!postRows.length) {
-    const err = new Error('POST_NOT_FOUND')
-    err.code = 'POST_NOT_FOUND'
-    throw err
-  }
-
   const id = `reply_${randomUUID().slice(0, 8)}`
   const authorName = body.authorName.trim()
   const authorRole = body.authorRole === 'teacher' ? 'teacher' : 'student'
   const content = body.content.trim()
 
-  await query(
+  const insertedRows = await query(
     `
       INSERT INTO community_replies (
         id,
@@ -558,10 +557,20 @@ const createReplyInMySql = async (postId, body) => {
         status,
         quality_score,
         like_count
-      ) VALUES (?, ?, ?, ?, ?, 'pending', 0.00, 0)
+      )
+      SELECT ?, ?, ?, ?, ?, 'pending', 0.00, 0
+      FROM community_posts
+      WHERE id = ? AND status = 'approved'
+      LIMIT 1
     `,
-    [id, postId, authorName, authorRole, content],
+    [id, postId, authorName, authorRole, content, postId],
   )
+
+  if (!insertedRows?.affectedRows) {
+    const err = new Error('POST_NOT_FOUND')
+    err.code = 'POST_NOT_FOUND'
+    throw err
+  }
 
   return {
     id,
@@ -592,7 +601,7 @@ const createReply = async (req, res, postId) => {
   }
 
   const post = mockPosts.find((item) => item.id === postId)
-  if (!post) return notFound(res, '帖子不存在')
+  if (!post || post.status !== 'approved') return notFound(res, '帖子不存在')
 
   const now = new Date().toISOString()
   const reply = {
@@ -843,7 +852,7 @@ const updateKnowledgeStatusFromMock = (knowledgeId, status) => {
   }
 }
 
-const updatePostStatusInMySql = async (postId, status, action, note = '') => {
+const updatePostStatusInMySql = async (postId, status, action, note = '', reviewer = 'admin') => {
   const rows = await query(
     `
       SELECT id
@@ -873,7 +882,7 @@ const updatePostStatusInMySql = async (postId, status, action, note = '') => {
     targetType: 'post',
     targetId: postId,
     action,
-    reviewer: 'admin',
+    reviewer,
     note,
   })
 
@@ -909,7 +918,7 @@ const updateReplyStatus = (res, replyId, status, message) => {
   return ok(res, { id: reply.id, status: reply.status }, message)
 }
 
-const updateReplyStatusInMySql = async (replyId, status, action, note = '') => {
+const updateReplyStatusInMySql = async (replyId, status, action, note = '', reviewer = 'admin') => {
   const rows = await query(
     `
       SELECT id, post_id
@@ -974,7 +983,7 @@ const updateReplyStatusInMySql = async (replyId, status, action, note = '') => {
     targetType: 'reply',
     targetId: replyId,
     action,
-    reviewer: 'admin',
+    reviewer,
     note,
   })
 
@@ -984,7 +993,7 @@ const updateReplyStatusInMySql = async (replyId, status, action, note = '') => {
   }
 }
 
-const updateKnowledgeStatusInMySql = async (knowledgeId, status, action, note = '') => {
+const updateKnowledgeStatusInMySql = async (knowledgeId, status, action, note = '', reviewer = 'admin') => {
   const rows = await query(
     `
       SELECT id, post_id
@@ -1023,7 +1032,7 @@ const updateKnowledgeStatusInMySql = async (knowledgeId, status, action, note = 
     targetType: 'knowledge',
     targetId: knowledgeId,
     action,
-    reviewer: 'admin',
+    reviewer,
     note,
   })
 
@@ -1075,7 +1084,7 @@ const buildCommunityKnowledgeContent = ({ post, replies }) => {
 }
 
 const buildCommunityKnowledgeKeywords = ({ post, replies }) => {
-  const seed = new Set([...(post.tags || [])])
+  const seed = new Set(post.tags || [])
 
   for (const token of String(post.title || '').split(/[、，,。；：:\s]+/)) {
     const normalized = token.trim()
@@ -1096,7 +1105,7 @@ const buildCommunityKnowledgeKeywords = ({ post, replies }) => {
   return Array.from(seed).slice(0, 12)
 }
 
-const generateKnowledgeInMySql = async (postId) => {
+const generateKnowledgeInMySql = async (postId, reviewer = 'admin') => {
   const posts = await query(
     `
       SELECT
@@ -1197,7 +1206,7 @@ const generateKnowledgeInMySql = async (postId) => {
       targetType: 'knowledge',
       targetId: existingId,
       action: 'generate_knowledge',
-      reviewer: 'admin',
+      reviewer,
       note: '更新社区知识条目',
     })
 
@@ -1239,7 +1248,7 @@ const generateKnowledgeInMySql = async (postId) => {
     targetType: 'knowledge',
     targetId: knowledgeId,
     action: 'generate_knowledge',
-    reviewer: 'admin',
+    reviewer,
     note: '生成社区知识条目',
   })
 
@@ -1251,13 +1260,14 @@ const generateKnowledgeInMySql = async (postId) => {
 }
 
 const generateKnowledge = async (req, res) => {
+  const reviewer = req.authSession?.displayName || 'admin'
   const body = await parseJsonBody(req)
   const postId = String(body.postId || '').trim()
   if (!postId) return badRequest(res, 'postId 不能为空')
 
   if (await shouldUseMySql()) {
     try {
-      const result = await generateKnowledgeInMySql(postId)
+      const result = await generateKnowledgeInMySql(postId, reviewer)
       return ok(res, result, '生成成功')
     } catch (error) {
       if (error?.code === 'POST_NOT_FOUND') {
@@ -1347,6 +1357,8 @@ export const handleCommunityRoute = async (req, res, requestUrl, tools) => {
     }
   }
 
+  const reviewer = req.authSession?.displayName || 'admin'
+
   if (req.method === 'GET' && path === '/community/meta') {
     return ok(res, { categories: COMMUNITY_CATEGORIES, hotTags: HOT_TAGS })
   }
@@ -1422,6 +1434,7 @@ export const handleCommunityRoute = async (req, res, requestUrl, tools) => {
           'approved',
           'approve',
           '帖子审核通过',
+          reviewer,
         )
         return ok(res, result, '帖子审核通过')
       } catch (error) {
@@ -1443,6 +1456,7 @@ export const handleCommunityRoute = async (req, res, requestUrl, tools) => {
           'rejected',
           'reject',
           '帖子已拒绝',
+          reviewer,
         )
         return ok(res, result, '帖子已拒绝')
       } catch (error) {
@@ -1464,6 +1478,7 @@ export const handleCommunityRoute = async (req, res, requestUrl, tools) => {
           'approved',
           'approve',
           '回复审核通过',
+          reviewer,
         )
         return ok(res, result, '回复审核通过')
       } catch (error) {
@@ -1485,6 +1500,7 @@ export const handleCommunityRoute = async (req, res, requestUrl, tools) => {
           'rejected',
           'reject',
           '回复已拒绝',
+          reviewer,
         )
         return ok(res, result, '回复已拒绝')
       } catch (error) {
@@ -1510,6 +1526,7 @@ export const handleCommunityRoute = async (req, res, requestUrl, tools) => {
           'approved',
           'approve',
           '社区知识审核通过',
+          reviewer,
         )
         return ok(res, result, '社区知识审核通过')
       } catch (error) {
@@ -1533,6 +1550,7 @@ export const handleCommunityRoute = async (req, res, requestUrl, tools) => {
           'rejected',
           'reject',
           '社区知识已拒绝',
+          reviewer,
         )
         return ok(res, result, '社区知识已拒绝')
       } catch (error) {

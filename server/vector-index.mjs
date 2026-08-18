@@ -43,7 +43,7 @@ const EMBEDDING_TIMEOUT_MS = toNumber(process.env.VECTOR_EMBEDDING_TIMEOUT_MS, 3
 const normalizeText = (value) =>
   String(value || '')
     .replace(/\r\n/g, '\n')
-    .replace(/\u0000/g, '')
+    .replaceAll('\u0000', '')
     .replace(/[ \t]+\n/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .replace(/[ \t]{2,}/g, ' ')
@@ -55,7 +55,7 @@ const tokenizeText = (input) => {
 
   const tokens = new Set()
   const words = text
-    .split(/[\s,，。！？；:：、（）()\[\]{}"'“”‘’<>《》【】「」\-_\\/]+/g)
+    .split(/[\s,，。！？；:：、（）()[\]{}"'“”‘’<>《》【】「」\-_\\/]+/g)
     .filter(Boolean)
 
   for (const word of words) {
@@ -91,7 +91,7 @@ const normalizeVector = (vector) => {
 }
 
 const buildHashEmbedding = (text, dimension) => {
-  const vector = new Array(dimension).fill(0)
+  const vector = Array.from({ length: dimension }, () => 0)
   const tokens = tokenizeText(text)
 
   for (const token of tokens) {
@@ -206,7 +206,7 @@ export const embedText = async (text, options = {}) => {
   const dimension = toNumber(options.dimension, HASH_EMBEDDING_DIM)
   const normalized = normalizeText(text)
 
-  if (!normalized) return new Array(dimension).fill(0)
+  if (!normalized) return Array.from({ length: dimension }, () => 0)
 
   if (provider === 'hash') {
     return buildHashEmbedding(normalized, dimension)

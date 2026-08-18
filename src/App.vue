@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div
     class="app-layout"
     :class="{ 'app-layout--agent': activeSection === 'home' }"
@@ -87,6 +87,7 @@
     append-to-body
     :close-on-click-modal="true"
     class="login-dialog"
+    @closed="clearPendingLoginAction"
   >
     <LoginView @login-success="handleLoginSuccess" />
   </el-dialog>
@@ -105,7 +106,6 @@ const AdminReviewView = defineAsyncComponent(() => import('./views/AdminReviewVi
 
 type MainSection = 'home' | 'community' | 'admin'
 type CommunityViewState = 'list' | 'detail'
-type LoginRole = 'user' | 'admin'
 
 const authStore = useAuthStore()
 const activeSection = ref<MainSection>('home')
@@ -116,7 +116,12 @@ const currentPostId = ref('')
 const loginDialogVisible = ref(false)
 let pendingLoginAction: (() => void) | null = null
 
+const clearPendingLoginAction = () => {
+  pendingLoginAction = null
+}
+
 const openLogin = () => {
+  clearPendingLoginAction()
   loginDialogVisible.value = true
 }
 
@@ -129,14 +134,18 @@ const goHome = () => {
   activeSection.value = 'home'
 }
 
-const goCommunity = () => {
-  // 未登录访问校园社区 → 弹登录弹窗，不切换页面
-  if (!authStore.loggedIn) {
-    openLogin()
-    return
-  }
+const goCommunityAfterLogin = () => {
   activeSection.value = 'community'
   communityView.value = 'list'
+}
+
+const goCommunity = () => {
+  // 未登录访问校园社区 → 弹登录弹窗，登录成功后自动进入社区
+  if (!authStore.loggedIn) {
+    requestLogin(goCommunityAfterLogin)
+    return
+  }
+  goCommunityAfterLogin()
 }
 
 const goAdmin = () => {
@@ -161,7 +170,7 @@ const backToCommunityList = () => {
   communityView.value = 'list'
 }
 
-const handleLoginSuccess = (_role: LoginRole) => {
+const handleLoginSuccess = () => {
   loginDialogVisible.value = false
   if (pendingLoginAction) {
     const action = pendingLoginAction

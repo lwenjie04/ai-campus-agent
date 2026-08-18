@@ -176,7 +176,7 @@
                   <p class="item-card__content">{{ item.summary }}</p>
 
                   <div class="item-card__foot">
-                    <span>{{ formatDate(item.updatedAt) }}</span>
+                    <span>{{ formatDateTime(item.updatedAt) }}</span>
                     <div class="item-card__actions">
                       <el-button size="small" plain @click="openPostDetail(item.postId, '社区知识来源帖子')">
                         查看来源帖子
@@ -239,7 +239,7 @@
                   <p class="item-card__content">{{ post.content }}</p>
 
                   <div class="item-card__foot">
-                    <span>{{ formatDate(post.createdAt) }}</span>
+                    <span>{{ formatDateTime(post.createdAt) }}</span>
                     <div class="item-card__actions">
                       <el-button size="small" plain @click="openPostDetail(post.id, '待审核帖子详情')">
                         查看详情
@@ -286,7 +286,7 @@
                   <p class="item-card__content">{{ reply.content }}</p>
 
                   <div class="item-card__foot">
-                    <span>{{ formatDate(reply.createdAt) }}</span>
+                    <span>{{ formatDateTime(reply.createdAt) }}</span>
                     <div class="item-card__actions">
                       <el-button size="small" plain @click="openPostDetail(reply.postId, '回复所属帖子详情')">
                         查看所属帖子
@@ -338,7 +338,7 @@
                   <span>回复 {{ store.currentPost.replyCount }}</span>
                   <span>点赞 {{ store.currentPost.likeCount }}</span>
                   <span>知识状态 {{ knowledgeStatusLabel(store.currentPost.knowledgeStatus) }}</span>
-                  <span>更新时间 {{ formatDate(store.currentPost.updatedAt) }}</span>
+                  <span>更新时间 {{ formatDateTime(store.currentPost.updatedAt) }}</span>
                 </div>
 
               <div v-if="store.currentPost.tags?.length" class="detail-tags">
@@ -374,7 +374,7 @@
                   <div class="reply-timeline__head">
                     <div>
                       <strong>{{ reply.authorName }}</strong>
-                      <span> · {{ formatDate(reply.createdAt) }}</span>
+                      <span> · {{ formatDateTime(reply.createdAt) }}</span>
                     </div>
                     <el-tag :type="statusTagType(reply.status)" round>
                       {{ statusLabel(reply.status) }}
@@ -444,6 +444,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useCommunityStore } from '@/store/community'
+import { formatDateTime } from '@/utils/date'
 import { appConfig } from '@/config/app'
 import { getAuthRequestHeaders } from '@/api/auth'
 
@@ -511,11 +512,7 @@ const categoryLabelMap = computed(() =>
   Object.fromEntries(store.meta.categories.map((item) => [item.value, item.label])),
 )
 
-const formatDate = (value: string) => {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
-}
+
 
 const statusLabel = (value: string) => {
   if (value === 'approved') return '已通过'

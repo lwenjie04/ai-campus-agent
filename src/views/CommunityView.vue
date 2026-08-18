@@ -166,6 +166,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useCommunityStore } from '@/store/community'
+import { formatDate } from '@/utils/date'
 
 defineEmits<{
   (e: 'open-post', postId: string): void
@@ -195,11 +196,7 @@ const categoryLabelMap = computed(() =>
   Object.fromEntries(store.meta.categories.map((item) => [item.value, item.label])),
 )
 
-const formatDate = (value: string) => {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-}
+
 
 const applyFilters = async () => {
   store.setKeyword(keywordInput.value.trim())

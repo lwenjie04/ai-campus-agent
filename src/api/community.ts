@@ -1,4 +1,4 @@
-﻿import type {
+import type {
   CommunityKnowledge,
   CommunityKnowledgeGenerateResult,
   CommunityMeta,
@@ -26,7 +26,7 @@ const request = async <T>(path: string, init?: RequestInit): Promise<T> => {
     headers: {
       'Content-Type': 'application/json',
       ...getAuthRequestHeaders(),
-      ...(init?.headers || {}),
+      ...init?.headers,
     },
   })
 

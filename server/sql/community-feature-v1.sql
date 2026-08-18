@@ -8,7 +8,7 @@
 
 CREATE DATABASE IF NOT EXISTS `ai_campus_agent`
   DEFAULT CHARACTER SET utf8mb4
-  DEFAULT COLLATE utf8mb4_0900_ai_ci;
+  DEFAULT COLLATE utf8mb4_unicode_ci;
 
 USE `ai_campus_agent`;
 
@@ -42,7 +42,7 @@ CREATE TABLE `community_posts` (
   KEY `idx_posts_category_status_created` (`category`, `status`, `created_at` DESC),
   KEY `idx_posts_knowledge_status` (`knowledge_status`),
   FULLTEXT KEY `ft_posts_title_content` (`title`, `content`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='学生社区帖子表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='学生社区帖子表';
 
 -- 回复表：
 -- 存储对帖子的一层回复。第一版先做单层回复，不做楼中楼。
@@ -64,7 +64,7 @@ CREATE TABLE `community_replies` (
     FOREIGN KEY (`post_id`) REFERENCES `community_posts`(`id`)
     ON DELETE CASCADE
     ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='学生社区回复表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='学生社区回复表';
 
 -- 社区知识条目表：
 -- 这是“社区互动层”到“知识沉淀层”的桥梁。
@@ -92,7 +92,7 @@ CREATE TABLE `community_knowledge` (
     FOREIGN KEY (`post_id`) REFERENCES `community_posts`(`id`)
     ON DELETE CASCADE
     ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='社区知识沉淀表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='社区知识沉淀表';
 
 -- 审核日志表：
 -- 记录帖子、回复、知识条目的审核轨迹，后续便于追溯。
@@ -107,7 +107,7 @@ CREATE TABLE `community_review_logs` (
   PRIMARY KEY (`id`),
   KEY `idx_review_target` (`target_type`, `target_id`, `created_at` DESC),
   KEY `idx_review_created` (`created_at` DESC)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='社区审核日志表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='社区审核日志表';
 
 -- 可选初始化说明：
 -- 第一版建议前端分类选项与这里保持一致：

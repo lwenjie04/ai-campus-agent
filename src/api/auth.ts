@@ -1,4 +1,4 @@
-﻿import axios from 'axios'
+import axios from 'axios'
 import { appConfig } from '@/config/app'
 
 const AUTH_BASE_URL = appConfig.apiBaseUrl

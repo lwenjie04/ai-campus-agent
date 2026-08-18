@@ -8,7 +8,7 @@
 支持两种模式：
 
 - `mock`：本地演示，不调用真实模型
-- `openai_compatible`：调用 OpenAI 兼容接口（如 DeepSeek API）
+- `deepseek`：调用 DeepSeek 兼容接口（默认 `https://api.deepseek.com`，可用 `LLM_API_BASE_URL` 覆盖）
 
 ## 启动
 
@@ -35,7 +35,7 @@ npm run server
 
 ```env
 PORT=3000
-LLM_PROVIDER_MODE=openai_compatible
+LLM_PROVIDER_MODE=deepseek
 LLM_API_BASE_URL=https://api.deepseek.com
 LLM_API_KEY=你的DeepSeekKey
 LLM_MODEL=deepseek-chat
@@ -45,7 +45,7 @@ CORS_ORIGIN=http://localhost:5173
 ## 不使用 .env 文件（PowerShell）
 
 ```powershell
-$env:LLM_PROVIDER_MODE='openai_compatible'
+$env:LLM_PROVIDER_MODE='deepseek'
 $env:LLM_API_BASE_URL='https://api.deepseek.com'
 $env:LLM_API_KEY='你的Key'
 $env:LLM_MODEL='deepseek-chat'

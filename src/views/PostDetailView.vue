@@ -22,7 +22,7 @@
                 <span>浏览：{{ store.currentPost.viewCount }}</span>
                 <span>回复：{{ store.currentPost.replyCount }}</span>
               </div>
-              <span>{{ formatDate(store.currentPost.createdAt) }}</span>
+              <span>{{ formatDateTime(store.currentPost.createdAt) }}</span>
             </div>
 
             <div class="detail-content">{{ store.currentPost.content }}</div>
@@ -59,7 +59,7 @@
         <article v-for="reply in store.currentReplies" :key="reply.id" class="reply-item">
           <div class="reply-item-head">
             <strong>{{ reply.authorName }}</strong>
-            <span>{{ formatDate(reply.createdAt) }}</span>
+            <span>{{ formatDateTime(reply.createdAt) }}</span>
           </div>
           <div class="reply-item-content">{{ reply.content }}</div>
         </article>
@@ -96,12 +96,13 @@
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useCommunityStore } from '@/store/community'
+import { formatDateTime } from '@/utils/date'
 
 const props = defineProps<{
   postId: string
 }>()
 
-const emit = defineEmits<{
+defineEmits<{
   (e: 'back-list'): void
 }>()
 
@@ -118,11 +119,7 @@ const categoryLabel = computed(() => {
   return match?.label || category || '未分类'
 })
 
-const formatDate = (value: string) => {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
-}
+
 
 const submitReply = async () => {
   if (!store.currentPost) return

@@ -1,7 +1,28 @@
-import { randomUUID } from 'node:crypto'
-import { readSession, signOpaqueValue, verifyOpaqueValue } from './session.mjs'
+import { createHmac, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto'
+import { readRequestClientIp } from './client-ip.mjs'
+import { readSession } from './session.mjs'
 
 const COOKIE_NAME = 'campus_guest_id'
+const configuredGuestSecret = String(process.env.GUEST_COOKIE_SECRET || '').trim()
+// 游客 Cookie 使用独立密钥；未配置时回退到会话密钥，并在控制台提示生产环境应配置独立密钥。
+const guestCookieSecret =
+  configuredGuestSecret || String(process.env.AUTH_SESSION_SECRET || '').trim() || randomBytes(32).toString('hex')
+
+if (!configuredGuestSecret) {
+  console.warn(
+    '[guest-quota] GUEST_COOKIE_SECRET 未配置，游客 Cookie 当前复用 AUTH_SESSION_SECRET；生产环境请配置独立的 32 位以上随机密钥。',
+  )
+}
+
+const signGuestId = (guestId) =>
+  createHmac('sha256', guestCookieSecret).update(String(guestId)).digest('base64url')
+
+const verifyGuestId = (guestId, signature) => {
+  const expected = Buffer.from(signGuestId(guestId))
+  const actual = Buffer.from(String(signature || ''))
+  return expected.length === actual.length && timingSafeEqual(expected, actual)
+}
+
 const QUOTA_LIMIT = Math.max(1, Number(process.env.GUEST_CHAT_LIMIT || 1))
 const SESSION_TTL_MS = Math.max(60 * 60 * 1000, Number(process.env.GUEST_SESSION_TTL_DAYS || 30) * 86_400_000)
 const IP_QUOTA_LIMIT = Math.max(QUOTA_LIMIT, Number(process.env.GUEST_IP_CHAT_LIMIT || 20))
@@ -25,25 +46,18 @@ const readSignedGuestId = (req) => {
   const raw = parseCookies(req)[COOKIE_NAME]
   if (!raw) return ''
   const [guestId, signature] = raw.split('.')
-  if (!guestId || !signature || !verifyOpaqueValue(guestId, signature)) return ''
+  if (!guestId || !signature || !verifyGuestId(guestId, signature)) return ''
   return guestId
 }
 
 const serializeGuestCookie = (guestId) => {
-  const value = `${guestId}.${signOpaqueValue(guestId)}`
+  const value = `${guestId}.${signGuestId(guestId)}`
   const secure = process.env.COOKIE_SECURE === 'true' ? '; Secure' : ''
   return `${COOKIE_NAME}=${encodeURIComponent(value)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${Math.floor(SESSION_TTL_MS / 1000)}${secure}`
 }
 
-const readClientIp = (req) => {
-  if (process.env.GUEST_TRUST_PROXY === 'true') {
-    const forwarded = String(req?.headers?.['x-forwarded-for'] || '')
-      .split(',')[0]
-      .trim()
-    if (forwarded) return forwarded
-  }
-  return String(req?.socket?.remoteAddress || req?.connection?.remoteAddress || '').trim()
-}
+const readClientIp = (req) =>
+  readRequestClientIp(req, { trustProxy: process.env.GUEST_TRUST_PROXY === 'true' })
 
 const cleanupExpiredSessions = () => {
   const cutoff = Date.now() - SESSION_TTL_MS

@@ -124,13 +124,21 @@ AUTH_DEFAULT_ADMIN_NAME=系统管理员
 AUTH_NOTIFY_EMAIL=管理员通知邮箱
 AUTH_CODE_EXPIRE_MINUTES=10
 AUTH_CODE_RESEND_SECONDS=60
+AUTH_IP_SEND_LIMIT=10
+AUTH_IP_SEND_WINDOW_HOURS=24
+AUTH_LOGIN_MAX_FAILURES=5
+AUTH_LOGIN_LOCKOUT_SECONDS=900
+AUTH_LOGIN_FAILURE_WINDOW_MINUTES=15
+AUTH_LOGIN_FAILURE_MAX_ENTRIES=10000
+AUTH_TRUST_PROXY=true
+TRUSTED_PROXY_IPS=127.0.0.1,::1
 AUTH_SESSION_SECRET=请生成至少32位随机字符串
 AUTH_SESSION_TTL_SECONDS=28800
 GUEST_CHAT_LIMIT=1
 GUEST_SESSION_TTL_DAYS=30
 GUEST_IP_CHAT_LIMIT=20
 GUEST_IP_WINDOW_MINUTES=60
-# 只有受信任的 Nginx 会覆盖 X-Forwarded-For 时才设为 true
+# 仅当 Node 端口不对公网开放且 TRUSTED_PROXY_IPS 已配置时开启
 GUEST_TRUST_PROXY=true
 COOKIE_SECURE=true
 
@@ -145,7 +153,12 @@ MAIL_FROM=你的发信邮箱
 # TTS
 TTS_PROVIDER=tencentcloud
 TTS_AUTH_TOKEN=
-TTS_MAX_TEXT_LENGTH=100000
+# 未配置 TTS_AUTH_TOKEN 时，/tts 要求登录会话
+TTS_MAX_TEXT_LENGTH=2000
+TTS_RATE_WINDOW_MINUTES=60
+TTS_IP_LIMIT=20
+TTS_USER_LIMIT=50
+TTS_TRUST_PROXY=true
 
 TENCENTCLOUD_SECRET_ID=你的腾讯云SecretId
 TENCENTCLOUD_SECRET_KEY=你的腾讯云SecretKey
@@ -318,6 +331,8 @@ pm2 logs ai-campus-agent-backend
 可参考：
 
 ```nginx
+# Node 服务应仅监听 127.0.0.1 或受控内网地址，禁止公网绕过 Nginx 直连。
+# 单层 Nginx 场景覆盖 X-Forwarded-For，避免保留客户端伪造的同名请求头。
 server {
     listen 80;
     server_name your-domain.com;
@@ -334,7 +349,7 @@ server {
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-For $remote_addr;
     }
 
     location /api/ {
@@ -342,7 +357,7 @@ server {
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-For $remote_addr;
     }
 
     location /community {
@@ -350,7 +365,7 @@ server {
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-For $remote_addr;
     }
 
     location /auth {
@@ -358,7 +373,7 @@ server {
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-For $remote_addr;
     }
 
     location /tts {
@@ -366,7 +381,7 @@ server {
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-For $remote_addr;
     }
 }
 ```

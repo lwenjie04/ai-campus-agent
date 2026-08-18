@@ -347,19 +347,20 @@ export const useAgentStore = defineStore('agent', {
 
         if (!narrationStarted) {
           this.triggerVideoCue('idle')
-        } else {
-          target && (target.videoCue = 'teaching')
+        } else if (target) {
+          target.videoCue = 'teaching'
         }
         this.persistSession()
         return { ok: true } as SendMessageResult
-      } catch (error: any) {
+      } catch (error) {
         // 后端异常也要转成聊天消息，避免界面静默失败。
+        const err = error as Error & { code?: string; sources?: unknown }
         const errorReply =
-          typeof error?.message === 'string' && error.message.trim()
-            ? `请求失败：${error.message}`
+          typeof err?.message === 'string' && err.message.trim()
+            ? `请求失败：${err.message}`
             : '请求失败，请稍后重试。'
-        const errorCode = typeof error?.code === 'string' ? error.code : undefined
-        const recoverySources = Array.isArray(error?.sources) ? error.sources : []
+        const errorCode = typeof err?.code === 'string' ? err.code : undefined
+        const recoverySources = Array.isArray(err?.sources) ? err.sources : []
 
         if (errorCode === 'GUEST_LOGIN_REQUIRED' || errorCode === 'GUEST_RATE_LIMITED') {
           this.messages = this.messages.filter(

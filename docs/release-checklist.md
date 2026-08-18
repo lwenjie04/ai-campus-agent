@@ -30,7 +30,7 @@ npm run service:smoke
 
 - `AUTH_DEFAULT_ADMIN_PASSWORD` 至少 10 位且不是示例值。
 - `AUTH_SESSION_SECRET` 至少 32 位随机值。
-- `GUEST_COOKIE_SECRET` 至少 32 位随机值。
+- `GUEST_COOKIE_SECRET` 至少 32 位随机值（未配置时游客 Cookie 会复用 `AUTH_SESSION_SECRET`，生产环境建议配置独立密钥）。
 - 模型、邮件、数据库和 TTS 密钥只放在被忽略的部署环境文件中。
 - 管理接口和 LightRAG 代理必须验证管理员会话。
 

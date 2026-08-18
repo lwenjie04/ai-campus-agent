@@ -51,8 +51,11 @@ if (sessionSecret.length < 32) {
 }
 
 const guestCookieSecret = String(process.env.GUEST_COOKIE_SECRET || '').trim()
-if (guestCookieSecret.length < 32) {
-  configIssue('GUEST_COOKIE_SECRET is missing or shorter than 32 characters; set a stable production secret')
+const effectiveGuestCookieSecret = guestCookieSecret || String(process.env.AUTH_SESSION_SECRET || '').trim()
+if (effectiveGuestCookieSecret.length < 32) {
+  configIssue('effective guest-cookie secret is missing or shorter than 32 characters; set GUEST_COOKIE_SECRET and AUTH_SESSION_SECRET')
+} else if (!guestCookieSecret) {
+  warnings.push('GUEST_COOKIE_SECRET is not set; guest cookies currently reuse AUTH_SESSION_SECRET, set a dedicated production secret')
 }
 
 if (!process.env.MYSQL_PASSWORD) {

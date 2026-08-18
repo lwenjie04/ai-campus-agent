@@ -1,4 +1,4 @@
-﻿import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
+import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { isMySqlConfigured, query } from './mysql.mjs'
 import { searchVectorIndex } from './vector-index.mjs'
@@ -38,6 +38,7 @@ const TIME_DECAY = {
 
 const RAG_LOG_ENABLED = (process.env.RAG_LOG_ENABLED ?? 'true') === 'true'
 const ROUTE_MIN_HITS = toNumber(process.env.RAG_ROUTE_MIN_HITS, 2)
+const RAG_ROUTE_MIN_SCORE = toNumber(process.env.RAG_ROUTE_MIN_SCORE, 3)
 const VECTOR_SEARCH_ENABLED = (process.env.RAG_VECTOR_ENABLED ?? 'true') === 'true'
 const VECTOR_SEARCH_LIMIT = toNumber(process.env.RAG_VECTOR_TOPK, 8)
 const KEYWORD_SEARCH_MULTIPLIER = toNumber(process.env.RAG_KEYWORD_LIMIT_MULTIPLIER, 3)
@@ -194,7 +195,10 @@ const loadCommunityKnowledge = async () => {
     )
 
     return rows.map(mapCommunityKnowledgeRow)
-  } catch {
+  } catch (error) {
+    console.warn(
+      `[rag] community knowledge query failed, falling back to mock: ${error?.code || error?.message || 'UNKNOWN_ERROR'}`,
+    )
     return getApprovedMockCommunityKnowledge()
   }
 }
@@ -233,7 +237,7 @@ const extractQueryTerms = (query) => {
 
   const terms = new Set([q])
 
-  q.split(/[\s,，。！？；:：、（）()\[\]\-_/]+/g)
+  q.split(/[\s,，。！？；:：、（）()[\]\-_/]+/g)
     .map((item) => item.trim())
     .filter((item) => item.length >= 2)
     .forEach((item) => terms.add(item))
@@ -511,7 +515,7 @@ export const getKnowledgeBaseEntryById = (id) => {
 
 export const searchKnowledgeBase = async (query, options = {}) => {
   const limit = options.limit ?? 3
-  const minScore = options.minScore ?? 3
+  const minScore = options.minScore ?? RAG_ROUTE_MIN_SCORE
   const q = normalize(query)
   if (!q) return []
 
@@ -556,7 +560,9 @@ export const searchKnowledgeBase = async (query, options = {}) => {
     }
   }
 
-  const finalHits = rerankHybridHits(mergeHybridHits(keywordHits, vectorHits)).slice(0, limit)
+  const finalHits = rerankHybridHits(mergeHybridHits(keywordHits, vectorHits))
+    .filter((hit) => hit.score >= minScore)
+    .slice(0, limit)
   logSearch(query, { limit, minScore }, finalHits, {
     preferredCategories,
     routeMode,

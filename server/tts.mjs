@@ -4,8 +4,15 @@ import { readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { spawn } from 'node:child_process'
+import { readRequestClientIp } from './client-ip.mjs'
+import { requireSession } from './session.mjs'
 
 const require = createRequire(import.meta.url)
+
+const toPositiveNumber = (value, fallback) => {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
+}
 const tencentCloudTtsSdk = require('tencentcloud-sdk-nodejs-tts')
 
 const hasTencentCloudCredentials = Boolean(
@@ -16,7 +23,10 @@ const hasTencentCloudCredentials = Boolean(
 const TTS_PROVIDER =
   process.env.TTS_PROVIDER || (hasTencentCloudCredentials ? 'tencentcloud' : process.platform === 'win32' ? 'windows_sapi' : 'disabled')
 const TTS_AUTH_TOKEN = process.env.TTS_AUTH_TOKEN || ''
-const TTS_MAX_TEXT_LENGTH = Number(process.env.TTS_MAX_TEXT_LENGTH || 100000)
+const TTS_MAX_TEXT_LENGTH = toPositiveNumber(process.env.TTS_MAX_TEXT_LENGTH, 2000)
+const TTS_RATE_WINDOW_MS = Math.max(60_000, toPositiveNumber(process.env.TTS_RATE_WINDOW_MINUTES, 60) * 60_000)
+const TTS_IP_LIMIT = Math.max(1, toPositiveNumber(process.env.TTS_IP_LIMIT, 20))
+const TTS_USER_LIMIT = Math.max(1, toPositiveNumber(process.env.TTS_USER_LIMIT, 50))
 
 // 腾讯云 TTS 配置。默认选广州地域，便于你们后续部署在国内服务器。
 const TENCENTCLOUD_SECRET_ID = process.env.TENCENTCLOUD_SECRET_ID || ''
@@ -54,6 +64,42 @@ const toErrorPayload = (message, code, extra = {}) => ({
     ...extra,
   },
 })
+
+// TTS 调用频率限制：按客户端 IP 和登录用户两个维度分别限流。
+// 默认未配置 TTS_AUTH_TOKEN 时，必须登录后才能调用，因此用户维度通常也会命中；
+// 当配置了 TTS_AUTH_TOKEN 时，匿名调用只能按 IP 限流。
+const ttsRateBuckets = new Map()
+
+const readTtsClientIp = (req) =>
+  readRequestClientIp(req, { trustProxy: process.env.TTS_TRUST_PROXY === 'true' })
+
+const cleanupTtsRateBuckets = (now) => {
+  for (const [key, bucket] of ttsRateBuckets.entries()) {
+    if (now - bucket.windowStartedAt >= TTS_RATE_WINDOW_MS) ttsRateBuckets.delete(key)
+  }
+}
+
+const enforceTtsRateLimit = (key, limit) => {
+  if (!key) return
+
+  const now = Date.now()
+  cleanupTtsRateBuckets(now)
+
+  let bucket = ttsRateBuckets.get(key)
+  if (!bucket || now - bucket.windowStartedAt >= TTS_RATE_WINDOW_MS) {
+    bucket = { count: 0, windowStartedAt: now }
+    ttsRateBuckets.set(key, bucket)
+  }
+
+  if (bucket.count >= limit) {
+    const err = new Error('TTS 调用过于频繁，请稍后再试')
+    err.code = 'TTS_RATE_LIMITED'
+    err.statusCode = 429
+    throw err
+  }
+
+  bucket.count += 1
+}
 
 const codecToMimeType = (codec) => {
   if (codec === 'mp3') return 'audio/mpeg'
@@ -301,11 +347,39 @@ export const handleTtsRoute = async (req, res, tools) => {
   const path = new URL(req.url, `http://${req.headers.host || 'localhost'}`).pathname.replace(/^\/api/, '')
   if (!(req.method === 'POST' && path === '/tts')) return false
 
+  let ttsSession = null
   if (TTS_AUTH_TOKEN) {
     const authorization = String(req.headers.authorization || '')
-    if (authorization !== `Bearer ${TTS_AUTH_TOKEN}`) {
-      return json(res, 401, toErrorPayload('TTS 鉴权失败。', 'TTS_UNAUTHORIZED'))
+    if (authorization === `Bearer ${TTS_AUTH_TOKEN}`) {
+      // 使用 TTS 专用令牌，允许匿名内部调用；仍按 IP 限流。
+    } else {
+      try {
+        ttsSession = requireSession(req)
+      } catch {
+        return json(res, 401, toErrorPayload('TTS 鉴权失败。', 'TTS_UNAUTHORIZED'))
+      }
     }
+  } else {
+    try {
+      ttsSession = requireSession(req)
+    } catch (error) {
+      return json(
+        res,
+        error?.statusCode || 401,
+        toErrorPayload(error?.message || 'TTS 鉴权失败。', error?.code || 'TTS_UNAUTHORIZED'),
+      )
+    }
+  }
+
+  try {
+    enforceTtsRateLimit(readTtsClientIp(req), TTS_IP_LIMIT)
+    if (ttsSession) enforceTtsRateLimit(`user:${ttsSession.userId}`, TTS_USER_LIMIT)
+  } catch (error) {
+    return json(
+      res,
+      error?.statusCode || 429,
+      toErrorPayload(error?.message || 'TTS 调用过于频繁。', error?.code || 'TTS_RATE_LIMITED'),
+    )
   }
 
   let body = {}

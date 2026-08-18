@@ -17,6 +17,30 @@ export interface StreamChatHandlers {
   onMeta?: (payload: ChatApiResponse) => void
 }
 
+interface ChatStreamEvent {
+  type?: string
+  requestId?: string
+  delta?: string
+  content?: string
+  intent?: string
+  videoCue?: string
+  sources?: MessageSource[]
+  error?: {
+    code?: string
+    message?: string
+    sources?: MessageSource[]
+    retryable?: boolean
+    quotaConsumed?: boolean
+  }
+}
+
+type ChatError = Error & {
+  code?: string
+  sources?: MessageSource[]
+  retryable?: boolean
+  quotaConsumed?: boolean
+}
+
 // Mock 回复仅用于明确启用的本地前端联调，不代表真实服务回答。
 const mockReply = (messages: Message[]): ChatApiResponse => {
   const lastUser = [...messages].reverse().find((msg) => msg.role === 'user')?.content ?? ''
@@ -110,14 +134,14 @@ export const streamChat = async (
   })
 
   if (!resp.ok || !resp.body) {
-    let errData: any = null
+    let errData: { error?: { code?: string; message?: string } } | null = null
     try {
       errData = await resp.json()
     } catch {
       // ignore
     }
-    const err = new Error(errData?.error?.message || `HTTP ${resp.status}`)
-    ;(err as any).code = errData?.error?.code || 'HTTP_ERROR'
+    const err = new Error(errData?.error?.message || `HTTP ${resp.status}`) as ChatError
+    err.code = errData?.error?.code || 'HTTP_ERROR'
     throw err
   }
 
@@ -131,9 +155,9 @@ export const streamChat = async (
     const line = lineRaw.trim()
     if (!line) return
 
-    let event: any
+    let event: ChatStreamEvent
     try {
-      event = JSON.parse(line)
+      event = JSON.parse(line) as ChatStreamEvent
     } catch {
       return
     }
@@ -158,11 +182,11 @@ export const streamChat = async (
       return
     }
     if (event.type === 'error') {
-      const err = new Error(event?.error?.message || '流式请求失败')
-      ;(err as any).code = event?.error?.code || 'STREAM_ERROR'
-      ;(err as any).sources = Array.isArray(event?.error?.sources) ? event.error.sources : []
-      ;(err as any).retryable = event?.error?.retryable === true
-      ;(err as any).quotaConsumed = event?.error?.quotaConsumed === true
+      const err = new Error(event?.error?.message || '流式请求失败') as ChatError
+      err.code = event?.error?.code || 'STREAM_ERROR'
+      err.sources = Array.isArray(event?.error?.sources) ? event.error.sources : []
+      err.retryable = event?.error?.retryable === true
+      err.quotaConsumed = event?.error?.quotaConsumed === true
       throw err
     }
   }

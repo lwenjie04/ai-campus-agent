@@ -1,37 +1,175 @@
-﻿import { randomInt, randomUUID, scryptSync, timingSafeEqual } from 'node:crypto'
+import { randomInt, randomUUID, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto'
+import { promisify } from 'node:util'
 import nodemailer from 'nodemailer'
+import { readRequestClientIp } from './client-ip.mjs'
 import { query } from './mysql.mjs'
 import { issueSessionToken, sessionConfig } from './session.mjs'
+
+const scrypt = promisify(scryptCallback)
 
 const AUTH_NOTIFY_EMAIL = process.env.AUTH_NOTIFY_EMAIL || '3279574698@qq.com'
 const DEFAULT_ADMIN_USERNAME = process.env.AUTH_DEFAULT_ADMIN_USERNAME || 'admin'
 const DEFAULT_ADMIN_PASSWORD = String(process.env.AUTH_DEFAULT_ADMIN_PASSWORD || '').trim()
 const DEFAULT_ADMIN_NAME = process.env.AUTH_DEFAULT_ADMIN_NAME || '系统管理员'
 const ALLOW_MEMORY_FALLBACK = process.env.AUTH_ALLOW_MEMORY_FALLBACK === 'true'
-const CODE_EXPIRE_MINUTES = Number(process.env.AUTH_CODE_EXPIRE_MINUTES || 10)
-const CODE_RESEND_SECONDS = Number(process.env.AUTH_CODE_RESEND_SECONDS || 60)
+const toPositiveNumber = (value, fallback) => {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
+}
+
+const CODE_EXPIRE_MINUTES = toPositiveNumber(process.env.AUTH_CODE_EXPIRE_MINUTES, 10)
+const CODE_RESEND_SECONDS = toPositiveNumber(process.env.AUTH_CODE_RESEND_SECONDS, 60)
+const AUTH_IP_SEND_LIMIT = Math.max(1, toPositiveNumber(process.env.AUTH_IP_SEND_LIMIT, 10))
+const AUTH_IP_SEND_WINDOW_MS =
+  Math.max(60_000, toPositiveNumber(process.env.AUTH_IP_SEND_WINDOW_HOURS, 24) * 3_600_000)
+const AUTH_LOGIN_MAX_FAILURES = Math.max(1, toPositiveNumber(process.env.AUTH_LOGIN_MAX_FAILURES, 5))
+const AUTH_LOGIN_LOCKOUT_MS =
+  Math.max(60_000, toPositiveNumber(process.env.AUTH_LOGIN_LOCKOUT_SECONDS, 900) * 1000)
+const AUTH_LOGIN_FAILURE_WINDOW_MS = Math.max(
+  60_000,
+  toPositiveNumber(process.env.AUTH_LOGIN_FAILURE_WINDOW_MINUTES, 15) * 60_000,
+)
+const AUTH_LOGIN_FAILURE_MAX_ENTRIES = Math.max(
+  100,
+  Math.floor(toPositiveNumber(process.env.AUTH_LOGIN_FAILURE_MAX_ENTRIES, 10_000)),
+)
+
+const authRateBuckets = new Map()
+const loginFailures = new Map()
+let lastLoginFailureCleanupAt = 0
 
 let authSchemaReadyPromise = null
 let mailTransporter = null
 let memoryAdmin = null
 
-const hashPassword = (password) => {
+const readClientIp = (req) =>
+  readRequestClientIp(req, { trustProxy: process.env.AUTH_TRUST_PROXY === 'true' })
+
+const cleanupAuthRateBuckets = (now) => {
+  for (const [key, bucket] of authRateBuckets.entries()) {
+    if (now - bucket.windowStartedAt >= AUTH_IP_SEND_WINDOW_MS) authRateBuckets.delete(key)
+  }
+}
+
+// 发送注册验证码：按 IP 固定窗口限流，防止单出口网络刷邮件。
+const enforceIpSendLimit = (req) => {
+  const ipAddress = readClientIp(req)
+  if (!ipAddress) return
+
+  const now = Date.now()
+  cleanupAuthRateBuckets(now)
+
+  let bucket = authRateBuckets.get(ipAddress)
+  if (!bucket || now - bucket.windowStartedAt >= AUTH_IP_SEND_WINDOW_MS) {
+    bucket = { count: 0, windowStartedAt: now }
+    authRateBuckets.set(ipAddress, bucket)
+  }
+
+  if (bucket.count >= AUTH_IP_SEND_LIMIT) {
+    const err = new Error('当前网络发送验证码过于频繁，请稍后再试')
+    err.code = 'AUTH_CODE_IP_RATE_LIMITED'
+    err.statusCode = 429
+    throw err
+  }
+
+  bucket.count += 1
+}
+
+const normalizeAccountKey = (account) => String(account || '').trim().toLowerCase()
+
+const isLoginFailureExpired = (entry, now) => {
+  if (entry.lockedUntil) return entry.lockedUntil <= now
+  return now - entry.lastFailureAt >= AUTH_LOGIN_FAILURE_WINDOW_MS
+}
+
+const cleanupLoginFailures = (now = Date.now()) => {
+  if (now - lastLoginFailureCleanupAt < 60_000 && loginFailures.size <= AUTH_LOGIN_FAILURE_MAX_ENTRIES) return
+
+  for (const [key, entry] of loginFailures.entries()) {
+    if (isLoginFailureExpired(entry, now)) loginFailures.delete(key)
+  }
+
+  while (loginFailures.size > AUTH_LOGIN_FAILURE_MAX_ENTRIES) {
+    const oldestKey = loginFailures.keys().next().value
+    if (!oldestKey) break
+    loginFailures.delete(oldestKey)
+  }
+  lastLoginFailureCleanupAt = now
+}
+
+const getLoginFailure = (account) => {
+  const key = normalizeAccountKey(account)
+  if (!key) return null
+
+  const now = Date.now()
+  cleanupLoginFailures(now)
+  const entry = loginFailures.get(key)
+  if (!entry) return null
+
+  if (isLoginFailureExpired(entry, now)) {
+    loginFailures.delete(key)
+    return null
+  }
+  return entry
+}
+
+const registerLoginFailure = (accountKey) => {
+  const key = normalizeAccountKey(accountKey)
+  if (!key) return
+
+  const now = Date.now()
+  cleanupLoginFailures(now)
+  const existing = getLoginFailure(key)
+  const entry = existing || { count: 0, lockedUntil: 0, lastFailureAt: now }
+  entry.count += 1
+  entry.lastFailureAt = now
+  if (entry.count >= AUTH_LOGIN_MAX_FAILURES) {
+    entry.lockedUntil = now + AUTH_LOGIN_LOCKOUT_MS
+  }
+  loginFailures.delete(key)
+  loginFailures.set(key, entry)
+  cleanupLoginFailures(now)
+}
+
+const clearLoginFailures = (accountKey) => {
+  const key = normalizeAccountKey(accountKey)
+  if (key) loginFailures.delete(key)
+}
+
+const assertLoginAllowed = (account) => {
+  const entry = getLoginFailure(account)
+  if (!entry?.lockedUntil || entry.lockedUntil <= Date.now()) return
+
+  const remainingMinutes = Math.max(1, Math.ceil((entry.lockedUntil - Date.now()) / 60_000))
+  const err = new Error(`登录失败次数过多，请在 ${remainingMinutes} 分钟后再试`)
+  err.code = 'AUTH_LOGIN_LOCKED'
+  err.statusCode = 429
+  throw err
+}
+
+export const resetAuthRateLimitForTests = () => {
+  authRateBuckets.clear()
+  loginFailures.clear()
+  lastLoginFailureCleanupAt = 0
+}
+
+const hashPassword = async (password) => {
   const salt = randomUUID().replace(/-/g, '')
-  const derived = scryptSync(password, salt, 64).toString('hex')
+  const derived = (await scrypt(password, salt, 64)).toString('hex')
   return `${salt}:${derived}`
 }
 
-const verifyPassword = (password, storedHash) => {
+const verifyPassword = async (password, storedHash) => {
   const [salt, expected] = String(storedHash || '').split(':')
   if (!salt || !expected) return false
 
-  const actual = scryptSync(password, salt, 64)
+  const actual = await scrypt(password, salt, 64)
   const expectedBuffer = Buffer.from(expected, 'hex')
   if (actual.length !== expectedBuffer.length) return false
   return timingSafeEqual(actual, expectedBuffer)
 }
 
-const ensureMemoryAdmin = () => {
+const ensureMemoryAdmin = async () => {
   if (!ALLOW_MEMORY_FALLBACK) return null
   if (!DEFAULT_ADMIN_PASSWORD || DEFAULT_ADMIN_PASSWORD === 'admin123' || DEFAULT_ADMIN_PASSWORD.length < 10) {
     const error = new Error('启用认证内存回退前，请配置至少 10 位的 AUTH_DEFAULT_ADMIN_PASSWORD')
@@ -42,7 +180,7 @@ const ensureMemoryAdmin = () => {
     memoryAdmin = {
       id: 'memory-admin',
       username: DEFAULT_ADMIN_USERNAME,
-      password_hash: hashPassword(DEFAULT_ADMIN_PASSWORD),
+      password_hash: await hashPassword(DEFAULT_ADMIN_PASSWORD),
       display_name: DEFAULT_ADMIN_NAME,
       role: 'admin',
       email: AUTH_NOTIFY_EMAIL,
@@ -97,7 +235,7 @@ const ensureDefaultAdmin = async () => {
   await query(
     `INSERT INTO auth_users (id, username, password_hash, display_name, role, email)
      VALUES (?, ?, ?, ?, 'admin', ?)`,
-    [randomUUID(), DEFAULT_ADMIN_USERNAME, hashPassword(DEFAULT_ADMIN_PASSWORD), DEFAULT_ADMIN_NAME, AUTH_NOTIFY_EMAIL],
+    [randomUUID(), DEFAULT_ADMIN_USERNAME, await hashPassword(DEFAULT_ADMIN_PASSWORD), DEFAULT_ADMIN_NAME, AUTH_NOTIFY_EMAIL],
   )
 }
 
@@ -110,7 +248,7 @@ const ensureAuthSchema = async () => {
         return 'mysql'
       } catch (error) {
         if (!ALLOW_MEMORY_FALLBACK) throw error
-        ensureMemoryAdmin()
+        await ensureMemoryAdmin()
         console.warn(
           `[auth] MySQL unavailable, using explicit competition memory fallback: ${error?.code || error?.message || 'UNKNOWN_ERROR'}`,
         )
@@ -254,6 +392,14 @@ const handleSendRegisterCode = async (req, res, helpers) => {
     })
   }
 
+  try {
+    enforceIpSendLimit(req)
+  } catch (error) {
+    return helpers.json(res, error?.statusCode || 429, {
+      error: { code: error?.code || 'AUTH_CODE_IP_RATE_LIMITED', message: error?.message || '发送验证码过于频繁' },
+    })
+  }
+
   const backendMode = await ensureAuthSchema()
   if (backendMode === 'memory') {
     return helpers.json(res, 503, {
@@ -316,18 +462,30 @@ const handleLogin = async (req, res, helpers) => {
   const backendMode = await ensureAuthSchema()
   let user
   if (backendMode === 'memory') {
-    const admin = ensureMemoryAdmin()
+    const admin = await ensureMemoryAdmin()
     user = admin && (account === admin.username || account === admin.email) ? admin : null
   } else {
     const rows = await query('SELECT * FROM auth_users WHERE username = ? OR email = ? LIMIT 1', [account, account])
     user = Array.isArray(rows) ? rows[0] : null
   }
 
-  if (!user || !verifyPassword(password, user.password_hash)) {
+  const loginFailureKey = user?.id ? `user:${user.id}` : `account:${normalizeAccountKey(account)}`
+  try {
+    assertLoginAllowed(loginFailureKey)
+  } catch (error) {
+    return helpers.json(res, error?.statusCode || 429, {
+      error: { code: error?.code || 'AUTH_LOGIN_LOCKED', message: error?.message || '登录失败次数过多，请稍后再试' },
+    })
+  }
+
+  if (!user || !(await verifyPassword(password, user.password_hash))) {
+    registerLoginFailure(loginFailureKey)
     return helpers.json(res, 401, {
       error: { code: 'AUTH_INVALID', message: '账号或密码错误' },
     })
   }
+
+  clearLoginFailures(loginFailureKey)
 
   const normalizedUser = normalizeUser(user)
   return helpers.json(res, 200, {
@@ -422,7 +580,7 @@ const handleRegister = async (req, res, helpers) => {
   await query(
     `INSERT INTO auth_users (id, username, password_hash, display_name, role, email)
      VALUES (?, ?, ?, ?, 'user', ?)`,
-    [id, email, hashPassword(password), displayName, email],
+    [id, email, await hashPassword(password), displayName, email],
   )
 
   await query(`UPDATE auth_verification_codes SET status = 'used', used_at = NOW() WHERE id = ?`, [codeRecord.id])

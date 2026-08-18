@@ -55,7 +55,7 @@ const collapseChineseSpacing = (text) =>
 const normalizeLine = (value) =>
   collapseChineseSpacing(
     String(value || '')
-      .replace(/\u0000/g, '')
+      .replaceAll('\u0000', '')
       .replace(/\s+/g, ' ')
       .trim(),
   )
