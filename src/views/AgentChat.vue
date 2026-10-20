@@ -79,6 +79,9 @@
                 </div>
 
                 <!-- 点击后打开用户设置弹窗 -->
+                <el-button class="settings-btn" size="small" data-testid="open-history" @click="historyOpen = true">
+                  历史
+                </el-button>
                 <el-button class="settings-btn" size="small" @click="settingsDialogVisible = true">
                   服务偏好
                 </el-button>
@@ -112,6 +115,11 @@
               </div>
             </div>
           </header>
+
+          <p v-if="conversationNotice" class="conversation-notice" role="status">{{ conversationNotice }}</p>
+          <p v-if="storageMessage" class="conversation-notice conversation-notice--warn" role="status">
+            {{ storageMessage }}
+          </p>
 
           <!--
             聊天主体区：
@@ -157,7 +165,7 @@
               也就是说：
               页面本身不处理发消息细节，真正的发送逻辑统一放在 store 中。
             -->
-            <InputBox :loading="store.loading" @send="handleSend" />
+            <InputBox v-model="draftText" :loading="store.loading" @send="handleSend" />
           </footer>
         </div>
       </section>
@@ -228,6 +236,17 @@
         </div>
       </template>
     </el-dialog>
+
+    <HistoryDrawer
+      :open="historyOpen"
+      :summaries="conversations.summaries"
+      :active-id="activeConversationId"
+      :storage-message="storageMessage"
+      @close="historyOpen = false"
+      @new="startNewConversation"
+      @open="openConversation"
+      @remove="removeConversation"
+    />
   </div>
 </template>
 
@@ -236,7 +255,7 @@
 // ref 用于定义基础响应式变量
 // computed 用于定义依赖其他状态自动更新的计算属性
 // onMounted 用于在页面挂载后执行初始化逻辑
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 // 引入右侧聊天列表组件
 import ChatWindow from '@/components/ChatWindow.vue'
@@ -250,6 +269,10 @@ import DigitalHumanPlayer from '@/components/DigitalHumanPlayer.vue'
 // 引入全局智能体 store
 import { useAgentStore } from '@/store/agent'
 import { useAuthStore } from '@/store/auth'
+import { useConversationsStore, resolveOwnerScope } from '@/store/conversations'
+import { applyMessagesToConversation, conversationToMessages } from '@/services/conversation-session'
+import { useRoute, useRouter } from 'vue-router'
+import HistoryDrawer from '@/components/HistoryDrawer.vue'
 
 const emit = defineEmits<{
   (e: 'openCommunityPost', postId: string): void
@@ -344,6 +367,95 @@ type GradeValue = '' | '大一' | '大二' | '大三' | '大四' | '大五' | '�
 // 页面中的业务状态大多都由 store 维护。
 const store = useAgentStore()
 
+// 3.3：会话记录、历史抽屉与路由恢复。
+const conversations = useConversationsStore()
+const route = useRoute()
+const router = useRouter()
+const historyOpen = ref(false)
+const activeConversationId = ref('')
+const conversationNotice = ref('')
+const draftText = ref('')
+
+const storageMessage = computed(() => {
+  if (!conversations.storageError) return ''
+  return conversations.storageError === 'quota' || conversations.storageError === 'capacity'
+    ? '浏览器存储空间不足，本次对话可能无法恢复，请清理后重试。'
+    : '当前浏览器无法保存对话，本次仍可提问，但刷新后可能丢失。'
+})
+
+const currentOwnerScope = () => resolveOwnerScope(authStore.loggedIn ? authStore.userId : '')
+
+const ensureConversationScope = () => {
+  const scope = currentOwnerScope()
+  if (conversations.ownerScope !== scope) conversations.openScope(scope)
+}
+
+// 一轮问答结束后把整份消息写回会话；只有出现过用户消息才进入历史。
+const persistActiveConversation = () => {
+  const messages = store.messages.filter((message) => message.role !== 'system')
+  if (!messages.some((message) => message.role === 'user' && message.content.trim())) return ''
+
+  ensureConversationScope()
+  const base = conversations.active ?? conversations.createDraft()
+  const next = applyMessagesToConversation(base, messages)
+  conversations.replaceActive(next)
+  activeConversationId.value = next.conversationId
+  return next.conversationId
+}
+
+const syncRouteAfterSend = () => {
+  const conversationId = persistActiveConversation()
+  if (!conversationId) return
+  if (route.params.conversationId !== conversationId) {
+    void router.replace(`/chat/${conversationId}`)
+  }
+}
+
+const startNewConversation = () => {
+  conversations.flush()
+  ensureConversationScope()
+  const draft = conversations.createDraft()
+  activeConversationId.value = draft.conversationId
+  conversationNotice.value = ''
+  historyOpen.value = false
+  draftText.value = ''
+  store.resetSession()
+  void router.push('/chat/new')
+}
+
+const restoreConversation = async (conversationId: string) => {
+  ensureConversationScope()
+  if (!conversations.loadConversation(conversationId)) {
+    conversationNotice.value = '这条对话不存在，或不属于当前身份，已为你新建对话。'
+    activeConversationId.value = ''
+    store.resetSession()
+    await router.replace('/chat/new')
+    return
+  }
+
+  activeConversationId.value = conversationId
+  conversationNotice.value = ''
+  const loaded = conversations.active
+  const messages = loaded ? conversationToMessages(loaded) : []
+  store.messages = [
+    { role: 'system', content: store.buildSystemPrompt(), createdAt: Date.now() },
+    ...messages,
+  ]
+  draftText.value = loaded?.draft || ''
+  store.clearNarration()
+  store.triggerVideoCue('idle')
+}
+
+const openConversation = (conversationId: string) => {
+  historyOpen.value = false
+  void router.push(`/chat/${conversationId}`)
+}
+
+const removeConversation = (conversationId: string) => {
+  conversations.removeConversation(conversationId)
+  if (conversationId === activeConversationId.value) startNewConversation()
+}
+
 const serviceShortcuts = [
   { label: '奖助学金', query: '国家助学金怎么申请？' },
   { label: '教务办理', query: '申请转专业需要什么条件？' },
@@ -362,6 +474,7 @@ const handleSend = async (text: string) => {
   const result = await store.sendMessage(text)
   if (!authStore.loggedIn && result.ok) {
     persistGuestTrialUsed()
+    syncRouteAfterSend()
     return
   }
 
@@ -373,7 +486,10 @@ const handleSend = async (text: string) => {
     persistGuestTrialUsed()
     queuePendingDraft(text)
     emit('require-login')
+    return
   }
+
+  syncRouteAfterSend()
 }
 
 const sendPendingDraft = async () => {
@@ -383,6 +499,7 @@ const sendPendingDraft = async () => {
   const result = await store.sendMessage(draft)
   if (result.ok) {
     clearPendingDraft()
+    syncRouteAfterSend()
     return
   }
 
@@ -420,6 +537,23 @@ watch(
     }
   },
 )
+
+// 从历史抽屉或地址栏切换会话时，按新 ID 重新加载。
+watch(
+  () => route.params.conversationId,
+  (value) => {
+    const conversationId = typeof value === 'string' ? value : ''
+    if (!conversationId || conversationId === activeConversationId.value) return
+    void restoreConversation(conversationId)
+  },
+)
+
+// 输入中的草稿写入当前会话，切走或刷新后仍能恢复。
+watch(draftText, (value) => {
+  if (!conversations.active) return
+  if (conversations.active.draft === value) return
+  conversations.setDraft(value)
+})
 
 // 校徽是否加载失败。
 // 如果失败，模板里会从图片切换为“广二师”文字兜底。
@@ -568,6 +702,21 @@ const onNarrationEnded = () => {
   store.onNarrationEnded()
 }
 
+// 跨标签页只刷新历史列表；正在生成的会话保持不动，避免旧标签页覆盖新回答。
+const handleStorageChange = (event: StorageEvent) => {
+  if (!event.key || !event.key.startsWith('ai-campus-agent.conversations')) return
+  if (store.loading) return
+  conversations.refreshSummaries()
+}
+
+onMounted(() => {
+  window.addEventListener('storage', handleStorageChange)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('storage', handleStorageChange)
+})
+
 // 组件挂载后执行初始化流程。
 onMounted(() => {
   try {
@@ -601,6 +750,16 @@ onMounted(() => {
   // 第五步：初始化智能体。
   // 这里通常会刷新 system prompt，并触发欢迎视频。
   store.initAgent()
+
+  // 第六步：按路由恢复会话；/chat/new 建立一条空白草稿，未发送前不进历史。
+  ensureConversationScope()
+  const routeConversationId =
+    typeof route.params.conversationId === 'string' ? route.params.conversationId : ''
+  if (routeConversationId) {
+    void restoreConversation(routeConversationId)
+  } else if (route.name === 'chat-new') {
+    activeConversationId.value = conversations.createDraft().conversationId
+  }
 })
 </script>
 
@@ -899,6 +1058,22 @@ onMounted(() => {
   border-left: 0.3rem solid var(--sun);
   padding: 0.8rem;
   background: #fff4ce;
+}
+
+.conversation-notice {
+  margin: 0 0 0.7rem;
+  border-left: 0.28rem solid var(--teal);
+  padding: 0.55rem 0.7rem;
+  color: var(--ink-soft);
+  background: var(--teal-soft);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.conversation-notice--warn {
+  border-left-color: var(--signal);
+  color: #a82c19;
+  background: #fff0ec;
 }
 
 .resume-draft__copy {

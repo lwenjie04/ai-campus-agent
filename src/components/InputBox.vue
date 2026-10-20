@@ -24,18 +24,31 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 
 const props = defineProps<{
   loading: boolean
+  modelValue?: string
 }>()
 
 const emit = defineEmits<{
   send: [content: string]
+  'update:modelValue': [value: string]
 }>()
 
-// 用本地 ref 保存输入框内容，发送成功后立即清空。
-const text = ref('')
+// 用本地 ref 保存输入框内容，发送成功后立即清空；同时与父组件的草稿双向同步。
+const text = ref(props.modelValue ?? '')
+
+watch(
+  () => props.modelValue,
+  (value) => {
+    if (typeof value === 'string' && value !== text.value) text.value = value
+  },
+)
+
+watch(text, (value) => {
+  emit('update:modelValue', value)
+})
 
 // 发送前做两层保护：
 // 1. 去掉首尾空白，避免空消息进入会话

@@ -114,6 +114,10 @@
         发送异常，请稍后重试
         <span v-if="message.errorCode" class="error-code">({{ message.errorCode }})</span>
       </div>
+
+      <div v-else-if="message.status === 'interrupted'" class="interrupted-tip" role="status">
+        回答已中断，已保留生成的内容
+      </div>
     </div>
   </div>
 </template>
@@ -450,6 +454,15 @@ const emit = defineEmits<{
 .error-code {
   margin-left: 0.3rem;
   font-family: var(--font-mono);
+}
+
+.interrupted-tip {
+  margin-top: 0.55rem;
+  border: 1px dashed var(--line-strong);
+  padding: 0.5rem 0.65rem;
+  color: var(--ink-soft);
+  background: var(--paper);
+  font-size: 0.76rem;
 }
 
 @keyframes message-in {

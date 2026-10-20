@@ -31,6 +31,14 @@ export const routes: RouteRecordRaw[] = [
     meta: { layout: 'agent' },
   },
   {
+    // 3.3 起：首次发送后进入 /chat/:conversationId，刷新按 ID 恢复。
+    path: '/chat/:conversationId',
+    name: 'chat-detail',
+    component: () => import('@/views/AgentChat.vue'),
+    props: true,
+    meta: { layout: 'agent' },
+  },
+  {
     path: '/community',
     name: 'community',
     component: () => import('@/views/CommunityView.vue'),

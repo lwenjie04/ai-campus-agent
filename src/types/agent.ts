@@ -34,8 +34,9 @@ export interface Message {
   id?: string
   role: MessageRole
   content: string
-  // pending 表示还在生成，sent 表示成功，error 表示请求失败。
-  status?: 'pending' | 'sent' | 'error'
+  // pending 表示还在生成，sent 表示成功，error 表示请求失败，
+  // interrupted 表示被用户停止、切换或刷新打断（保留已生成文本）。
+  status?: 'pending' | 'sent' | 'error' | 'interrupted'
   // 后端异常码，方便定位错误来源。
   errorCode?: string
   // 请求 id 用于前后端日志关联。

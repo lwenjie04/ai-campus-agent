@@ -104,10 +104,20 @@ export const useConversationsStore = defineStore('conversations', {
         draft: '',
         messages: [],
       }
-
       // 空对话只在内存中存在，首次实际发送后才进入历史。
       this.active = draft
       return draft
+    },
+
+    // 页面完成一轮问答后，把整份消息一次性回写；返回保存结果供界面提示。
+    replaceActive(conversation: Conversation): SaveOutcome {
+      this.active = { ...conversation, ownerScope: this.ownerScope }
+      return this.flush()
+    },
+
+    // 其他标签页写入后只刷新索引，不覆盖当前正在运行的会话。
+    refreshSummaries() {
+      this.summaries = repository.list(this.ownerScope)
     },
 
     loadConversation(conversationId: string) {
