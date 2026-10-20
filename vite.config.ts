@@ -4,14 +4,9 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 import path from 'path'
 
 const localApiTarget = process.env.VITE_LOCAL_API_TARGET || 'http://127.0.0.1:3000'
+// 页面路由（/chat、/community…）必须由前端接管，dev/preview 只代理 /api。
 const localApiProxy = {
   '/api': localApiTarget,
-  '/auth': localApiTarget,
-  '/chat': localApiTarget,
-  '/community': localApiTarget,
-  '/tts': localApiTarget,
-  '/kb': localApiTarget,
-  '/lightrag': localApiTarget,
 }
 
 // https://vite.dev/config/

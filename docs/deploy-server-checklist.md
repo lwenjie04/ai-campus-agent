@@ -333,6 +333,7 @@ pm2 logs ai-campus-agent-backend
 ```nginx
 # Node 服务应仅监听 127.0.0.1 或受控内网地址，禁止公网绕过 Nginx 直连。
 # 单层 Nginx 场景覆盖 X-Forwarded-For，避免保留客户端伪造的同名请求头。
+# 接口只走 /api/；/chat、/community、/admin 是前端页面路由，必须回 index.html。
 server {
     listen 80;
     server_name your-domain.com;
@@ -340,27 +341,13 @@ server {
     root /var/www/ai-campus-agent/dist;
     index index.html;
 
+    # 页面路由（含 /chat/:id、/community/posts/:id、/admin/*）全部交给 SPA。
     location / {
         try_files $uri $uri/ /index.html;
     }
 
-    location /chat {
-        proxy_pass http://127.0.0.1:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $remote_addr;
-    }
-
+    # 接口原样转发：后端自身兼容 /api 前缀，不再重写路径。
     location /api/ {
-        proxy_pass http://127.0.0.1:3000/;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $remote_addr;
-    }
-
-    location /community {
         proxy_pass http://127.0.0.1:3000;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
@@ -368,20 +355,21 @@ server {
         proxy_set_header X-Forwarded-For $remote_addr;
     }
 
-    location /auth {
+    # 流式回答单独关闭缓冲，避免 NDJSON 被 Nginx 攒成整段输出。
+    location /api/chat/stream {
         proxy_pass http://127.0.0.1:3000;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_read_timeout 300s;
     }
 
-    location /tts {
-        proxy_pass http://127.0.0.1:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $remote_addr;
+    # 入口 HTML 不缓存，避免发布后仍指向旧的 hash 资源。
+    location = /index.html {
+        add_header Cache-Control "no-store";
     }
 }
 ```
