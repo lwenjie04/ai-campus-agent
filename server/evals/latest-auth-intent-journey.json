@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "completedAt": "2026-10-20T10:49:15.289Z",
+  "mode": "isolated_mock",
+  "targetUrl": "http://127.0.0.1:4175",
+  "ok": true,
+  "steps": [
+    {
+      "name": "游客第一问成功",
+      "ok": true,
+      "detail": "/chat/conv_d6178240-1bc1-4977-b896-a7fa911d25c3"
+    },
+    {
+      "name": "游客第二问触发登录且未发送",
+      "ok": true,
+      "detail": "messages=3"
+    },
+    {
+      "name": "取消登录保留草稿且不执行",
+      "ok": true,
+      "detail": "发现一个未完成的问题奖学金怎么申请？放弃登录后继续"
+    },
+    {
+      "name": "登录后只补发一次",
+      "ok": true,
+      "detail": "/chat/conv_d6178240-1bc1-4977-b896-a7fa911d25c3"
+    },
+    {
+      "name": "刷新后不重复发送",
+      "ok": true,
+      "detail": "count=1"
+    }
+  ]
+}

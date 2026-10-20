@@ -102,7 +102,7 @@
               </button>
             </div>
 
-            <div v-if="pendingDraftRestored && pendingDraft" class="resume-draft" role="status">
+            <div v-if="pendingDraftVisible && pendingDraft" class="resume-draft" role="status">
               <div class="resume-draft__copy">
                 <strong>发现一个未完成的问题</strong>
                 <span>{{ pendingDraft }}</span>
@@ -280,6 +280,7 @@ import DigitalHumanPlayer from '@/components/DigitalHumanPlayer.vue'
 import { useAgentStore } from '@/store/agent'
 import { useAuthStore } from '@/store/auth'
 import { useConversationsStore, resolveOwnerScope } from '@/store/conversations'
+import { useAuthIntentStore } from '@/store/auth-intent'
 import { applyMessagesToConversation, conversationToMessages } from '@/services/conversation-session'
 import { clearPendingQuestion, readPendingQuestion, writePendingQuestion } from '@/services/pending-question'
 import { useRoute, useRouter } from 'vue-router'
@@ -294,6 +295,8 @@ const authStore = useAuthStore()
 // 未登录时拦截的待发送消息：同页登录后自动补发，浏览器重启后由用户确认恢复。
 const pendingDraft = ref('')
 const pendingDraftRestored = ref(false)
+// 取消登录或刷新后都要让用户看到待问内容，避免“草稿还在但界面上找不到”。
+const pendingDraftVisible = ref(false)
 const resumeAfterLoginRequested = ref(false)
 const GUEST_TRIAL_STORAGE_KEY = 'ai-campus-agent.guest-trial.used.v1'
 const guestTrialUsed = ref(false)
@@ -318,6 +321,7 @@ const persistGuestTrialUsed = () => {
 const clearPendingDraft = () => {
   pendingDraft.value = ''
   pendingDraftRestored.value = false
+  pendingDraftVisible.value = false
   resumeAfterLoginRequested.value = false
   clearPendingQuestion(getLocalStorage())
 }
@@ -327,7 +331,20 @@ const queuePendingDraft = (text: string) => {
   if (!normalized) return
   pendingDraft.value = normalized
   pendingDraftRestored.value = false
+  pendingDraftVisible.value = true
   writePendingQuestion(normalized, getLocalStorage())
+}
+
+// 登录后自动补发前先消费意图，保证同一动作只执行一次。
+const consumeQuestionIntent = () => {
+  const intent = authIntent.peek()
+  if (intent?.type === 'send-question') authIntent.consume(intent.intentId)
+}
+
+// 游客第二次提问：本地草稿用于确认 UI，意图用于登录后只执行一次。
+const queueGuestQuestion = (text: string) => {
+  queuePendingDraft(text)
+  authIntent.queue('send-question', text)
 }
 
 const restorePendingDraft = () => {
@@ -335,6 +352,7 @@ const restorePendingDraft = () => {
   if (!stored) return
   pendingDraft.value = stored.text
   pendingDraftRestored.value = true
+  pendingDraftVisible.value = true
 }
 
 // 用户身份的允许值。
@@ -351,6 +369,7 @@ const store = useAgentStore()
 
 // 3.3：会话记录、历史抽屉与路由恢复。
 const conversations = useConversationsStore()
+const authIntent = useAuthIntentStore()
 const route = useRoute()
 const router = useRouter()
 const historyOpen = ref(false)
@@ -479,7 +498,7 @@ const runOptions = () => ({
 // 游客可以先完成一次真实问答；第二次保留草稿并登录，成功后自动补发。
 const handleSend = async (text: string) => {
   if (!authStore.loggedIn && guestTrialUsed.value) {
-    queuePendingDraft(text)
+    queueGuestQuestion(text)
     emit('require-login')
     return
   }
@@ -498,7 +517,7 @@ const handleSend = async (text: string) => {
     (result.errorCode === 'GUEST_LOGIN_REQUIRED' || result.errorCode === 'GUEST_RATE_LIMITED')
   ) {
     persistGuestTrialUsed()
-    queuePendingDraft(text)
+    queueGuestQuestion(text)
     emit('require-login')
     return
   }
@@ -524,6 +543,7 @@ const sendPendingDraft = async () => {
   const draft = pendingDraft.value.trim()
   if (!draft || !authStore.loggedIn || store.loading) return
 
+  consumeQuestionIntent()
   const result = await store.sendMessage(draft, runOptions())
   if (result.ok) {
     clearPendingDraft()
@@ -544,6 +564,8 @@ const resumePendingQuestion = () => {
 }
 
 const discardPendingDraft = () => {
+  const intent = authIntent.peek()
+  if (intent?.type === 'send-question') authIntent.clear()
   clearPendingDraft()
 }
 

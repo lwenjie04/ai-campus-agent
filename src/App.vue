@@ -59,6 +59,14 @@
       </div>
     </header>
 
+    <div v-if="pendingIntent" class="intent-banner" role="status">
+      <span class="intent-banner__text">上次未完成的操作：{{ intentLabel }}</span>
+      <span class="intent-banner__actions">
+        <button type="button" class="intent-banner__primary" @click="resumeIntent">继续</button>
+        <button type="button" class="intent-banner__secondary" @click="dismissIntent">忽略</button>
+      </span>
+    </div>
+
     <main
       class="page-content"
       :class="{ 'page-content--agent': isAgentLayout }"
@@ -84,21 +92,32 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineAsyncComponent, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from './store/auth'
 import { useSessionLifecycle } from './composables/useSessionLifecycle'
+import { useAuthIntentStore, type AuthIntent } from './store/auth-intent'
+import { intentDestination } from './store/auth-intent-destination'
 import { safeInternalPath } from './router/return-to'
 
 // 登录页按需加载，首屏只加载当前路由的页面组件。
 const LoginView = defineAsyncComponent(() => import('./views/LoginView.vue'))
 
 const authStore = useAuthStore()
+const authIntentStore = useAuthIntentStore()
 const route = useRoute()
 const router = useRouter()
+const pendingIntent = ref<AuthIntent | null>(null)
 
 // 登录/退出时切换会话作用域并清理界面；注册一次即可。
 useSessionLifecycle()
+
+const intentLabel = computed(() => {
+  if (!pendingIntent.value) return ''
+  if (pendingIntent.value.type === 'open-post') return '打开校园社区帖子'
+  if (pendingIntent.value.type === 'enter-admin') return '进入知识运营后台'
+  return '继续上次操作'
+})
 
 const loginDialogVisible = ref(false)
 
@@ -145,6 +164,7 @@ const routeListeners = computed<Record<string, RouteListener>>(() => {
     case 'home':
     case 'chat':
     case 'chat-new':
+    case 'chat-detail':
       listeners['open-community-post'] = openPostFromSource
       listeners['require-login'] = openLogin
       break
@@ -166,8 +186,23 @@ const routeListeners = computed<Record<string, RouteListener>>(() => {
   return listeners
 })
 
+// 执行一条已确认的登录后意图；返回是否已经处理（避免再走 redirect）。
+const runIntent = (intent: AuthIntent): boolean => {
+  const destination = intentDestination(intent)
+  if (!destination) return false
+
+  authIntentStore.consume(intent.intentId)
+  pendingIntent.value = null
+  void router.replace(destination)
+  return true
+}
+
 const handleLoginSuccess = () => {
   loginDialogVisible.value = false
+
+  // 登录前明确提交的动作只执行一次。
+  const intent = authIntentStore.peek()
+  if (intent && intent.type !== 'send-question' && runIntent(intent)) return
 
   // 只接受站内路径，避免登录后被带到外部地址。
   const redirect = safeInternalPath(route.query.redirect)
@@ -177,7 +212,11 @@ const handleLoginSuccess = () => {
 }
 
 const handleDialogClosed = () => {
-  // 用户取消登录时清掉一次性参数，避免刷新后再次弹出。
+  // 取消登录保留意图，但本轮不执行；刷新后由顶部提示条再次确认。
+  const intent = authIntentStore.peek()
+  if (intent && intent.type !== 'send-question') pendingIntent.value = intent
+
+  // 清掉一次性参数，避免刷新后再次弹出登录框。
   if (!route.query.login && !route.query.redirect) return
 
   const query = { ...route.query }
@@ -185,6 +224,26 @@ const handleDialogClosed = () => {
   delete query.redirect
   router.replace({ path: route.path, query })
 }
+
+const resumeIntent = () => {
+  if (!pendingIntent.value) return
+  if (!authStore.loggedIn) {
+    openLogin()
+    return
+  }
+  if (!runIntent(pendingIntent.value)) pendingIntent.value = null
+}
+
+const dismissIntent = () => {
+  authIntentStore.clear()
+  pendingIntent.value = null
+}
+
+onMounted(() => {
+  // 刷新恢复时先确认，不自动执行任何待办动作。
+  const intent = authIntentStore.peek()
+  if (intent && intent.type !== 'send-question') pendingIntent.value = intent
+})
 
 const logout = () => {
   authStore.logout()
@@ -402,6 +461,55 @@ watch(
 .page-content {
   min-width: 0;
   padding: 0.75rem;
+}
+
+.intent-banner {
+  position: relative;
+  z-index: 2;
+  width: min(100%, 108rem);
+  margin: 0.6rem auto 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  border: 1px solid var(--line-strong);
+  border-left: 0.3rem solid var(--teal);
+  padding: 0.6rem 0.8rem;
+  background: var(--paper-raised);
+  box-shadow: var(--shadow-sm);
+  font-size: 0.8rem;
+}
+
+.intent-banner__text {
+  min-width: 0;
+  color: var(--ink-soft);
+}
+
+.intent-banner__actions {
+  display: inline-flex;
+  gap: 0.45rem;
+}
+
+.intent-banner__primary,
+.intent-banner__secondary {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.7rem;
+  font-size: 0.76rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.intent-banner__primary {
+  border-color: var(--ink);
+  color: var(--white);
+  background: var(--ink);
+}
+
+.intent-banner__secondary {
+  color: var(--ink-soft);
+  background: transparent;
 }
 
 :global(.el-dialog.login-dialog) {

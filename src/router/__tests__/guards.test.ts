@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { createMemoryHistory, createRouter, type RouteRecordRaw } from 'vue-router'
 import { installAuthGuard, routes } from '@/router'
 import { useAuthStore } from '@/store/auth'
+import { useAuthIntentStore } from '@/store/auth-intent'
 
 const stub = { template: '<div />' }
 
@@ -47,6 +48,20 @@ describe('路由守卫', () => {
       expect(router.currentRoute.value.query.login).toBe('1')
       expect(router.currentRoute.value.query.redirect).toBe(target)
     }
+  })
+
+  it('游客访问帖子或后台时登记可恢复的登录意图', async () => {
+    const { router } = await setup()
+
+    await router.push('/community/posts/p1')
+    const postIntent = useAuthIntentStore().peek()
+    expect(postIntent?.type).toBe('open-post')
+    expect(postIntent?.target).toBe('p1')
+
+    await router.push('/admin/review')
+    const adminIntent = useAuthIntentStore().peek()
+    expect(adminIntent?.type).toBe('enter-admin')
+    expect(adminIntent?.target).toBe('/admin/review')
   })
 
   it('登录意图页本身不再触发跳转，取消登录不会形成循环', async () => {

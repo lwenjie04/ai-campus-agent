@@ -30,6 +30,7 @@
     "service:journey:run": "node server/scripts/run-service-journey.mjs",
     "service:journey": "run-s build service:journey:run",
     "conversation:journey": "node server/scripts/conversation-journey-browser.mjs",
+    "auth-intent:journey": "node server/scripts/auth-intent-journey-browser.mjs",
     "ui:inspect:mobile": "node server/scripts/inspect-responsive-layout.mjs",
     "dev:all": "run-p dev server",
     "build": "run-p type-check \"build-only {@}\" --",

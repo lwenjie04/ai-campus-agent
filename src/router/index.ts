@@ -7,6 +7,7 @@ import {
   type RouterHistory,
 } from 'vue-router'
 import { useAuthStore } from '@/store/auth'
+import { useAuthIntentStore } from '@/store/auth-intent'
 
 // 页面路由与接口命名空间分开：接口统一走 /api，以下路径只负责页面。
 // 会话详情（/chat/:conversationId）要等多会话模型落地后再接入，避免把静态
@@ -102,12 +103,21 @@ export const installAuthGuard = (router: Router) => {
 
     if (to.meta.requiresAdmin) {
       // 未登录 → 首页登录意图；已登录但非管理员 → 403，不重复弹登录框。
-      if (!authStore.loggedIn) return loginRedirect(to)
+      if (!authStore.loggedIn) {
+        useAuthIntentStore().queue('enter-admin', to.fullPath)
+        return loginRedirect(to)
+      }
       if (!authStore.isAdmin) return { name: 'forbidden', query: { from: to.fullPath } }
       return true
     }
 
-    if (to.meta.requiresAuth && !authStore.loggedIn) return loginRedirect(to)
+    if (to.meta.requiresAuth && !authStore.loggedIn) {
+      // 帖子详情保留“登录后回到原帖”的意图。
+      if (to.name === 'community-post' && typeof to.params.postId === 'string') {
+        useAuthIntentStore().queue('open-post', to.params.postId)
+      }
+      return loginRedirect(to)
+    }
 
     return true
   })

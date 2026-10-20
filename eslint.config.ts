@@ -31,6 +31,8 @@ export default defineConfigWithVueTs(
       'server/scripts/browser-export-notice.console.js',
       'server/scripts/inspect-responsive-layout.mjs',
       'server/scripts/service-journey-browser.mjs',
+      'server/scripts/conversation-journey-browser.mjs',
+      'server/scripts/auth-intent-journey-browser.mjs',
     ],
     languageOptions: {
       globals: {
