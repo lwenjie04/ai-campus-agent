@@ -1,8 +1,8 @@
-# 数智校答 V2 状态与 API 契约（0.4 草案）
+# 数智校答 V2 状态与 API 契约（0.4）
 
 **日期**：2026-10-20
 **维护者**：AI-2（Codex）
-**状态**：待人工签字；签字前作为 4.3、7.1、7.2 的评审基准，不代表相关接口已实现。
+**状态**：已人工签字并冻结（2026-10-20）；作为 4.3、7.1、7.2 的实现基准，不代表相关接口已实现。
 **依据**：[`campus-service-v2-development-plan.md`](campus-service-v2-development-plan.md)、[`interaction-flow-v2.md`](interaction-flow-v2.md)、[`development-baseline-v2.md`](development-baseline-v2.md)。
 
 本文冻结目标行为和字段命名。现有实现与目标有差距时，以对应任务验收为准；不得仅凭本文宣称目标环境、MySQL 或真实模型已验证。
