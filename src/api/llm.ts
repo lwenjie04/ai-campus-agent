@@ -110,15 +110,18 @@ export const sendChat = async (messages: Message[]): Promise<ChatApiResponse> =>
 export const streamChat = async (
   messages: Message[],
   handlers: StreamChatHandlers = {},
+  signal?: AbortSignal,
 ): Promise<ChatApiResponse> => {
   if (appConfig.useMockChat) {
-    // Mock 模式也模拟字符级流式输出，方便前端调试打字机效果。
+    // Mock 模式也模拟字符级流式输出，但同样响应取消，便于前端回归。
     const reply = mockReply(messages)
     handlers.onStart?.({ requestId: `mock-${Date.now()}` })
     for (const ch of reply.content) {
+      if (signal?.aborted) throw new DOMException('请求已取消', 'AbortError')
       handlers.onDelta?.(ch)
       await new Promise((r) => setTimeout(r, 12))
     }
+    if (signal?.aborted) throw new DOMException('请求已取消', 'AbortError')
     handlers.onMeta?.(reply)
     return reply
   }
@@ -131,6 +134,7 @@ export const streamChat = async (
     },
     credentials: 'include',
     body: JSON.stringify({ messages }),
+    signal,
   })
 
   if (!resp.ok || !resp.body) {

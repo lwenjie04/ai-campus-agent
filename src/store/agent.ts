@@ -41,6 +41,28 @@ export type SendMessageResult =
   | { ok: true }
   | { ok: false; errorCode?: string }
 
+// 一次生成运行的运行态信息。只存在于内存，不持久化 Promise/AbortController。
+type ActiveRun = {
+  runId: string
+  conversationId: string
+  ownerScope: string
+  assistantMessageId: string
+  controller: AbortController
+}
+
+let activeRun: ActiveRun | null = null
+let idleWaiters: Array<() => void> = []
+
+const createRunId = () =>
+  `run-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+
+// 通知所有等待“生成结束”的调用方（会话切换、离开页面时需要）。
+const releaseIdleWaiters = () => {
+  const waiters = idleWaiters
+  idleWaiters = []
+  waiters.forEach((resolve) => resolve())
+}
+
 const looksGarbledText = (value: string) => {
   const text = String(value || '')
   return text.includes('���') || (text.includes('?') && text.replace(/\?/g, '').trim().length <= 4)
@@ -71,6 +93,9 @@ export const useAgentStore = defineStore('agent', {
   state: () => ({
     messages: [] as Message[],
     loading: false,
+    // 当前运行绑定的会话与身份空间；由页面在切换会话时写入。
+    conversationId: '',
+    ownerScope: '',
     userProfile: {
       role: 'student',
       grade: '',
@@ -117,14 +142,24 @@ export const useAgentStore = defineStore('agent', {
         }
 
         if (Array.isArray(parsed.messages)) {
-          this.messages = parsed.messages.filter(
-            (msg) =>
-              msg &&
-              typeof msg === 'object' &&
-              typeof msg.content === 'string' &&
-              ['system', 'user', 'assistant'].includes(msg.role) &&
-              !looksGarbledText(msg.content),
-          )
+          let recoveredInterrupted = false
+          this.messages = parsed.messages
+            .filter(
+              (msg) =>
+                msg &&
+                typeof msg === 'object' &&
+                typeof msg.content === 'string' &&
+                ['system', 'user', 'assistant'].includes(msg.role) &&
+                !looksGarbledText(msg.content),
+            )
+            .map((msg) => {
+              if (msg.status !== 'pending') return msg
+              // 刷新时仍标记 pending 的回答已经不可能继续，统一转成 interrupted。
+              recoveredInterrupted = true
+              return { ...msg, status: 'interrupted' as const }
+            })
+
+          if (recoveredInterrupted) this.persistSession()
         }
 
       } catch {
@@ -257,6 +292,8 @@ export const useAgentStore = defineStore('agent', {
     },
 
     resetSession() {
+      // 重置前先结束正在进行的生成，避免旧回调继续写入新会话。
+      this.cancelGeneration()
       this.messages = [createMessage('system', this.buildSystemPrompt())]
       this.ensureWelcomeMessage()
       this.clearNarration()
@@ -264,10 +301,44 @@ export const useAgentStore = defineStore('agent', {
       this.persistSession()
     },
 
-    async sendMessage(content: string) {
-      // 这里串起完整的发送链路：写入用户消息 -> 创建占位回复 -> 流式更新 -> 触发讲解。
+    // 页面切换会话/身份时登记本次运行应归属的作用域。
+    bindRunScope(conversationId: string, ownerScope: string) {
+      this.conversationId = conversationId
+      this.ownerScope = ownerScope
+    },
+
+    cancelGeneration() {
+      if (!activeRun) return false
+      const run = activeRun
+      activeRun = null
+      run.controller.abort()
+
+      const target = this.messages.find((message) => message.id === run.assistantMessageId)
+      if (target) {
+        // 保留已生成文本，只把状态改为中断，不当作普通错误。
+        target.status = 'interrupted'
+      }
+      this.loading = false
+      this.clearNarration()
+      this.triggerVideoCue('idle')
+      this.persistSession()
+      releaseIdleWaiters()
+      return true
+    },
+
+    whenIdle(): Promise<void> {
+      if (!this.loading) return Promise.resolve()
+      return new Promise((resolve) => {
+        idleWaiters.push(resolve)
+      })
+    },
+
+    async sendMessage(
+      content: string,
+      options: { conversationId?: string; ownerScope?: string } = {},
+    ): Promise<SendMessageResult> {
       const trimmed = content.trim()
-      if (!trimmed || this.loading) return { ok: false, errorCode: 'EMPTY_OR_LOADING' } as SendMessageResult
+      if (!trimmed || this.loading) return { ok: false, errorCode: 'EMPTY_OR_LOADING' }
 
       const userMessage = createMessage('user', trimmed)
       this.messages.push(userMessage)
@@ -276,10 +347,56 @@ export const useAgentStore = defineStore('agent', {
         sources: [],
       })
       this.messages.push(assistantPlaceholder)
+
+      return this.runGeneration(userMessage, assistantPlaceholder, options)
+    },
+
+    // 重试复用原问题与回答位置：不新增用户消息，只重置这一条回答。
+    async retryGeneration(
+      assistantMessageId: string,
+      options: { conversationId?: string; ownerScope?: string } = {},
+    ): Promise<SendMessageResult> {
+      if (this.loading) return { ok: false, errorCode: 'EMPTY_OR_LOADING' }
+
+      const index = this.messages.findIndex((message) => message.id === assistantMessageId)
+      if (index <= 0) return { ok: false, errorCode: 'RETRY_NOT_FOUND' }
+
+      const assistant = this.messages[index]
+      if (!assistant || assistant.role !== 'assistant') return { ok: false, errorCode: 'RETRY_NOT_FOUND' }
+
+      const userMessage = this.messages.slice(0, index).reverse().find((message) => message.role === 'user')
+      if (!userMessage) return { ok: false, errorCode: 'RETRY_NOT_FOUND' }
+
+      assistant.content = ''
+      assistant.sources = []
+      assistant.errorCode = undefined
+      assistant.requestId = undefined
+      assistant.videoCue = undefined
+      assistant.status = 'pending'
+      this.persistSession()
+
+      return this.runGeneration(userMessage, assistant, options)
+    },
+
+    async runGeneration(
+      userMessage: Message,
+      assistantMessage: Message,
+      options: { conversationId?: string; ownerScope?: string } = {},
+    ): Promise<SendMessageResult> {
+      const runId = createRunId()
+      const controller = new AbortController()
+      const conversationId = options.conversationId ?? this.conversationId
+      const ownerScope = options.ownerScope ?? this.ownerScope
+      const assistantMessageId = assistantMessage.id as string
+
+      activeRun = { runId, conversationId, ownerScope, assistantMessageId, controller }
       this.loading = true
       this.clearNarration()
       this.triggerVideoCue('idle')
       this.persistSession()
+
+      const isCurrentRun = () => activeRun?.runId === runId
+      const findAssistant = () => this.messages.find((message) => message.id === assistantMessageId)
 
       let finalContent = ''
       let finalSources: MessageSource[] = []
@@ -288,37 +405,46 @@ export const useAgentStore = defineStore('agent', {
       let narrationStarted = false
 
       try {
-        await streamChat(this.messages.filter((msg) => msg.id !== assistantPlaceholder.id), {
-          onStart: ({ requestId }) => {
-            finalRequestId = requestId
-            const target = this.messages.find((msg) => msg.id === assistantPlaceholder.id)
-            if (target) target.requestId = requestId
-          },
-          onDelta: (delta) => {
-            // 每一段流式文本都直接追加到占位消息里，用户能实时看到生成过程。
-            const target = this.messages.find((msg) => msg.id === assistantPlaceholder.id)
-            if (!target) return
-            target.content += delta
+        await streamChat(
+          this.messages.filter((message) => message.id !== assistantMessageId),
+          {
+            onStart: ({ requestId }) => {
+              if (!isCurrentRun()) return
+              finalRequestId = requestId
+              const target = findAssistant()
+              if (target) target.requestId = requestId
+            },
+            onDelta: (delta) => {
+              // 迟到回调必须校验自己仍属于当前运行，否则丢弃。
+              if (!isCurrentRun()) return
+              const target = findAssistant()
+              if (!target) return
+              target.content += delta
 
-            // 同时把文本累计成完整句子，一旦成句就立即送给数字人播报。
-            narrationBuffer += delta
-            const { chunks, rest } = splitSpeakableChunks(narrationBuffer)
-            narrationBuffer = rest
-            if (chunks.length > 0) {
-              if (!narrationStarted) {
-                this.triggerVideoCue('teaching')
-                narrationStarted = true
+              narrationBuffer += delta
+              const { chunks, rest } = splitSpeakableChunks(narrationBuffer)
+              narrationBuffer = rest
+              if (chunks.length > 0) {
+                if (!narrationStarted) {
+                  this.triggerVideoCue('teaching')
+                  narrationStarted = true
+                }
+                chunks.forEach((chunk) => this.triggerNarration(chunk))
               }
-              chunks.forEach((chunk) => this.triggerNarration(chunk))
-            }
+            },
+            onMeta: (meta) => {
+              if (!isCurrentRun()) return
+              finalContent = meta.content || finalContent
+              finalSources = meta.sources ?? []
+            },
           },
-          onMeta: (meta) => {
-            finalContent = meta.content || finalContent
-            finalSources = meta.sources ?? []
-          },
-        })
+          controller.signal,
+        )
 
-        const target = this.messages.find((msg) => msg.id === assistantPlaceholder.id)
+        // 运行已被取消或替换时，迟到结果一律丢弃。
+        if (!isCurrentRun()) return { ok: false, errorCode: 'STALE_RUN' }
+
+        const target = findAssistant()
         if (target) {
           target.content = (finalContent || target.content || '').trim()
           target.videoCue = 'teaching'
@@ -351,8 +477,18 @@ export const useAgentStore = defineStore('agent', {
           target.videoCue = 'teaching'
         }
         this.persistSession()
-        return { ok: true } as SendMessageResult
+        return { ok: true }
       } catch (error) {
+        if (controller.signal.aborted || (error as Error)?.name === 'AbortError') {
+          const target = findAssistant()
+          // 已生成文本保留；没有内容也保持空文本，不写成错误文案。
+          if (target) target.status = 'interrupted'
+          this.clearNarration()
+          this.triggerVideoCue('idle')
+          this.persistSession()
+          return { ok: false, errorCode: 'ABORTED' }
+        }
+
         // 后端异常也要转成聊天消息，避免界面静默失败。
         const err = error as Error & { code?: string; sources?: unknown }
         const errorReply =
@@ -364,15 +500,15 @@ export const useAgentStore = defineStore('agent', {
 
         if (errorCode === 'GUEST_LOGIN_REQUIRED' || errorCode === 'GUEST_RATE_LIMITED') {
           this.messages = this.messages.filter(
-            (message) => message.id !== userMessage.id && message.id !== assistantPlaceholder.id,
+            (message) => message.id !== userMessage.id && message.id !== assistantMessageId,
           )
           this.clearNarration()
           this.triggerVideoCue('idle')
           this.persistSession()
-          return { ok: false, errorCode } as SendMessageResult
+          return { ok: false, errorCode }
         }
 
-        const target = this.messages.find((msg) => msg.id === assistantPlaceholder.id)
+        const target = findAssistant()
         if (target) {
           target.content = errorReply
           target.status = 'error'
@@ -390,9 +526,15 @@ export const useAgentStore = defineStore('agent', {
         this.clearNarration()
         this.triggerVideoCue('idle')
         this.persistSession()
-        return { ok: false, errorCode } as SendMessageResult
+        return { ok: false, errorCode }
       } finally {
-        this.loading = false
+        if (activeRun?.runId === runId) {
+          activeRun = null
+          this.loading = false
+        } else if (!activeRun) {
+          this.loading = false
+        }
+        releaseIdleWaiters()
       }
     },
   },

@@ -113,10 +113,12 @@
       <div v-if="message.status === 'error'" class="error-tip">
         发送异常，请稍后重试
         <span v-if="message.errorCode" class="error-code">({{ message.errorCode }})</span>
+        <button v-if="message.id" type="button" class="retry-btn" @click="emit('retry', message.id)">重试</button>
       </div>
 
       <div v-else-if="message.status === 'interrupted'" class="interrupted-tip" role="status">
         回答已中断，已保留生成的内容
+        <button v-if="message.id" type="button" class="retry-btn" @click="emit('retry', message.id)">重试</button>
       </div>
     </div>
   </div>
@@ -201,6 +203,7 @@ defineProps<{
 
 const emit = defineEmits<{
   (e: 'openCommunityPost', postId: string): void
+  (e: 'retry', messageId: string): void
 }>()
 </script>
 
@@ -463,6 +466,18 @@ const emit = defineEmits<{
   color: var(--ink-soft);
   background: var(--paper);
   font-size: 0.76rem;
+}
+
+.retry-btn {
+  margin-left: 0.55rem;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-sm);
+  padding: 0.18rem 0.45rem;
+  color: inherit;
+  background: transparent;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 @keyframes message-in {

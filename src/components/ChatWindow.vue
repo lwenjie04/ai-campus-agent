@@ -14,6 +14,7 @@
       :key="msg.id || `${msg.role}-${msg.createdAt}`"
       :message="msg"
       @open-community-post="emit('openCommunityPost', $event)"
+      @retry="emit('retry', $event)"
     />
 
     <!-- 正常请求由 pending 消息展示加载态；此处只处理没有占位消息的兜底场景。 -->
@@ -44,6 +45,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'openCommunityPost', postId: string): void
+  (e: 'retry', messageId: string): void
 }>()
 
 // store 通常会先插入 pending assistant 消息；仅在它缺失时显示兜底加载行，避免双重提示。

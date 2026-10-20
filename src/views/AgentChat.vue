@@ -130,6 +130,7 @@
               :messages="visibleMessages"
               :loading="store.loading"
               @open-community-post="emit('openCommunityPost', $event)"
+              @retry="handleRetry"
             />
           </div>
 
@@ -138,6 +139,15 @@
             用来中断当前讲解视频和语音播报。
           -->
           <div class="chat-actions-bar">
+            <el-button
+              v-if="store.loading"
+              class="stop-btn"
+              size="small"
+              data-testid="stop-generation"
+              @click="handleCancelGeneration"
+            >
+              停止生成
+            </el-button>
             <el-button class="stop-btn" size="small" @click="onStopPlayback">停止讲解</el-button>
           </div>
 
@@ -384,10 +394,16 @@ const syncRouteAfterSend = () => {
 }
 
 const startNewConversation = () => {
+  if (store.loading) {
+    // 切走前先中断并保存当前内容，旧回答不会写进新会话。
+    store.cancelGeneration()
+    persistActiveConversation()
+  }
   conversations.flush()
   ensureConversationScope()
   const draft = conversations.createDraft()
   activeConversationId.value = draft.conversationId
+  store.bindRunScope(draft.conversationId, conversations.ownerScope)
   conversationNotice.value = ''
   historyOpen.value = false
   draftText.value = ''
@@ -396,6 +412,12 @@ const startNewConversation = () => {
 }
 
 const restoreConversation = async (conversationId: string) => {
+  if (store.loading) {
+    store.cancelGeneration()
+    persistActiveConversation()
+    await store.whenIdle()
+  }
+
   ensureConversationScope()
   if (!conversations.loadConversation(conversationId)) {
     conversationNotice.value = '这条对话不存在，或不属于当前身份，已为你新建对话。'
@@ -406,6 +428,7 @@ const restoreConversation = async (conversationId: string) => {
   }
 
   activeConversationId.value = conversationId
+  store.bindRunScope(conversationId, conversations.ownerScope)
   conversationNotice.value = ''
   const loaded = conversations.active
   const messages = loaded ? conversationToMessages(loaded) : []
@@ -435,6 +458,24 @@ const serviceShortcuts = [
   { label: '生活服务', query: '宿舍报修怎么申请？' },
 ] as const
 
+// 发送前确保有一条（尚未写入历史的）草稿会话，让运行从一开始就绑定会话身份。
+const ensureDraftForRun = () => {
+  ensureConversationScope()
+  if (!conversations.active) {
+    const draft = conversations.createDraft()
+    activeConversationId.value = draft.conversationId
+  }
+
+  const conversation = conversations.active
+  if (conversation) store.bindRunScope(conversation.conversationId, conversations.ownerScope)
+  return conversation
+}
+
+const runOptions = () => ({
+  conversationId: conversations.active?.conversationId,
+  ownerScope: conversations.ownerScope,
+})
+
 // 游客可以先完成一次真实问答；第二次保留草稿并登录，成功后自动补发。
 const handleSend = async (text: string) => {
   if (!authStore.loggedIn && guestTrialUsed.value) {
@@ -443,7 +484,8 @@ const handleSend = async (text: string) => {
     return
   }
 
-  const result = await store.sendMessage(text)
+  ensureDraftForRun()
+  const result = await store.sendMessage(text, runOptions())
   if (!authStore.loggedIn && result.ok) {
     persistGuestTrialUsed()
     syncRouteAfterSend()
@@ -464,11 +506,25 @@ const handleSend = async (text: string) => {
   syncRouteAfterSend()
 }
 
+// 停止生成：保留已生成内容，标记为中断，并立即写回当前会话。
+const handleCancelGeneration = () => {
+  if (!store.cancelGeneration()) return
+  persistActiveConversation()
+  conversationNotice.value = '已停止生成，已保留当前内容。'
+}
+
+const handleRetry = async (messageId: string) => {
+  if (store.loading || !messageId) return
+  ensureDraftForRun()
+  await store.retryGeneration(messageId, runOptions())
+  syncRouteAfterSend()
+}
+
 const sendPendingDraft = async () => {
   const draft = pendingDraft.value.trim()
   if (!draft || !authStore.loggedIn || store.loading) return
 
-  const result = await store.sendMessage(draft)
+  const result = await store.sendMessage(draft, runOptions())
   if (result.ok) {
     clearPendingDraft()
     syncRouteAfterSend()
@@ -681,12 +737,25 @@ const handleStorageChange = (event: StorageEvent) => {
   conversations.refreshSummaries()
 }
 
+// 刷新或关闭页面时先中断并保存当前内容，刷新后应显示 interrupted 而不是空白。
+const handleBeforeUnload = () => {
+  if (!store.loading) return
+  store.cancelGeneration()
+  persistActiveConversation()
+}
+
 onMounted(() => {
   window.addEventListener('storage', handleStorageChange)
+  window.addEventListener('beforeunload', handleBeforeUnload)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('storage', handleStorageChange)
+  window.removeEventListener('beforeunload', handleBeforeUnload)
+  if (store.loading) {
+    store.cancelGeneration()
+    persistActiveConversation()
+  }
 })
 
 // 组件挂载后执行初始化流程。
