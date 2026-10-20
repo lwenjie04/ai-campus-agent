@@ -15,14 +15,8 @@
     "types": ["@dcloudio/types"]
   },
   "include": [
-    "main.ts",
-    "main.js",
-    "App.vue",
-    "env.d.ts",
-    "api/**/*.ts",
-    "pages/**/*.vue",
-    "stores/**/*.ts",
-    "types/**/*.ts",
-    "utils/**/*.ts"
+    "src/**/*.ts",
+    "src/**/*.vue",
+    "src/env.d.ts"
   ]
 }
