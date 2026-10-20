@@ -39,6 +39,7 @@ const TIME_DECAY = {
 const RAG_LOG_ENABLED = (process.env.RAG_LOG_ENABLED ?? 'true') === 'true'
 const ROUTE_MIN_HITS = toNumber(process.env.RAG_ROUTE_MIN_HITS, 2)
 const RAG_ROUTE_MIN_SCORE = toNumber(process.env.RAG_ROUTE_MIN_SCORE, 3)
+const RAG_ANSWER_MIN_SCORE = Math.max(0, toNumber(process.env.RAG_ANSWER_MIN_SCORE, 3))
 const VECTOR_SEARCH_ENABLED = (process.env.RAG_VECTOR_ENABLED ?? 'true') === 'true'
 const VECTOR_SEARCH_LIMIT = toNumber(process.env.RAG_VECTOR_TOPK, 8)
 const KEYWORD_SEARCH_MULTIPLIER = toNumber(process.env.RAG_KEYWORD_LIMIT_MULTIPLIER, 3)
@@ -570,6 +571,18 @@ export const searchKnowledgeBase = async (query, options = {}) => {
     vectorHits: vectorHits.length,
   })
   return finalHits
+}
+
+// Retrieval may intentionally run with a permissive cutoff so candidate recall can be inspected.
+// Only candidates that clear this separate answer threshold are safe to expose as grounding or sources.
+export const filterConfidentRagHits = (hits, options = {}) => {
+  if (!Array.isArray(hits)) return []
+
+  const minScore = Math.max(0, toNumber(options.minScore, RAG_ANSWER_MIN_SCORE))
+  return hits.filter((hit) => {
+    const score = Number(hit?.score)
+    return Number.isFinite(score) && score >= minScore
+  })
 }
 
 export const buildRagContext = (hits) => {

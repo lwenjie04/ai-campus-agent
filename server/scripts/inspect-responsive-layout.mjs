@@ -1,12 +1,13 @@
 import { spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
-import { mkdtemp, readFile, rm } from 'node:fs/promises'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
 const targetUrl = process.env.RESPONSIVE_TARGET_URL || 'http://127.0.0.1:4173'
 const viewportWidth = Number.parseInt(process.env.RESPONSIVE_VIEWPORT_WIDTH || '390', 10)
 const viewportHeight = Number.parseInt(process.env.RESPONSIVE_VIEWPORT_HEIGHT || '844', 10)
+const screenshotPath = process.env.RESPONSIVE_SCREENSHOT_PATH
 
 const chromeCandidates = [
   process.env.CHROME_PATH,
@@ -111,6 +112,14 @@ try {
     'page load',
   )
   await sleep(700)
+
+  if (screenshotPath) {
+    const screenshot = await command('Page.captureScreenshot', {
+      format: 'png',
+      fromSurface: true,
+    })
+    await writeFile(path.resolve(screenshotPath), Buffer.from(screenshot.data, 'base64'))
+  }
 
   const loginClick = await command('Runtime.evaluate', {
     expression: `(() => {

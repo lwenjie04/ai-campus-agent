@@ -6,7 +6,13 @@ import { extname, resolve } from 'node:path'
 import { handleAuthRoute } from './auth.mjs'
 import { handleCommunityRoute } from './community.mjs'
 import { buildRuleBasedSources } from './sources-rules.mjs'
-import { buildRagContext, getKnowledgeBaseEntryById, ragHitsToSources, searchKnowledgeBase } from './rag.mjs'
+import {
+  buildRagContext,
+  filterConfidentRagHits,
+  getKnowledgeBaseEntryById,
+  ragHitsToSources,
+  searchKnowledgeBase,
+} from './rag.mjs'
 import { checkLightRagHealth, formatLightragContext, lightragContextToSources, queryLightRag } from './lightrag.mjs'
 import { handleTtsRoute } from './tts.mjs'
 import { beginChatAccess } from './guest-quota.mjs'
@@ -204,6 +210,18 @@ const classifyIntentAndVideoCue = (content) => {
   if (/奖学金|资助|助学金/.test(content)) return { intent: 'scholarship', videoCue: 'idle' }
   return { intent: 'general', videoCue: 'idle' }
 }
+
+const isSmallTalk = (text) =>
+  /^(?:你好|您好|嗨|哈喽|hello|hi|hey|谢谢|感谢|再见|拜拜)[\s!！,.，。?？]*$/i.test(
+    String(text || '').trim(),
+  )
+
+const buildLowConfidenceResult = (userText) => ({
+  content:
+    '我目前没有检索到与这个问题足够匹配的校内资料，暂时不能可靠确认答案。请补充具体事项、所属学期或年份、办理部门等信息后再问；涉及时间、条件或流程时，请以学校官网和相关部门最新通知为准。',
+  ...classifyIntentAndVideoCue(userText),
+  sources: [],
+})
 
 // Mock 回复。
 // 仅在没有接入真实模型时用于前后端联调，现在保留它主要是为了兜底和演示。
@@ -574,6 +592,7 @@ const handleChatStream = async (req, res) => {
     let ragSources = []
     let ragContext = ''
     let ragUsed = 'none'
+    let ragCandidateCount = 0
 
     if (LIGHTRAG_PRIMARY && lightragIsHealthy) {
       try {
@@ -618,12 +637,16 @@ const handleChatStream = async (req, res) => {
 
     if (!ragContext) {
       // 回退到关键词 + 向量混合检索
-      ragHits = await searchKnowledgeBase(userText, { limit: 3 })
+      const ragCandidates = await searchKnowledgeBase(userText, { limit: 3 })
+      ragCandidateCount = ragCandidates.length
+      ragHits = filterConfidentRagHits(ragCandidates)
       ragSources = ragHitsToSources(ragHits)
       ragContext = buildRagContext(ragHits)
       if (ragHits.length > 0) ragUsed = 'keyword'
     }
     recoverySources = ragSources
+    const useLowConfidenceResponse = !ragContext && !isSmallTalk(userText)
+    if (useLowConfidenceResponse) ragUsed = 'low_confidence'
 
     // 把 RAG 上下文注入到消息列表
     const messagesForLlm =
@@ -649,17 +672,25 @@ const handleChatStream = async (req, res) => {
 
     writeNdjson(res, { type: 'start', requestId })
 
-    // 每收到一个 delta，就立刻写回前端，形成逐字/逐段显示效果。
-    const content = await requestOpenAICompatibleChatStream(messagesForLlm, requestId, {
-      onDelta(delta) {
-        writeNdjson(res, { type: 'delta', delta })
-      },
-    })
+    // 低置信度时直接返回可解释的安全答复，不让模型基于无关资料猜测。
+    // 其他情况保持原有模型流式生成路径。
+    const lowConfidenceResult = useLowConfidenceResponse ? buildLowConfidenceResult(userText) : null
+    const content = lowConfidenceResult
+      ? lowConfidenceResult.content
+      : await requestOpenAICompatibleChatStream(messagesForLlm, requestId, {
+          onDelta(delta) {
+            writeNdjson(res, { type: 'delta', delta })
+          },
+        })
+    if (lowConfidenceResult) writeNdjson(res, { type: 'delta', delta: content })
 
     // sources 优先使用真实 RAG 命中；如果没命中，再退回规则型来源。
-    const classified = classifyIntentAndVideoCue(content)
-    const sources =
-      ragSources.length > 0 ? ragSources : buildRuleBasedSources(userText, classified.intent, 'real')
+    const classified = lowConfidenceResult || classifyIntentAndVideoCue(content)
+    const sources = lowConfidenceResult
+      ? []
+      : ragSources.length > 0
+        ? ragSources
+        : buildRuleBasedSources(userText, classified.intent, 'real')
 
     writeNdjson(res, {
       type: 'meta',
@@ -683,6 +714,7 @@ const handleChatStream = async (req, res) => {
         intent: classified.intent,
         rag: ragUsed,
         ragHits: ragHits.length,
+        ragCandidates: ragCandidateCount,
         durationMs,
       }),
     )
@@ -764,6 +796,7 @@ const handleChat = async (req, res) => {
     let ragSources = []
     let ragContext = ''
     let ragUsed = 'keyword'
+    let ragCandidateCount = 0
 
     if (LIGHTRAG_PRIMARY && lightragIsHealthy) {
       try {
@@ -791,11 +824,15 @@ const handleChat = async (req, res) => {
     }
 
     if (!ragContext) {
-      ragHits = await searchKnowledgeBase(userText, { limit: 3 })
+      const ragCandidates = await searchKnowledgeBase(userText, { limit: 3 })
+      ragCandidateCount = ragCandidates.length
+      ragHits = filterConfidentRagHits(ragCandidates)
       ragSources = ragHitsToSources(ragHits)
       ragContext = buildRagContext(ragHits)
     }
     recoverySources = ragSources
+    const useLowConfidenceResponse = !ragContext && !isSmallTalk(userText)
+    if (useLowConfidenceResponse) ragUsed = 'low_confidence'
 
     let content = ''
     let intent = 'general'
@@ -809,11 +846,19 @@ const handleChat = async (req, res) => {
         : ragContext
           ? [...messages, { role: 'system', content: ragContext }]
           : messages
-    content = await requestOpenAICompatibleChat(messagesForLlm, requestId)
-    const classified = classifyIntentAndVideoCue(content)
-    intent = classified.intent
-    videoCue = classified.videoCue
-    sources = ragSources.length > 0 ? ragSources : buildRuleBasedSources(userText, intent, 'real')
+    if (useLowConfidenceResponse) {
+      const lowConfidenceResult = buildLowConfidenceResult(userText)
+      content = lowConfidenceResult.content
+      intent = lowConfidenceResult.intent
+      videoCue = lowConfidenceResult.videoCue
+      sources = lowConfidenceResult.sources
+    } else {
+      content = await requestOpenAICompatibleChat(messagesForLlm, requestId)
+      const classified = classifyIntentAndVideoCue(content)
+      intent = classified.intent
+      videoCue = classified.videoCue
+      sources = ragSources.length > 0 ? ragSources : buildRuleBasedSources(userText, intent, 'real')
+    }
 
     const durationMs = Date.now() - startedAt
     console.log(
@@ -825,6 +870,7 @@ const handleChat = async (req, res) => {
         intent,
         rag: ragUsed,
         ragHits: ragHits.length,
+        ragCandidates: ragCandidateCount,
         durationMs,
       }),
     )
