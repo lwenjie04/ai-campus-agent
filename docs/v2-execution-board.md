@@ -55,14 +55,14 @@
 | S0 | 4 | 2 | 2 | 0 | 0 | 0 | 0.3 收尾 |
 | S1 | 5 | 5 | 0 | 0 | 0 | 0 | — |
 | S2 | 5 | 0 | 5 | 0 | 0 | 0 | 等 2.1 设计稿 |
-| S3 | 5 | 3 | 2 | 0 | 0 | 0 | **3.3 回归 / 4.1** |
+| S3 | 5 | 4 | 1 | 0 | 0 | 0 | 3.4 / 2.x |
 | S4 | 6 | 2 | 3 | 0 | 0 | 1 | **4.3 开发** |
 | S5 | 4 | 0 | 0 | 0 | 0 | 4 | 等 5.1 数据 |
 | S6 | 5 | 0 | 5 | 0 | 0 | 0 | 2.1 之后 |
 | S7 | 5 | 0 | 1 | 0 | 0 | 4 | 7.1 可提前 |
-| **合计** | **39** | **12** | **18** | **0** | **0** | **9** | — |
+| **合计** | **39** | **13** | **17** | **0** | **0** | **9** | — |
 
-> 已完成：0.1、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、3.1、3.2、3.5、4.1、4.2；3.3 代码就绪待浏览器回归。4.3 可继续按依赖顺序推进。实时状态以本表为准。
+> 已完成：0.1、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、3.1、3.2、3.3、3.5、4.1、4.2。4.3 可继续按依赖顺序推进，2.x 等设计稿。实时状态以本表为准。
 
 ---
 
@@ -103,7 +103,7 @@
 | --- | --- | --- | --- | --- | --- |
 | 3.1 | 会话数据模型与存储适配 | AI-1 | ✅ | 1.5、2.5 | `src/types/conversation.ts`、`src/services/conversation-repository.ts`、`src/store/conversations.ts`、`src/utils/id.ts`。证据：`35ae6b8`；13 个会话用例覆盖空对话不入历史、回答+草稿恢复、`generating→interrupted` 落盘、容量/配额/不可用降级；type-check/lint/build 通过。**注**：2.5 属 UI 联调，数据层未依赖；`storageError` 已由 store 暴露，用户可见提示随 3.3 的界面接入 |
 | 3.2 | 迁移旧单会话缓存 | AI-1 | ✅ | 3.1 | `src/services/migrate-conversations.ts`：`session.v2` → 一条 `legacy:pending` 历史；原 key 保留；稳定 conversationId 保证幂等；pending → interrupted。证据：`b9b278a`；7 个迁移用例 + store 集成；`npm run test:unit` 30/30；type-check/lint 通过 |
-| 3.3 | 新建、历史与路由恢复 | AI-1 | 🟡 | 3.1、3.2 | 已做：`/chat/:conversationId`、`HistoryDrawer`、消息↔会话映射、首次发送后 `replace` 到详情 URL、按 ID 恢复消息与草稿、无效/越权 ID 提示并回落 `/chat/new`、新建前 `flush` 旧会话、跨标签页只刷新列表不覆盖运行中会话。证据：`3c12a46`；35 个单测通过；type-check/lint/build 通过。**剩余**：真实浏览器刷新/前进后退回归 |
+| 3.3 | 新建、历史与路由恢复 | AI-1 | ✅ | 3.1、3.2 | `/chat/:conversationId`、`HistoryDrawer`、消息↔会话映射、首次发送后 `replace`、按 ID 恢复消息与草稿、无效/越权 ID 提示并回落、跨标签页只刷新列表。浏览器回归：`npm run conversation:journey` **8/8 通过**（登录→两轮问答→刷新恢复→历史切换→草稿恢复→无效 ID→后退），证据 `server/evals/latest-conversation-journey.json`。提交：`3c12a46`、`153e61c`；55 个单测 + type-check/lint/build 通过 |
 | 3.4 | 统一登录后待执行动作 | AI-1 | 🟡 | 1.4、3.3 | `auth-intent.ts`：`intentId/type/target/createdAt/consumedAt`；同页登录只执行一次；刷新先确认；取消保留草稿 |
 | 3.5 | 账号隔离与生命周期 | AI-1 | ✅ | 3.3、3.4 | `useSessionLifecycle`：登录只接纳当前这条有内容的游客会话、退出停媒体并清空界面再切回 guest、管理员登录不跳后台；`pending-question` 24h TTL 抽成服务。证据：`91b22cb`；42 个单测（新增 7 个隔离/迁移 + 5 个 TTL）通过；type-check/lint/build 通过 |
 
@@ -206,6 +206,7 @@
 
 | 日期 | 任务 ID | 执行者 | 证据（commit / 命令 / 文件） | 备注 |
 | --- | --- | --- | --- | --- |
+| 2026-10-20 | 3.3 会话路由与历史 | AI-1 | `3c12a46` + `153e61c`；`npm run conversation:journey` 8/8；`server/evals/latest-conversation-journey.json`；`npm run test:unit` 55/55 | 真实 Chrome 回归：路由、刷新、历史、草稿、无效 ID、后退 |
 | 2026-10-20 | 1.4 权限与返回 | AI-1 | `63ae7d2`；`npm run test:unit` 55/55；`npm run lint` 0 error；`npm run type-check` 通过 | 403 与登录意图分离；外部直达无历史回落首页 |
 | 2026-10-20 | 4.2 取消传递到检索与模型 | AI-2（Codex） | `ab5455b`；`npm run test:server` 36/36；`npm run server:check` 53 模块通过；定向 ESLint 通过 | close 与超时合并；取消传递到 LightRAG/向量/LLM；四边界和一次性结算通过 |
 | 2026-10-20 | 4.1 运行身份与取消 | AI-1 | `0c5a877`；`npm run test:unit` 49/49（新增信号/取消/迟到 delta/重试/刷新 7 个）；type-check/lint/build 通过 | 4.2 的交接条件已满足 |
@@ -251,6 +252,7 @@
 | 2026-10-20 | 完成 | 4.2：客户端断开中止检索/模型上游；首段前回滚、首段后结算，正常响应不误判中断 | AI-2（Codex） |
 | 2026-10-20 | 占用 | 领取 1.4：先认领再检查守卫，范围限前端路由与页面 | AI-1 |
 | 2026-10-20 | 完成 | 1.4：未登录/无权限语义分离、`safeInternalPath`、403 无历史回落、三视角矩阵；55 用例通过 | AI-1 |
+| 2026-10-20 | 完成 | 3.3 浏览器回归：`conversation:journey` 8/8（登录、两轮会话、刷新、历史切换、草稿、无效 ID、后退） | AI-1 |
 
 ---
 
