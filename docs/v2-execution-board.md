@@ -53,14 +53,14 @@
 | Sprint | 任务 | ✅ | 🟡 | 🔵 | ⛔ | ⬜ | 当前主攻 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | S0 | 4 | 2 | 2 | 0 | 0 | 0 | 0.3 收尾 |
-| S1 | 5 | 4 | 1 | 0 | 0 | 0 | 1.4 收尾 |
+| S1 | 5 | 4 | 0 | 1 | 0 | 0 | **1.4（AI-1 已认领）** |
 | S2 | 5 | 0 | 5 | 0 | 0 | 0 | 等 2.1 设计稿 |
 | S3 | 5 | 3 | 2 | 0 | 0 | 0 | **3.3 回归 / 4.1** |
 | S4 | 6 | 2 | 3 | 0 | 0 | 1 | **4.3 开发** |
 | S5 | 4 | 0 | 0 | 0 | 0 | 4 | 等 5.1 数据 |
 | S6 | 5 | 0 | 5 | 0 | 0 | 0 | 2.1 之后 |
 | S7 | 5 | 0 | 1 | 0 | 0 | 4 | 7.1 可提前 |
-| **合计** | **39** | **11** | **19** | **0** | **0** | **9** | — |
+| **合计** | **39** | **11** | **18** | **1** | **0** | **9** | — |
 
 > 已完成：0.1、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.5、3.1、3.2、3.5、4.1、4.2；3.3 代码就绪待浏览器回归。4.3 可继续按依赖顺序推进。实时状态以本表为准。
 
@@ -84,7 +84,7 @@
 | 1.1 | 统一前端 API 地址构造 | AI-1 | ✅ | 0.4 | `src/config/app.ts` 新增 `apiUrl()`，默认根 `/api`、origin 自动补 `/api`、绝对根透传；`llm/tts/auth/community`、`MessageItem`、`AdminReviewView` 全部改走它。证据：`npm run type-check` 通过；curl 实测 `/api/health`、`/api/community/posts` 200 |
 | 1.2 | 迁移代理与来源路径 | AI-2（主）+ AI-1 | ✅ | 1.1 | 原有代理与页面路由验收保留。提交 `a9548ff`；`node --test server/tests/api-aliases.test.mjs` 1/1 通过；`npm run build` 通过（1609 模块）；`node server/scripts/check-api-preview.mjs` 通过：`/chat/new` HTML、问答 NDJSON、下载 401/403、代理登录 200；`git diff --cached --check` 通过。 |
 | 1.3 | 引入 vue-router 并拆页面壳 | AI-1 | ✅ | 1.2 | `src/router/index.ts` + `RouterView` 页面壳；路由 `/`、`/chat`、`/chat/new`、`/community`、`/community/posts/:postId`、`/admin/review`、`/admin/retrieval`、404；懒加载拆分。证据：`777a7c7`；type-check/lint/build 通过；preview 冒烟见 1.2 |
-| 1.4 | 权限、初始访问与返回 | AI-1 | 🟡 | 1.3 | 已有一版守卫：导航前恢复登录态、未登录跳 `/?login=1&redirect=…`、非管理员进后台回首页、404 页面。**剩余**：403 语义、外部进入无返回历史、登录取消循环、三视角直接 URL 回归 |
+| 1.4 | 权限、初始访问与返回 | AI-1 | 🔵 | 1.3 | **AI-1 认领 2026-10-20**；在做：403 语义、外部直达无返回历史、取消登录不循环、游客/普通/管理员三视角直接 URL 回归 |
 | 1.5 | 建立前端测试入口 | AI-1 | ✅ | 1.3 | `vitest 3.2.7` + `jsdom` + `@vue/test-utils`；`vitest.config.ts` 与 `test:unit`（threads pool）；守卫测试复用生产路由 meta、组件打桩。证据：`8c345de`；`npm run test:unit` 4 文件 / 22 用例通过。**注意**：`release:check` 尚未纳入 `test:unit`（转 7.3） |
 
 ### Sprint 2：视觉与问答主页（3–4 天）
