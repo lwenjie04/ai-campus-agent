@@ -1,6 +1,7 @@
 import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createLocalConversationRepository } from '@/services/conversation-repository'
+import { LEGACY_OWNER_SCOPE, LEGACY_SESSION_KEY } from '@/services/migrate-conversations'
 import {
   resolveOwnerScope,
   setConversationRepository,
@@ -24,6 +25,8 @@ class MemoryStorage {
   }
 }
 
+let storage = new MemoryStorage()
+
 const makeMessage = (
   role: ConversationMessage['role'],
   content: string,
@@ -44,7 +47,8 @@ const newStore = () => {
 }
 
 beforeEach(() => {
-  setConversationRepository(createLocalConversationRepository(new MemoryStorage(), { maxConversations: 5 }))
+  storage = new MemoryStorage()
+  setConversationRepository(createLocalConversationRepository(storage, { maxConversations: 5 }), storage)
 })
 
 afterEach(() => {
@@ -138,5 +142,22 @@ describe('会话 store', () => {
   it('ownerScope 由登录身份派生', () => {
     expect(resolveOwnerScope()).toBe('guest:local')
     expect(resolveOwnerScope('u_1')).toBe('user:u_1')
+  })
+
+  it('打开作用域时迁移旧缓存，旧记录不混入当前账号', () => {
+    storage.setItem(
+      LEGACY_SESSION_KEY,
+      JSON.stringify({
+        messages: [{ id: 'legacy-u1', role: 'user', content: '旧的问题', status: 'sent', createdAt: 1 }],
+      }),
+    )
+
+    const store = newStore()
+
+    expect(store.legacyMigration?.status).toBe('migrated')
+    expect(store.summaries).toHaveLength(0)
+
+    store.openScope(LEGACY_OWNER_SCOPE)
+    expect(store.summaries).toHaveLength(1)
   })
 })

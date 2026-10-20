@@ -24,7 +24,7 @@ export interface ConversationRepository {
   count(ownerScope: string): number
 }
 
-type StorageLike = {
+export type StorageLike = {
   getItem(key: string): string | null
   setItem(key: string, value: string): void
   removeItem(key: string): void
@@ -47,6 +47,9 @@ const getDefaultStorage = (): StorageLike | null => {
     return null
   }
 }
+
+// 供迁移逻辑与 store 使用同一份存储，避免测试与生产出现两套存储。
+export const getDefaultConversationStorage = (): StorageLike | null => getDefaultStorage()
 
 const conversationKey = (conversationId: string) => `${CONVERSATION_KEY_PREFIX}${conversationId}`
 

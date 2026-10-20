@@ -8,10 +8,13 @@ import {
 } from '@/types/conversation'
 import {
   createLocalConversationRepository,
+  getDefaultConversationStorage,
   type ConversationRepository,
   type SaveOutcome,
   type StorageFailureReason,
+  type StorageLike,
 } from '@/services/conversation-repository'
+import { migrateLegacySession, type LegacyMigrationResult } from '@/services/migrate-conversations'
 import { createId } from '@/utils/id'
 
 // 节流写入：输入草稿或流式更新时不每个字符都同步写 localStorage。
@@ -20,10 +23,15 @@ const TITLE_MAX_LENGTH = 20
 
 // 仓库可在测试中替换；生产默认使用浏览器 localStorage。
 let repository: ConversationRepository = createLocalConversationRepository()
+let legacyStorage: StorageLike | null = getDefaultConversationStorage()
 let persistTimer: ReturnType<typeof setTimeout> | null = null
 
-export const setConversationRepository = (next: ConversationRepository) => {
+export const setConversationRepository = (
+  next: ConversationRepository,
+  storage: StorageLike | null = getDefaultConversationStorage(),
+) => {
   repository = next
+  legacyStorage = storage
   if (persistTimer) {
     clearTimeout(persistTimer)
     persistTimer = null
@@ -57,6 +65,8 @@ export const useConversationsStore = defineStore('conversations', {
     summaries: [] as ConversationSummary[],
     active: null as Conversation | null,
     storageError: '' as '' | StorageFailureReason,
+    // 旧单会话缓存的迁移结果：3.3 据此给出“是否导入旧记录”的确认入口。
+    legacyMigration: null as LegacyMigrationResult | null,
   }),
 
   getters: {
@@ -74,6 +84,8 @@ export const useConversationsStore = defineStore('conversations', {
 
     openScope(ownerScope: string) {
       this.flush()
+      // 迁移是幂等的；每次进入新的身份空间都确认一次旧缓存状态。
+      this.legacyMigration = migrateLegacySession(repository, legacyStorage)
       this.ownerScope = ownerScope
       this.summaries = repository.list(ownerScope)
       this.active = null
