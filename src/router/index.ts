@@ -69,6 +69,12 @@ export const routes: RouteRecordRaw[] = [
     meta: { requiresAdmin: true },
   },
   {
+    // 已登录但角色不足：与“未登录”区分开，直接给 403 页面而不是弹登录框。
+    path: '/403',
+    name: 'forbidden',
+    component: () => import('@/views/ForbiddenView.vue'),
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
     component: () => import('@/views/NotFoundView.vue'),
@@ -95,8 +101,9 @@ export const installAuthGuard = (router: Router) => {
     }
 
     if (to.meta.requiresAdmin) {
+      // 未登录 → 首页登录意图；已登录但非管理员 → 403，不重复弹登录框。
       if (!authStore.loggedIn) return loginRedirect(to)
-      if (!authStore.isAdmin) return { path: '/' }
+      if (!authStore.isAdmin) return { name: 'forbidden', query: { from: to.fullPath } }
       return true
     }
 

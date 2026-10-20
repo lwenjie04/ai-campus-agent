@@ -88,6 +88,7 @@ import { computed, defineAsyncComponent, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from './store/auth'
 import { useSessionLifecycle } from './composables/useSessionLifecycle'
+import { safeInternalPath } from './router/return-to'
 
 // 登录页按需加载，首屏只加载当前路由的页面组件。
 const LoginView = defineAsyncComponent(() => import('./views/LoginView.vue'))
@@ -169,8 +170,8 @@ const handleLoginSuccess = () => {
   loginDialogVisible.value = false
 
   // 只接受站内路径，避免登录后被带到外部地址。
-  const redirect = route.query.redirect
-  if (typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//')) {
+  const redirect = safeInternalPath(route.query.redirect)
+  if (redirect) {
     router.replace(redirect)
   }
 }
