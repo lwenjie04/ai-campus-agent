@@ -59,10 +59,10 @@
 | S4 | 6 | 3 | 2 | 0 | 0 | 1 | **7.1 可提前** |
 | S5 | 4 | 0 | 0 | 0 | 0 | 4 | 等 5.1 数据 |
 | S6 | 5 | 0 | 5 | 0 | 0 | 0 | 2.1 之后 |
-| S7 | 5 | 0 | 1 | 0 | 0 | 4 | 7.1 可提前 |
-| **合计** | **39** | **15** | **15** | **0** | **0** | **9** | — |
+| S7 | 5 | 0 | 2 | 0 | 0 | 3 | 等 7.1 MySQL 验证 |
+| **合计** | **39** | **15** | **16** | **0** | **0** | **8** | — |
 
-> 已完成：0.1、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、3.1、3.2、3.3、3.4、3.5、4.1、4.2、4.3。S1/S3 已全部完成；7.1 可提前，2.x 等设计稿。实时状态以本表为准。
+> 已完成：0.1、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、3.1、3.2、3.3、3.4、3.5、4.1、4.2、4.3。S1/S3 已全部完成；7.1 数据层代码已提交，待专用 MySQL 测试库验证；2.x 等设计稿。实时状态以本表为准。
 
 ---
 
@@ -141,7 +141,7 @@
 
 | ID | 任务 | 主责 | 状态 | 依赖 | 完成判定 / 证据 |
 | --- | --- | --- | --- | --- | --- |
-| 7.1 | 请求凭据与反馈增量表 | AI-2 | ⬜ | 4.3、0.4 | `server/sql/migrations/` 新增表（只增不删）；`request-receipts.mjs`/`feedback.mjs`；MySQL 持久化，内存替代仅测试显式开启；不重跑含 `DROP TABLE` 的旧 SQL |
+| 7.1 | 请求凭据与反馈增量表 | AI-2 | 🟡 | 4.3、0.4 | 已完成：`4bd44ac`；`npm run test:server` 41/41；`npm run server:check` 58 模块；定向 ESLint 与 `git diff --check` 通过。增量 SQL 无 DROP，测试内存需显式开启。**剩余**：在专用 MySQL 测试库应用新迁移并验证 receipt/feedback 持久化与唯一约束；未验证前不开始 7.2 |
 | 7.2 | 反馈接口与操作 | AI-2（接口）+ AI-1（组件） | ⬜ | 7.1、3.4 | `POST /api/feedback` 支持 helpful/none；主体来自会话/签名 Cookie；唯一约束幂等；限频；伪造 requestId 与跨账号被拒；`MessageActions.vue` |
 | 7.3 | CI 与可重复门禁 | AI-2 | ⬜ | 1.5、4.6、5.4、6.5、7.2 | `.github/workflows/quality.yml` 合并 lint/type-check/test:unit/test:server/golden/build/journey；干净数据、固定端口、Chrome 跨平台；`release:check` 纳入单元测试 |
 | 7.4 | 目标环境验证与性能 | 共同 | ⬜ | 7.3 | 真模型/MySQL/SMTP/TTS/HTTPS/反代实测并留证；50 条金标；首字/总耗时/取消耗时/资源体积；`RELEASE_LIVE_VALIDATION_CONFIRMED` 不得伪造 |
@@ -207,6 +207,7 @@
 | 日期 | 任务 ID | 执行者 | 证据（commit / 命令 / 文件） | 备注 |
 | --- | --- | --- | --- | --- |
 | 2026-10-20 | 4.3 阶段事件与额度结算 | AI-2（Codex） | `4623976`；`npm run test:server` 37/37；`npm run server:check` 55 模块；定向 ESLint 与 `git diff --check` 通过 | start 前移至检索前；新增 retrieval/generation phase 与单次结算竞态覆盖 |
+| 2026-10-20 | 部分 | 7.1 数据层代码提交 `4bd44ac`；服务端测试 41/41，语法检查 58 模块通过 | AI-2（Codex） |
 | 2026-10-20 | 3.4 登录意图 | AI-1 | `f3920b8`；`npm run auth-intent:journey` 5/5；`server/evals/latest-auth-intent-journey.json`；`npm run test:unit` 65/65；lint/type-check/build 通过 | 浏览器回归发现并修复 `chat-detail` 未绑定 `require-login` |
 | 2026-10-20 | 3.3 会话路由与历史 | AI-1 | `3c12a46` + `153e61c`；`npm run conversation:journey` 8/8；`server/evals/latest-conversation-journey.json`；`npm run test:unit` 55/55 | 真实 Chrome 回归：路由、刷新、历史、草稿、无效 ID、后退 |
 | 2026-10-20 | 1.4 权限与返回 | AI-1 | `63ae7d2`；`npm run test:unit` 55/55；`npm run lint` 0 error；`npm run type-check` 通过 | 403 与登录意图分离；外部直达无历史回落首页 |
@@ -237,6 +238,8 @@
 | 2026-10-20 | 占用 | 领取 0.4；独占起草 `docs/api-contract-v2.md` | AI-2（Codex） |
 | 2026-10-20 | 占用 | 领取 4.3：按冻结契约前移 `start`，新增检索/生成阶段事件，并验证额度单次结算竞态 | AI-2（Codex） |
 | 2026-10-20 | 完成 | 4.3 阶段事件与额度结算；服务端全量测试 37/37，55 个模块语法检查通过 | AI-2（Codex） |
+| 2026-10-20 | 占用 | 领取 7.1：新增问答凭据与反馈数据表、MySQL 数据层和显式测试内存适配；不执行旧 DROP SQL | AI-2（Codex） |
+| 2026-10-20 | 部分 | 7.1 代码已提交；仍需专用 MySQL 测试库应用迁移并验证持久化，之后才能解锁 7.2 | AI-2（Codex） |
 | 2026-10-20 | 草案 | 完成 0.4 API/状态契约草案；`git diff --check` 通过。**剩余**：待人工签字后冻结 | AI-2（Codex） |
 | 2026-10-20 | 签字 | 人工确认 `api-contract-v2.md`；0.4 冻结，后续按契约推进 | 人工 |
 | 2026-10-20 | 占用 | 领取 1.2；检查后端 `/api` 路由与 preview 代理验证范围 | AI-2（Codex） |
