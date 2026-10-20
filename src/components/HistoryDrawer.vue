@@ -20,6 +20,7 @@
           :key="item.conversationId"
           class="history-item"
           :class="{ 'history-item--active': item.conversationId === activeId }"
+          :data-conversation-id="item.conversationId"
         >
           <button type="button" class="history-entry" @click="emit('open', item.conversationId)">
             <strong>{{ item.title || '未命名对话' }}</strong>

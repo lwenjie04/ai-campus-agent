@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "completedAt": "2026-10-20T10:38:12.659Z",
+  "mode": "isolated_mock",
+  "targetUrl": "http://127.0.0.1:4174",
+  "ok": true,
+  "steps": [
+    {
+      "name": "管理员登录",
+      "ok": true,
+      "detail": "admin"
+    },
+    {
+      "name": "首次发送进入 /chat/:id",
+      "ok": true,
+      "detail": "/chat/conv_dccfade3-623c-48c1-8be4-1b5106539a51"
+    },
+    {
+      "name": "刷新恢复会话与消息",
+      "ok": true,
+      "detail": "/chat/conv_dccfade3-623c-48c1-8be4-1b5106539a51"
+    },
+    {
+      "name": "新建对话先保存旧会话",
+      "ok": true,
+      "detail": "/chat/new (history=1)"
+    },
+    {
+      "name": "两条会话相互独立",
+      "ok": true,
+      "detail": "/chat/conv_dccfade3-623c-48c1-8be4-1b5106539a51 / /chat/conv_58006cce-1944-4af8-8f08-f94dae58a1d1"
+    },
+    {
+      "name": "历史切换恢复草稿",
+      "ok": true,
+      "detail": "这条是草稿，不发送"
+    },
+    {
+      "name": "无效会话 ID 提示并回落",
+      "ok": true,
+      "detail": "/chat/new"
+    },
+    {
+      "name": "浏览器后退仍可渲染会话",
+      "ok": true,
+      "detail": "/chat/new"
+    }
+  ]
+}
