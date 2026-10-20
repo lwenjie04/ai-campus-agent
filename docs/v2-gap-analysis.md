@@ -1,6 +1,7 @@
 # 数智校答 V2 差距分析（计划 vs 仓库现状）
 
 **分析日期**：2026-10-20  
+**状态快照**：开工前（39 项：0 ✅ / 18 🟡 / 21 ⬜）；实时进度以 [`v2-execution-board.md`](v2-execution-board.md) 为准  
 **对照基准**：[`campus-service-v2-development-plan.md`](campus-service-v2-development-plan.md)（下称“计划”）、[`interaction-flow-v2.md`](interaction-flow-v2.md)  
 **代码基线**：分支 `codex/campus-service-platform`，HEAD `237ba72`（2026-08-18 16:45）；工作区有 38 个已跟踪文件改动 + 11 个未跟踪文件，均未提交  
 **方法**：逐任务读代码与测试，结论均附 `文件:行`；无法离线验证的外部依赖（Figma、真实模型、MySQL、SMTP、TTS）单独标注，不混入“已实现”  
@@ -67,6 +68,8 @@
 | D（mobile-uniapp） | 目录从根迁到 `mobile-uniapp/src/`（旧文件显示为删除、新文件未跟踪），`tsconfig.json` 改 include | 计划明确“本次不扩展 uni-app” | **范围外**，建议单独提交或 stash，勿混入 V2 |
 
 **因此**：A 批的正确处置是 **0.1 固定基线**——先原样存档（提交到 `codex/` 分支或打 WIP commit），再由 2.1 决定是否整体替换视觉；B 批可作为 4.4/A15 的既有实现保留；C 批是 0.2/0.4 的素材；D 批应隔离。
+
+> **处置结果（2026-10-20）**：A→`61756be`、B→`364b6b8`、C→`46d754d`、D→`4af3c89`；工作区已清空，详见 [`development-baseline-v2.md`](development-baseline-v2.md)。
 
 ---
 
