@@ -517,11 +517,13 @@ export const getKnowledgeBaseEntryById = (id) => {
 export const searchKnowledgeBase = async (query, options = {}) => {
   const limit = options.limit ?? 3
   const minScore = options.minScore ?? RAG_ROUTE_MIN_SCORE
+  if (options.signal?.aborted) throw options.signal.reason
   const q = normalize(query)
   if (!q) return []
 
   const officialKnowledge = loadKnowledgeBase()
   const communityKnowledge = options.includeCommunity === false ? [] : await loadCommunityKnowledge()
+  if (options.signal?.aborted) throw options.signal.reason
   const allEntries = [...officialKnowledge, ...communityKnowledge]
   const terms = extractQueryTerms(q)
   const preferredCategories = inferQueryCategories(query)
@@ -555,11 +557,15 @@ export const searchKnowledgeBase = async (query, options = {}) => {
     try {
       vectorHits = await searchVectorIndex(query, {
         limit: Math.max(limit, VECTOR_SEARCH_LIMIT),
+        signal: options.signal,
       })
-    } catch {
+    } catch (error) {
+      if (options.signal?.aborted) throw options.signal.reason || error
       vectorHits = []
     }
   }
+
+  if (options.signal?.aborted) throw options.signal.reason
 
   const finalHits = rerankHybridHits(mergeHybridHits(keywordHits, vectorHits))
     .filter((hit) => hit.score >= minScore)

@@ -17,6 +17,7 @@ import { checkLightRagHealth, formatLightragContext, lightragContextToSources, q
 import { handleTtsRoute } from './tts.mjs'
 import { beginChatAccess } from './guest-quota.mjs'
 import { requireAdmin } from './session.mjs'
+import { createChatCancellation, createClientDisconnectError } from './chat-cancellation.mjs'
 
 // 读取 .env 文件并注入到 process.env。
 // 这里没有依赖 dotenv，而是自己做了一个极简解析器，便于保持后端零额外依赖。
@@ -342,12 +343,32 @@ const requestOpenAICompatibleChat = async (messages, requestId) => {
 
 // 流式模型调用。
 // 这里按 OpenAI 兼容 SSE 流格式逐段读取 delta，并实时回调给外层。
+const waitOrAbort = (milliseconds, signal) =>
+  new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(signal.reason || createClientDisconnectError())
+      return
+    }
+
+    const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort)
+      resolve()
+    }, milliseconds)
+    const onAbort = () => {
+      clearTimeout(timer)
+      signal?.removeEventListener('abort', onAbort)
+      reject(signal.reason || createClientDisconnectError())
+    }
+    signal?.addEventListener('abort', onAbort, { once: true })
+  })
+
 const requestOpenAICompatibleChatStream = async (messages, requestId, handlers = {}) => {
   if (PROVIDER_MODE === 'mock') {
     const content = mockChatResult(messages).content
     for (const chunk of content.match(/.{1,12}/gs) || [content]) {
+      if (handlers.signal?.aborted) throw handlers.signal.reason || createClientDisconnectError()
       handlers.onDelta?.(chunk)
-      await new Promise((resolve) => setTimeout(resolve, 2))
+      await waitOrAbort(2, handlers.signal)
     }
     return content
   }
@@ -359,10 +380,19 @@ const requestOpenAICompatibleChatStream = async (messages, requestId, handlers =
 
   const controller = new AbortController()
   let timeout
+  let timeoutTriggered = false
   const refreshIdleTimeout = () => {
     clearTimeout(timeout)
-    timeout = setTimeout(() => controller.abort(), LLM_STREAM_IDLE_TIMEOUT_MS)
+    timeout = setTimeout(() => {
+      timeoutTriggered = true
+      controller.abort()
+    }, LLM_STREAM_IDLE_TIMEOUT_MS)
   }
+  const relayClientAbort = () =>
+    controller.abort(handlers.signal?.reason || createClientDisconnectError())
+
+  if (handlers.signal?.aborted) relayClientAbort()
+  else handlers.signal?.addEventListener('abort', relayClientAbort, { once: true })
   refreshIdleTimeout()
 
   try {
@@ -454,10 +484,13 @@ const requestOpenAICompatibleChatStream = async (messages, requestId, handlers =
 
     return trimmed
   } catch (error) {
-    if (error?.name === 'AbortError') {
-      const err = new Error('LLM request timeout')
-      err.code = 'LLM_TIMEOUT'
-      throw err
+    if (handlers.signal?.aborted) {
+      throw handlers.signal.reason || createClientDisconnectError()
+    }
+    if (timeoutTriggered || error?.name === 'AbortError') {
+      const timeoutError = new Error('LLM request timeout')
+      timeoutError.code = 'LLM_TIMEOUT'
+      throw timeoutError
     }
     if (!error?.code && (error?.name === 'TypeError' || error?.cause)) {
       const err = new Error('LLM network request failed')
@@ -467,6 +500,7 @@ const requestOpenAICompatibleChatStream = async (messages, requestId, handlers =
     throw error
   } finally {
     clearTimeout(timeout)
+    handlers.signal?.removeEventListener('abort', relayClientAbort)
   }
 }
 
@@ -570,9 +604,29 @@ const handleChatStream = async (req, res) => {
   const startedAt = Date.now()
   let chatAccess = null
   let recoverySources = []
+  const settleQuota = (outcome) => {
+    if (!chatAccess) return
+    chatAccess[outcome]()
+  }
+  let quotaSettled = false
+  const cancellation = createChatCancellation(req, res, (outcome) => {
+    if (quotaSettled || !chatAccess) return
+    quotaSettled = true
+    settleQuota(outcome)
+  })
+  const signal = cancellation.signal
+  const ensureClientConnected = () => {
+    if (signal.aborted) throw signal.reason || createClientDisconnectError()
+  }
+  const writeEvent = (payload) => {
+    if (signal.aborted || res.destroyed || res.writableEnded) return false
+    writeNdjson(res, payload)
+    return true
+  }
 
   try {
     const body = await parseJsonBody(req)
+    ensureClientConnected()
     const validationError = validateMessages(body.messages)
     if (validationError) {
       return json(res, 400, {
@@ -582,6 +636,7 @@ const handleChatStream = async (req, res) => {
     }
 
     chatAccess = beginChatAccess(req)
+    ensureClientConnected()
 
     // 先确保 system prompt 存在，再提取最后一条用户问题做 RAG 检索。
     const messages = ensureSystemPrompt(body.messages)
@@ -601,6 +656,7 @@ const handleChatStream = async (req, res) => {
           onlyNeedContext: true,
           includeChunkContent: true,
           timeoutMs: CHAT_LIGHTRAG_TIMEOUT_MS,
+          signal,
         })
         ragContext = formatLightragContext(lightragResult?.response, lightragResult?.mode)
         try {
@@ -623,6 +679,7 @@ const handleChatStream = async (req, res) => {
           ragUsed = 'lightrag'
         }
       } catch (err) {
+        if (signal.aborted) throw signal.reason || createClientDisconnectError()
         console.log(
           JSON.stringify({
             level: 'warn',
@@ -637,13 +694,14 @@ const handleChatStream = async (req, res) => {
 
     if (!ragContext) {
       // 回退到关键词 + 向量混合检索
-      const ragCandidates = await searchKnowledgeBase(userText, { limit: 3 })
+      const ragCandidates = await searchKnowledgeBase(userText, { limit: 3, signal })
       ragCandidateCount = ragCandidates.length
       ragHits = filterConfidentRagHits(ragCandidates)
       ragSources = ragHitsToSources(ragHits)
       ragContext = buildRagContext(ragHits)
       if (ragHits.length > 0) ragUsed = 'keyword'
     }
+    ensureClientConnected()
     recoverySources = ragSources
     const useLowConfidenceResponse = !ragContext && !isSmallTalk(userText)
     if (useLowConfidenceResponse) ragUsed = 'low_confidence'
@@ -670,7 +728,7 @@ const handleChatStream = async (req, res) => {
       ...chatAccess.responseHeaders,
     })
 
-    writeNdjson(res, { type: 'start', requestId })
+    writeEvent({ type: 'start', requestId })
 
     // 低置信度时直接返回可解释的安全答复，不让模型基于无关资料猜测。
     // 其他情况保持原有模型流式生成路径。
@@ -678,11 +736,18 @@ const handleChatStream = async (req, res) => {
     const content = lowConfidenceResult
       ? lowConfidenceResult.content
       : await requestOpenAICompatibleChatStream(messagesForLlm, requestId, {
+          signal,
           onDelta(delta) {
-            writeNdjson(res, { type: 'delta', delta })
+            if (!delta || signal.aborted || res.destroyed || res.writableEnded) return
+            cancellation.markFirstDelta()
+            writeEvent({ type: 'delta', delta })
           },
         })
-    if (lowConfidenceResult) writeNdjson(res, { type: 'delta', delta: content })
+    if (lowConfidenceResult) {
+      cancellation.markFirstDelta()
+      writeEvent({ type: 'delta', delta: content })
+    }
+    ensureClientConnected()
 
     // sources 优先使用真实 RAG 命中；如果没命中，再退回规则型来源。
     const classified = lowConfidenceResult || classifyIntentAndVideoCue(content)
@@ -692,7 +757,7 @@ const handleChatStream = async (req, res) => {
         ? ragSources
         : buildRuleBasedSources(userText, classified.intent, 'real')
 
-    writeNdjson(res, {
+    writeEvent({
       type: 'meta',
       content,
       intent: classified.intent,
@@ -700,8 +765,9 @@ const handleChatStream = async (req, res) => {
       sources,
       requestId,
     })
-    writeNdjson(res, { type: 'done' })
-    chatAccess.commit()
+    writeEvent({ type: 'done' })
+    cancellation.settle('commit')
+    cancellation.markResponseFinished()
     res.end()
 
     const durationMs = Date.now() - startedAt
@@ -719,7 +785,12 @@ const handleChatStream = async (req, res) => {
       }),
     )
   } catch (error) {
-    chatAccess?.rollback()
+    if (signal.aborted || error?.code === 'CLIENT_DISCONNECTED') {
+      cancellation.settle('rollback')
+      cancellation.dispose()
+      return
+    }
+    settleQuota('rollback')
     // 流式接口分两种错误场景：
     // 1. 还没写响应头：直接返回普通 JSON 错误
     // 2. 已经开始流式输出：继续写一条 error 事件，再结束响应
@@ -743,11 +814,12 @@ const handleChatStream = async (req, res) => {
     )
 
     if (res.headersSent) {
-      writeNdjson(res, {
+      writeEvent({
         type: 'error',
         error: buildChatError(code, recoverySources),
         requestId,
       })
+      cancellation.markResponseFinished()
       return res.end()
     }
 
@@ -760,6 +832,7 @@ const handleChatStream = async (req, res) => {
           ? 502
           : 500
 
+    cancellation.dispose()
     return json(res, statusCode, {
       error: buildChatError(code, recoverySources),
       requestId,

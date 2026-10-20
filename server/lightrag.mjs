@@ -1,4 +1,5 @@
 import './env-loader.mjs'
+import { createClientDisconnectError } from './chat-cancellation.mjs'
 
 const trimTrailingSlash = (value) => String(value || '').replace(/\/+$/g, '')
 
@@ -36,7 +37,16 @@ const buildHeaders = () => {
 
 export const requestLightRag = async (endpoint, payload, options = {}) => {
   const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), options.timeoutMs || LIGHTRAG_CONFIG.timeoutMs)
+  let timeoutTriggered = false
+  const timeout = setTimeout(() => {
+    timeoutTriggered = true
+    controller.abort()
+  }, options.timeoutMs || LIGHTRAG_CONFIG.timeoutMs)
+  const relayClientAbort = () =>
+    controller.abort(options.signal?.reason || createClientDisconnectError())
+
+  if (options.signal?.aborted) relayClientAbort()
+  else options.signal?.addEventListener('abort', relayClientAbort, { once: true })
 
   try {
     const resp = await fetch(buildUrl(endpoint), {
@@ -64,7 +74,10 @@ export const requestLightRag = async (endpoint, payload, options = {}) => {
 
     return data
   } catch (error) {
-    if (error?.name === 'AbortError') {
+    if (options.signal?.aborted) {
+      throw options.signal.reason || createClientDisconnectError()
+    }
+    if (timeoutTriggered || error?.name === 'AbortError') {
       const err = new Error('LightRAG request timeout')
       err.code = 'LIGHTRAG_TIMEOUT'
       throw err
@@ -72,6 +85,7 @@ export const requestLightRag = async (endpoint, payload, options = {}) => {
     throw error
   } finally {
     clearTimeout(timeout)
+    options.signal?.removeEventListener('abort', relayClientAbort)
   }
 }
 
@@ -119,6 +133,7 @@ export const queryLightRag = async (query, options = {}) => {
 
   return requestLightRag(LIGHTRAG_CONFIG.queryEndpoint, payload, {
     timeoutMs: options.timeoutMs,
+    signal: options.signal,
   })
 }
 

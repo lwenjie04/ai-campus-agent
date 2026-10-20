@@ -125,9 +125,17 @@ const createOpenAICompatibleEmbeddingClient = () => {
     throw error
   }
 
-  return async (text) => {
+  return async (text, options = {}) => {
     const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), EMBEDDING_TIMEOUT_MS)
+    let timeoutTriggered = false
+    const timer = setTimeout(() => {
+      timeoutTriggered = true
+      controller.abort()
+    }, EMBEDDING_TIMEOUT_MS)
+    const relayClientAbort = () => controller.abort(options.signal?.reason)
+
+    if (options.signal?.aborted) relayClientAbort()
+    else options.signal?.addEventListener('abort', relayClientAbort, { once: true })
 
     let response
     try {
@@ -144,7 +152,8 @@ const createOpenAICompatibleEmbeddingClient = () => {
         signal: controller.signal,
       })
     } catch (error) {
-      if (error?.name === 'AbortError') {
+      if (options.signal?.aborted) throw options.signal.reason || error
+      if (timeoutTriggered || error?.name === 'AbortError') {
         const timeoutError = new Error(`VECTOR_EMBEDDING_TIMEOUT:${EMBEDDING_TIMEOUT_MS}`)
         timeoutError.code = 'VECTOR_EMBEDDING_TIMEOUT'
         throw timeoutError
@@ -152,6 +161,7 @@ const createOpenAICompatibleEmbeddingClient = () => {
       throw error
     } finally {
       clearTimeout(timer)
+      options.signal?.removeEventListener('abort', relayClientAbort)
     }
 
     const payload = await response.json().catch(() => ({}))
@@ -216,7 +226,7 @@ export const embedText = async (text, options = {}) => {
     if (!openAICompatibleEmbedding) {
       openAICompatibleEmbedding = createOpenAICompatibleEmbeddingClient()
     }
-    return openAICompatibleEmbedding(normalized)
+    return openAICompatibleEmbedding(normalized, options)
   }
 
   const error = new Error(`UNSUPPORTED_VECTOR_PROVIDER:${provider}`)
