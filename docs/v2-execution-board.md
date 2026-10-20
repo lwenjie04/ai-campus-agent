@@ -53,16 +53,16 @@
 | Sprint | 任务 | ✅ | 🟡 | 🔵 | ⛔ | ⬜ | 当前主攻 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | S0 | 4 | 2 | 2 | 0 | 0 | 0 | 0.3 收尾 |
-| S1 | 5 | 3 | 1 | 0 | 0 | 1 | 1.4 / 1.5 |
+| S1 | 5 | 4 | 1 | 0 | 0 | 0 | 1.4 收尾 |
 | S2 | 5 | 0 | 5 | 0 | 0 | 0 | 等 2.1 设计稿 |
-| S3 | 5 | 0 | 1 | 0 | 0 | 4 | 3.1 可开工 |
-| S4 | 6 | 0 | 3 | 0 | 1 | 2 | 4.1 阻塞；4.3 等 AI-2 |
+| S3 | 5 | 1 | 1 | 0 | 0 | 3 | **3.2 / 3.3 / 3.5** |
+| S4 | 6 | 0 | 3 | 0 | 1 | 2 | 4.1 等 3.5；4.3 等 AI-2 |
 | S5 | 4 | 0 | 0 | 0 | 0 | 4 | 等 5.1 数据 |
 | S6 | 5 | 0 | 5 | 0 | 0 | 0 | 2.1 之后 |
 | S7 | 5 | 0 | 1 | 0 | 0 | 4 | 7.1 可提前 |
-| **合计** | **39** | **5** | **18** | **0** | **1** | **15** | — |
+| **合计** | **39** | **7** | **18** | **0** | **1** | **13** | — |
 
-> 已完成：0.1、0.4（AI-2）、1.1、1.2（AI-2）、1.3。⛔ 目前只有 4.1（依赖 3.5）。差异说明见差距分析，实时状态以本表为准。
+> 已完成：0.1、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.5、3.1。⛔ 仍为 4.1（等 3.3/3.5）。实时状态以本表为准。
 
 ---
 
@@ -85,7 +85,7 @@
 | 1.2 | 迁移代理与来源路径 | AI-2（主）+ AI-1 | ✅ | 1.1 | 原有代理与页面路由验收保留。提交 `a9548ff`；`node --test server/tests/api-aliases.test.mjs` 1/1 通过；`npm run build` 通过（1609 模块）；`node server/scripts/check-api-preview.mjs` 通过：`/chat/new` HTML、问答 NDJSON、下载 401/403、代理登录 200；`git diff --cached --check` 通过。 |
 | 1.3 | 引入 vue-router 并拆页面壳 | AI-1 | ✅ | 1.2 | `src/router/index.ts` + `RouterView` 页面壳；路由 `/`、`/chat`、`/chat/new`、`/community`、`/community/posts/:postId`、`/admin/review`、`/admin/retrieval`、404；懒加载拆分。证据：`777a7c7`；type-check/lint/build 通过；preview 冒烟见 1.2 |
 | 1.4 | 权限、初始访问与返回 | AI-1 | 🟡 | 1.3 | 已有一版守卫：导航前恢复登录态、未登录跳 `/?login=1&redirect=…`、非管理员进后台回首页、404 页面。**剩余**：403 语义、外部进入无返回历史、登录取消循环、三视角直接 URL 回归 |
-| 1.5 | 建立前端测试入口 | AI-1 | ⬜ | 1.3 | 新增 `vitest` + `vitest.config.ts` + `test:unit`；至少覆盖路由/守卫/会话迁移；验证：`npm run test:unit` 独立通过，`release:check` 是否纳入写清楚 |
+| 1.5 | 建立前端测试入口 | AI-1 | ✅ | 1.3 | `vitest 3.2.7` + `jsdom` + `@vue/test-utils`；`vitest.config.ts` 与 `test:unit`（threads pool）；守卫测试复用生产路由 meta、组件打桩。证据：`8c345de`；`npm run test:unit` 4 文件 / 22 用例通过。**注意**：`release:check` 尚未纳入 `test:unit`（转 7.3） |
 
 ### Sprint 2：视觉与问答主页（3–4 天）
 
@@ -101,7 +101,7 @@
 
 | ID | 任务 | 主责 | 状态 | 依赖 | 完成判定 / 证据 |
 | --- | --- | --- | --- | --- | --- |
-| 3.1 | 会话数据模型与存储适配 | AI-1 | ⬜ | 1.5、2.5 | `conversationId/messageId/ownerScope/schemaVersion/draft/status` 落地；localStorage 容量上限 + 节流写 + 失败提示；空会话不入历史 |
+| 3.1 | 会话数据模型与存储适配 | AI-1 | ✅ | 1.5、2.5 | `src/types/conversation.ts`、`src/services/conversation-repository.ts`、`src/store/conversations.ts`、`src/utils/id.ts`。证据：`35ae6b8`；13 个会话用例覆盖空对话不入历史、回答+草稿恢复、`generating→interrupted` 落盘、容量/配额/不可用降级；type-check/lint/build 通过。**注**：2.5 属 UI 联调，数据层未依赖；`storageError` 已由 store 暴露，用户可见提示随 3.3 的界面接入 |
 | 3.2 | 迁移旧单会话缓存 | AI-1 | ⬜ | 3.1 | 旧 `session.v2` → 一条历史，幂等；保留原副本；无可靠 owner 标 legacy 待确认；有 Vitest |
 | 3.3 | 新建、历史与路由恢复 | AI-1 | ⬜ | 3.1、3.2 | 首次发送才 `replace` 到 `/chat/:id`；历史/草稿按身份恢复；跨标签页更新不覆盖运行中会话 |
 | 3.4 | 统一登录后待执行动作 | AI-1 | 🟡 | 1.4、3.3 | `auth-intent.ts`：`intentId/type/target/createdAt/consumedAt`；同页登录只执行一次；刷新先确认；取消保留草稿 |
@@ -181,7 +181,7 @@
 | D-3 | `TTS_AUTH_TOKEN` 共享密钥是否删除 | 4.5、7.4 | ⛔ 待决定 | 人工 + AI-2 |
 | D-4 | `mobile-uniapp/src` 迁移是否单独提交 | 0.1、仓库整洁 | ✅ 已单独提交 `4af3c89` | 人工 |
 | D-5 | `src/project-text/exports/` 261 个 JSON（0.26 MB）是否移出 | 仓库整洁 | ⬜ 未处理 | 人工 |
-| D-6 | **4.1 依赖未就绪**：3.5（账号隔离）与 3.1/3.3（会话模型/路由）仍是 ⬜；前端没有 `ownerScope`/`conversationId`/`runId`，无法做回写校验 | 4.1、4.2、4.5 | ⛔ 阻塞中 | AI-1 先做 3.1 → 3.3 → 3.5 |
+| D-6 | **4.1 依赖未就绪**：3.1（会话模型）已完成；仍缺 3.3（会话路由/历史）与 3.5（账号隔离/生命周期），前端尚无可运行的 `ownerScope` 运行态 | 4.1、4.2、4.5 | ⛔ 阻塞中（已解除一半） | AI-1 先做 3.3 → 3.5 |
 
 ---
 
@@ -191,6 +191,8 @@
 
 | 日期 | 任务 ID | 执行者 | 证据（commit / 命令 / 文件） | 备注 |
 | --- | --- | --- | --- | --- |
+| 2026-10-20 | 3.1 会话数据模型 | AI-1 | `35ae6b8`；`npm run type-check`；`npm run test:unit` 22/22（其中会话 13 个）；`npm run build` 通过 | 数据层完成；`storageError` 的用户可见提示在 3.3 接入 |
+| 2026-10-20 | 1.5 测试入口 | AI-1 | `8c345de`；`npm run test:unit` 4 文件 / 22 用例通过；`lint`/`type-check`/`build` 通过 | `release:check` 尚未纳入 `test:unit`，转 7.3 |
 | 2026-10-20 | 1.2 迁移代理与来源路径 | AI-2（Codex） | `a9548ff`；`node --test server/tests/api-aliases.test.mjs` 1/1；`npm run build` 1609 模块通过；`node server/scripts/check-api-preview.mjs` 各项通过 | 通过 preview 验证流式、下载权限与登录代理 |
 | 2026-10-20 | 0.4 定义状态/API/契约 | AI-2（Codex）+ 人工签字 | `de0f47c`；`git diff --cached --check` 通过；`git show --check --stat HEAD` 无空白错误 | 契约经人工确认冻结 |
 | 2026-10-20 | 0.1 固定基线 | AI-1 | 5 个归档提交 `4af3c89`/`61756be`/`364b6b8`/`46d754d`/`73f4d21`；`docs/development-baseline-v2.md` | 49 项改动全部归档，工作区干净 |
@@ -215,6 +217,9 @@
 | 2026-10-20 | 占用 | 领取 1.2；检查后端 `/api` 路由与 preview 代理验证范围 | AI-2（Codex） |
 | 2026-10-20 | 完成 | 1.2 后端 `/api` 别名契约测试及 preview 流式、下载鉴权、登录代理验证 | AI-2（Codex） |
 | 2026-10-20 | 阻塞 | 4.1 依赖 3.5/3.1 未就绪，未写代码；登记 D-6，4.2 同步等待 | AI-1 |
+| 2026-10-20 | 完成 | 1.5 测试入口：vitest 3.2.7 + jsdom，`test:unit` 22 用例；守卫测试改用生产路由 meta + 组件打桩 | AI-1 |
+| 2026-10-20 | 完成 | 3.1 会话模型与存储适配：类型、owner 分区仓库、节流 store、13 个用例 | AI-1 |
+| 2026-10-20 | 解除 | D-6 解除一半：3.1 ✅；4.1 仍需 3.3、3.5 | AI-1 |
 
 ---
 
