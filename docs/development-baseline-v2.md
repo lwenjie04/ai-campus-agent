@@ -51,11 +51,11 @@
 | `npm run rag:test:service` | ✅ 20/20，top1 100%，阈值 90% | 金标仍为 20 条 |
 | `node server/tests/rag-confidence.test.mjs` | ✅ 2/2 | 进程内直跑 |
 | `node server/index.mjs` + curl | ✅ `/api/health`、`/health`、`/api/community/posts`、`/community/posts` 均 200；`/api/unknown` 返回 JSON 404；`/api/chat/stream` 返回 `start → delta×N → meta → done` | 端口 3100、`LLM_PROVIDER_MODE=mock` |
+| `npm run build` | ✅ 通过（一次沙箱外执行） | 1590 模块，7.36s；产物检查：无 `/api/api`，生产包 `apiBaseUrl` 解析为 `/api` |
 | `npm run test:server` | ⛔ 环境阻断 | `node --test` 为每个文件 spawn 子进程，沙箱返回 `EPERM`；**不是用例失败** |
-| `npm run build` / `build-only` | ⛔ 环境阻断 | Vite 加载配置时 esbuild/vite 需 spawn 子进程，`EPERM`；需在普通终端或 CI 执行 |
-| `npm run service:journey` | 未执行 | 依赖 build 与 Chrome，需在上述环境补跑 |
+| `npm run service:journey` | 未执行 | 依赖浏览器与多进程，需在 CI 或普通终端补跑 |
 
-> 因此本基线**不能宣称“31/31 后端测试通过”与“构建通过”**；这两项是 0.3 的剩余动作。
+> 因此本基线**不能宣称“31/31 后端测试通过”与“浏览器旅程通过”**；这两项是 0.3 的剩余动作。构建已单独通过，但构建产物尚未在预览服务器上做 `/chat/new` 刷新实测。
 
 ---
 
