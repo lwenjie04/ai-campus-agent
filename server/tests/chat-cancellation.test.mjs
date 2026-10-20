@@ -84,3 +84,26 @@ test('a normally finished response is not reported as interrupted and commits on
   assert.equal(cancellation.signal.aborted, false)
   assert.deepEqual(settlements, ['commit'])
 })
+
+test('completion and disconnect racing after the first delta settle quota once', () => {
+  for (const firstEvent of ['completion', 'disconnect']) {
+    const settlements = []
+    const { res, cancellation } = makeConnection((outcome) => settlements.push(outcome))
+    cancellation.markFirstDelta()
+
+    if (firstEvent === 'completion') {
+      cancellation.settle('commit')
+      cancellation.markResponseFinished()
+      res.writableFinished = true
+      res.emit('finish')
+      res.emit('close')
+      cancellation.settle('rollback')
+    } else {
+      res.emit('close')
+      cancellation.settle('commit')
+    }
+
+    assert.deepEqual(settlements, ['commit'], `${firstEvent} should win exactly once`)
+    assert.equal(cancellation.signal.aborted, firstEvent === 'disconnect')
+  }
+})

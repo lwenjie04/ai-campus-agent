@@ -604,15 +604,8 @@ const handleChatStream = async (req, res) => {
   const startedAt = Date.now()
   let chatAccess = null
   let recoverySources = []
-  const settleQuota = (outcome) => {
-    if (!chatAccess) return
-    chatAccess[outcome]()
-  }
-  let quotaSettled = false
   const cancellation = createChatCancellation(req, res, (outcome) => {
-    if (quotaSettled || !chatAccess) return
-    quotaSettled = true
-    settleQuota(outcome)
+    if (chatAccess) chatAccess[outcome]()
   })
   const signal = cancellation.signal
   const ensureClientConnected = () => {
@@ -636,6 +629,23 @@ const handleChatStream = async (req, res) => {
     }
 
     chatAccess = beginChatAccess(req)
+    ensureClientConnected()
+
+    // Reserve quota first, then acknowledge the request before starting retrieval.
+    res.writeHead(200, {
+      'Content-Type': 'application/x-ndjson; charset=utf-8',
+      'Cache-Control': 'no-cache, no-transform',
+      Connection: 'keep-alive',
+      'Access-Control-Allow-Origin': ALLOW_ORIGIN,
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      Vary: 'Origin',
+      'X-Accel-Buffering': 'no',
+      ...chatAccess.responseHeaders,
+    })
+    writeEvent({ type: 'start', requestId })
+    writeEvent({ type: 'phase', phase: 'retrieval', requestId })
     ensureClientConnected()
 
     // 先确保 system prompt 存在，再提取最后一条用户问题做 RAG 检索。
@@ -714,25 +724,10 @@ const handleChatStream = async (req, res) => {
           ? [...messages, { role: 'system', content: ragContext }]
           : messages
 
-    // 建立流式响应头，告诉浏览器这是持续输出的数据流。
-    res.writeHead(200, {
-      'Content-Type': 'application/x-ndjson; charset=utf-8',
-      'Cache-Control': 'no-cache, no-transform',
-      Connection: 'keep-alive',
-      'Access-Control-Allow-Origin': ALLOW_ORIGIN,
-      'Access-Control-Allow-Credentials': 'true',
-      'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      Vary: 'Origin',
-      'X-Accel-Buffering': 'no',
-      ...chatAccess.responseHeaders,
-    })
-
-    writeEvent({ type: 'start', requestId })
-
     // 低置信度时直接返回可解释的安全答复，不让模型基于无关资料猜测。
     // 其他情况保持原有模型流式生成路径。
     const lowConfidenceResult = useLowConfidenceResponse ? buildLowConfidenceResult(userText) : null
+    if (!lowConfidenceResult) writeEvent({ type: 'phase', phase: 'generation', requestId })
     const content = lowConfidenceResult
       ? lowConfidenceResult.content
       : await requestOpenAICompatibleChatStream(messagesForLlm, requestId, {
@@ -765,7 +760,7 @@ const handleChatStream = async (req, res) => {
       sources,
       requestId,
     })
-    writeEvent({ type: 'done' })
+    writeEvent({ type: 'done', requestId })
     cancellation.settle('commit')
     cancellation.markResponseFinished()
     res.end()
@@ -790,7 +785,7 @@ const handleChatStream = async (req, res) => {
       cancellation.dispose()
       return
     }
-    settleQuota('rollback')
+    cancellation.settle('rollback')
     // 流式接口分两种错误场景：
     // 1. 还没写响应头：直接返回普通 JSON 错误
     // 2. 已经开始流式输出：继续写一条 error 事件，再结束响应

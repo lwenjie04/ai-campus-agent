@@ -86,9 +86,19 @@ test('V2 /api aliases preserve health, chat stream, login, and download authoriz
     assert.match(chatResponse.headers.get('content-type') || '', /application\/x-ndjson/)
     const events = await parseNdjson(chatResponse)
     assert.equal(events[0]?.type, 'start')
+    assert.equal(events[1]?.type, 'phase')
+    assert.equal(events[1]?.phase, 'retrieval')
+    const generationPhase = events.findIndex(
+      (event) => event.type === 'phase' && event.phase === 'generation',
+    )
+    const firstDelta = events.findIndex((event) => event.type === 'delta')
+    assert.ok(generationPhase > 1, 'generation phase should follow retrieval')
+    assert.ok(firstDelta > generationPhase, 'model output should follow generation phase')
     assert.ok(events.some((event) => event.type === 'delta'))
     assert.equal(events.at(-1)?.type, 'done')
     assert.ok(events[0]?.requestId)
+    assert.ok(events[1]?.requestId)
+    assert.ok(events.at(-1)?.requestId)
 
     const anonymousDownload = await fetch(`${baseUrl}/api/kb/download?id=not-a-real-file`)
     assert.equal(anonymousDownload.status, 401)

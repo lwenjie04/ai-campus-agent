@@ -84,8 +84,9 @@ test('chat uses a safe response for weak retrieval candidates while retaining st
     const weakEvents = await readNdjson(weakStreamResponse)
     assert.deepEqual(
       weakEvents.map((event) => event.type),
-      ['start', 'delta', 'meta', 'done'],
+      ['start', 'phase', 'delta', 'meta', 'done'],
     )
+    assert.equal(weakEvents[1]?.phase, 'retrieval')
     const weakMeta = weakEvents.find((event) => event.type === 'meta')
     assert.match(weakMeta.content, /没有检索到.*足够匹配/)
     assert.deepEqual(weakMeta.sources, [])
