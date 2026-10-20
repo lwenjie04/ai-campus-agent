@@ -56,13 +56,13 @@
 | S1 | 5 | 5 | 0 | 0 | 0 | 0 | — |
 | S2 | 5 | 0 | 5 | 0 | 0 | 0 | 等 2.1 设计稿 |
 | S3 | 5 | 5 | 0 | 0 | 0 | 0 | — |
-| S4 | 6 | 2 | 3 | 0 | 0 | 1 | **4.3 开发** |
+| S4 | 6 | 3 | 2 | 0 | 0 | 1 | **7.1 可提前** |
 | S5 | 4 | 0 | 0 | 0 | 0 | 4 | 等 5.1 数据 |
 | S6 | 5 | 0 | 5 | 0 | 0 | 0 | 2.1 之后 |
 | S7 | 5 | 0 | 1 | 0 | 0 | 4 | 7.1 可提前 |
-| **合计** | **39** | **14** | **16** | **0** | **0** | **9** | — |
+| **合计** | **39** | **15** | **15** | **0** | **0** | **9** | — |
 
-> 已完成：0.1、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、3.1、3.2、3.3、3.4、3.5、4.1、4.2。S1/S3 已全部完成；4.3 可继续，2.x 等设计稿。实时状态以本表为准。
+> 已完成：0.1、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、3.1、3.2、3.3、3.4、3.5、4.1、4.2、4.3。S1/S3 已全部完成；7.1 可提前，2.x 等设计稿。实时状态以本表为准。
 
 ---
 
@@ -113,7 +113,7 @@
 | --- | --- | --- | --- | --- | --- |
 | 4.1 | 前端请求身份与取消 | AI-1 | ✅ | 3.5 | `streamChat(..., signal)`（fetch + Mock 均响应取消）；`activeRun` 绑定 `ownerScope/conversationId/assistantMessageId/runId`，迟到回调校验失败即丢弃；停止/切会话/刷新保留文本并标 `interrupted`；重试复用原问题与回答位置。证据：`0c5a877`；`npm run test:unit` 49/49（新增 7）；type-check/lint/build 通过 |
 | 4.2 | 取消传递到检索与模型 | AI-2 | ✅ | 4.1（按人工决定可先行） | `ab5455b`；`npm run test:server` 36/36；`npm run server:check` 53 模块通过；定向 ESLint 通过。req/res/socket 断开与超时信号合并；LightRAG、向量检索和模型流接收取消信号；首段前回滚、断开且首段后结算；正常 finish 不报中断；四个边界测试通过 |
-| 4.3 | 阶段事件与额度结算 | AI-2 | 🟡 | 4.2、0.4 | 新增 `phase` 事件、`start` 在检索前到达；settled 只结算一次；取消/完成竞态有测试；前端以服务端为准 |
+| 4.3 | 阶段事件与额度结算 | AI-2 | ✅ | 4.2、0.4 | `4623976`；`npm run test:server` 37/37；`npm run server:check` 55 模块通过；定向 ESLint、`git diff --check` 通过。`start` 在检索前；发出真实 retrieval/generation phase；正常完成与断开竞态只结算一次 |
 | 4.4 | 来源元数据统一适配 | AI-2（主）+ AI-1（类型/展示） | 🟡 | 1.2、2.3 | 统一适配器产出 `sourceId/type/title/url/attachments/publishedAt/updatedAt/applicablePeriod/validity`；三支来源兼容；缺失日期显示“未提供”；去掉“可信度 %” |
 | 4.5 | 按需语音控制 | AI-1（主）+ AI-2（去密钥） | 🟡 | 3.4、4.1 | 默认不自动 TTS；`useNarration` 单队列、分段、晚到 Blob 丢弃、ObjectURL 释放；**删除 `TTS_AUTH_TOKEN` 前端旁路**；游客登录后恢复播放 |
 | 4.6 | 生成/来源/媒体联测 | 共同（AI-1 主导） | ⬜ | 4.3、4.4、4.5 | 覆盖跨会话晚到、过期登录、刷新中断、重试、来源选中、TTS 失败、移动端播放限制 |
@@ -206,6 +206,7 @@
 
 | 日期 | 任务 ID | 执行者 | 证据（commit / 命令 / 文件） | 备注 |
 | --- | --- | --- | --- | --- |
+| 2026-10-20 | 4.3 阶段事件与额度结算 | AI-2（Codex） | `4623976`；`npm run test:server` 37/37；`npm run server:check` 55 模块；定向 ESLint 与 `git diff --check` 通过 | start 前移至检索前；新增 retrieval/generation phase 与单次结算竞态覆盖 |
 | 2026-10-20 | 3.4 登录意图 | AI-1 | `f3920b8`；`npm run auth-intent:journey` 5/5；`server/evals/latest-auth-intent-journey.json`；`npm run test:unit` 65/65；lint/type-check/build 通过 | 浏览器回归发现并修复 `chat-detail` 未绑定 `require-login` |
 | 2026-10-20 | 3.3 会话路由与历史 | AI-1 | `3c12a46` + `153e61c`；`npm run conversation:journey` 8/8；`server/evals/latest-conversation-journey.json`；`npm run test:unit` 55/55 | 真实 Chrome 回归：路由、刷新、历史、草稿、无效 ID、后退 |
 | 2026-10-20 | 1.4 权限与返回 | AI-1 | `63ae7d2`；`npm run test:unit` 55/55；`npm run lint` 0 error；`npm run type-check` 通过 | 403 与登录意图分离；外部直达无历史回落首页 |
@@ -234,6 +235,8 @@
 | 2026-10-20 | 验证 | `npm run build` 通过（1590 模块）；产物无 `/api/api`，生产包解析为 `/api` | AI-1 |
 | 2026-10-20 | 完成 | 1.3 路由与页面壳；1.4 守卫落第一版；1.2 仍差流式/下载实测与契约测试 | AI-1 |
 | 2026-10-20 | 占用 | 领取 0.4；独占起草 `docs/api-contract-v2.md` | AI-2（Codex） |
+| 2026-10-20 | 占用 | 领取 4.3：按冻结契约前移 `start`，新增检索/生成阶段事件，并验证额度单次结算竞态 | AI-2（Codex） |
+| 2026-10-20 | 完成 | 4.3 阶段事件与额度结算；服务端全量测试 37/37，55 个模块语法检查通过 | AI-2（Codex） |
 | 2026-10-20 | 草案 | 完成 0.4 API/状态契约草案；`git diff --check` 通过。**剩余**：待人工签字后冻结 | AI-2（Codex） |
 | 2026-10-20 | 签字 | 人工确认 `api-contract-v2.md`；0.4 冻结，后续按契约推进 | 人工 |
 | 2026-10-20 | 占用 | 领取 1.2；检查后端 `/api` 路由与 preview 代理验证范围 | AI-2（Codex） |
