@@ -53,16 +53,16 @@
 | Sprint | 任务 | ✅ | 🟡 | 🔵 | ⬜ | 当前主攻 |
 | --- | --- | --- | --- | --- | --- | --- |
 | S0 | 4 | 1 | 2 | 0 | 1 | 0.3 收尾 / 0.4 |
-| S1 | 5 | 1 | 1 | 0 | 3 | 1.2 收尾 / 1.3 |
+| S1 | 5 | 2 | 2 | 0 | 1 | 1.4 / 1.5 |
 | S2 | 5 | 0 | 5 | 0 | 0 | 等 2.1 设计稿 |
-| S3 | 5 | 0 | 1 | 0 | 4 | 1.3 完成后 |
+| S3 | 5 | 0 | 1 | 0 | 4 | 3.1 可开工 |
 | S4 | 6 | 0 | 3 | 0 | 3 | 4.3 可并行 |
 | S5 | 4 | 0 | 0 | 0 | 4 | 等 5.1 数据 |
 | S6 | 5 | 0 | 5 | 0 | 0 | 2.1 之后 |
 | S7 | 5 | 0 | 1 | 0 | 4 | 7.1 可提前 |
-| **合计** | **39** | **2** | **19** | **0** | **18** | — |
+| **合计** | **39** | **3** | **19** | **0** | **17** | — |
 
-> 已完成：0.1（基线归档）、1.1（API 根统一）。差异说明见差距分析，实时状态以本表为准。
+> 已完成：0.1、1.1、1.3。差异说明见差距分析，实时状态以本表为准。
 
 ---
 
@@ -82,9 +82,9 @@
 | ID | 任务 | 主责 | 状态 | 依赖 | 完成判定 / 证据 |
 | --- | --- | --- | --- | --- | --- |
 | 1.1 | 统一前端 API 地址构造 | AI-1 | ✅ | 0.4 | `src/config/app.ts` 新增 `apiUrl()`，默认根 `/api`、origin 自动补 `/api`、绝对根透传；`llm/tts/auth/community`、`MessageItem`、`AdminReviewView` 全部改走它。证据：`npm run type-check` 通过；curl 实测 `/api/health`、`/api/community/posts` 200 |
-| 1.2 | 迁移代理与来源路径 | AI-2（主）+ AI-1 | 🟡 | 1.1 | 已做：`vite.config.ts` 只代理 `/api`；Nginx 改为 `/api/` 转发 + SPA fallback + 流式免缓冲；后端别名 curl 通过。**剩余**：`/api` 契约测试、浏览器刷新 `/chat/new` 实测 |
-| 1.3 | 引入 vue-router 并拆页面壳 | AI-1 | ⬜ | 1.2 | 锁 compatible 版本；`main.ts` 挂 router；`/`、`/chat`、`/chat/new`、`/chat/:id` 可直达与刷新；`App.vue` 用 RouterView，`activeSection` 移除；验证：静态 `/chat/new` 不被当会话 ID |
-| 1.4 | 权限、初始访问与返回 | AI-1 | ⬜ | 1.3 | 守卫先恢复登录态；403/404 页面；`returnTo` 限站内；无效 ID 有明确状态；验证：游客/普通/管理员三视角 + 直接 URL |
+| 1.2 | 迁移代理与来源路径 | AI-2（主）+ AI-1 | 🟡 | 1.1 | 已做：`vite.config.ts` 只代理 `/api`；Nginx 改为 `/api/` 转发 + SPA fallback + 流式免缓冲；preview 实测 `/chat/new`、`/community/posts/demo-post` 返回 HTML，`/api/health` 200 JSON，`/api/unknown` 404。**剩余**：流式/下载/鉴权经代理实测 + 自动化契约测试 |
+| 1.3 | 引入 vue-router 并拆页面壳 | AI-1 | ✅ | 1.2 | `src/router/index.ts` + `RouterView` 页面壳；路由 `/`、`/chat`、`/chat/new`、`/community`、`/community/posts/:postId`、`/admin/review`、`/admin/retrieval`、404；懒加载拆分。证据：`777a7c7`；type-check/lint/build 通过；preview 冒烟见 1.2 |
+| 1.4 | 权限、初始访问与返回 | AI-1 | 🟡 | 1.3 | 已有一版守卫：导航前恢复登录态、未登录跳 `/?login=1&redirect=…`、非管理员进后台回首页、404 页面。**剩余**：403 语义、外部进入无返回历史、登录取消循环、三视角直接 URL 回归 |
 | 1.5 | 建立前端测试入口 | AI-1 | ⬜ | 1.3 | 新增 `vitest` + `vitest.config.ts` + `test:unit`；至少覆盖路由/守卫/会话迁移；验证：`npm run test:unit` 独立通过，`release:check` 是否纳入写清楚 |
 
 ### Sprint 2：视觉与问答主页（3–4 天）
@@ -191,6 +191,7 @@
 | 日期 | 任务 ID | 执行者 | 证据（commit / 命令 / 文件） | 备注 |
 | --- | --- | --- | --- | --- |
 | 2026-10-20 | 0.1 固定基线 | AI-1 | 5 个归档提交 `4af3c89`/`61756be`/`364b6b8`/`46d754d`/`73f4d21`；`docs/development-baseline-v2.md` | 49 项改动全部归档，工作区干净 |
+| 2026-10-20 | 1.3 引入路由 | AI-1 | `777a7c7`；`npm run build` 通过；preview 实测 `/chat/new`、`/community/posts/demo-post` 返回 HTML，`/api/health` 200 JSON，`/api/unknown` 404 | 1.4 的守卫已先落一版 |
 | 2026-10-20 | 1.1 统一 API 构造 | AI-1 | `src/config/app.ts` 的 `apiUrl()`；`npm run type-check` ✅；curl `/api/health`、`/api/community/posts` 200；`/api/unknown` JSON 404 | 浏览器端待 1.2 收尾时一并实测 |
 | 2026-10-20 | 差距分析（D0） | AI-1 | `docs/v2-gap-analysis.md`；`node server/tests/rag-confidence.test.mjs` 2/2；`rag:test:service` 20/20 | 分析快照，不随后续任务更新 |
 
@@ -204,6 +205,7 @@
 | 2026-10-20 | 决策 | D-1 按 Figma 深绿重做；D-2 前端 WIP 提交存档 | 人工 |
 | 2026-10-20 | 完成 | 0.1、1.1；1.2 完成代理/Nginx，剩契约测试与浏览器实测 | AI-1 |
 | 2026-10-20 | 验证 | `npm run build` 通过（1590 模块）；产物无 `/api/api`，生产包解析为 `/api` | AI-1 |
+| 2026-10-20 | 完成 | 1.3 路由与页面壳；1.4 守卫落第一版；1.2 仍差流式/下载实测与契约测试 | AI-1 |
 
 ---
 
