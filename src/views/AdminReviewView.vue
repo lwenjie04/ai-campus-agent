@@ -441,12 +441,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useCommunityStore } from '@/store/community'
 import { formatDateTime } from '@/utils/date'
 import { apiUrl, appConfig } from '@/config/app'
 import { getAuthRequestHeaders } from '@/api/auth'
+
+const props = defineProps<{
+  initialTab?: 'review' | 'lightrag'
+}>()
 
 defineEmits<{
   (e: 'go-login'): void
@@ -458,7 +462,15 @@ const detailDialogVisible = ref(false)
 const detailDialogTitle = ref('帖子详情')
 
 // 二级导航：内容审核 | LightRAG 管理
-const activeTab = ref<'review' | 'lightrag'>('review')
+// 路由 /admin/retrieval 通过 initialTab 直接落在检索运行面板。
+const activeTab = ref<'review' | 'lightrag'>(props.initialTab === 'lightrag' ? 'lightrag' : 'review')
+
+watch(
+  () => props.initialTab,
+  (tab) => {
+    if (tab) activeTab.value = tab
+  },
+)
 
 const lrHealthOk = ref(false)
 const lrVersion = ref('')

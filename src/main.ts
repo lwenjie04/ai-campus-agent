@@ -1,5 +1,6 @@
 import { createApp } from 'vue'
 import App from './App.vue'
+import router from './router'
 import { createPinia } from 'pinia'
 import {
   ElAlert,
@@ -43,6 +44,7 @@ import './styles/design-system.css'
 // 4. 把应用挂载到 index.html 中的 #app 节点
 const app = createApp(App)
 app.use(createPinia())
+app.use(router)
 
 for (const component of [
   ElAlert,

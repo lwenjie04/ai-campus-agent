@@ -49,7 +49,8 @@
     "nodemailer": "^8.0.4",
     "pinia": "^3.0.4",
     "tencentcloud-sdk-nodejs-tts": "^4.1.182",
-    "vue": "^3.5.28"
+    "vue": "^3.5.28",
+    "vue-router": "^4.6.4"
   },
   "devDependencies": {
     "@tsconfig/node24": "^24.0.4",

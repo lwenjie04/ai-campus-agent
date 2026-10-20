@@ -93,7 +93,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useCommunityStore } from '@/store/community'
 import { formatDateTime } from '@/utils/date'
@@ -156,6 +156,15 @@ onMounted(async () => {
   }
   await store.loadPostDetail(props.postId)
 })
+
+// 同一组件在 /community/posts/:postId 之间切换时不会重新挂载，需要按新 ID 重新加载。
+watch(
+  () => props.postId,
+  async (postId) => {
+    if (!postId) return
+    await store.loadPostDetail(postId)
+  },
+)
 </script>
 
 

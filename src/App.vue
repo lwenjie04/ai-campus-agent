@@ -1,7 +1,7 @@
 <template>
   <div
     class="app-layout"
-    :class="{ 'app-layout--agent': activeSection === 'home' }"
+    :class="{ 'app-layout--agent': isAgentLayout }"
   >
     <header class="top-nav">
       <div class="top-nav__inner">
@@ -18,7 +18,7 @@
           <button
             type="button"
             class="top-nav__tab"
-            :class="{ 'top-nav__tab--active': activeSection === 'home' }"
+            :class="{ 'top-nav__tab--active': isHomeActive }"
             data-testid="nav-service-desk"
             @click="goHome"
           >
@@ -28,7 +28,7 @@
           <button
             type="button"
             class="top-nav__tab"
-            :class="{ 'top-nav__tab--active': activeSection === 'community' }"
+            :class="{ 'top-nav__tab--active': isCommunityActive }"
             data-testid="nav-community"
             @click="goCommunity"
           >
@@ -39,7 +39,7 @@
             v-if="authStore.isAdmin"
             type="button"
             class="top-nav__tab"
-            :class="{ 'top-nav__tab--active': activeSection === 'admin' }"
+            :class="{ 'top-nav__tab--active': isAdminActive }"
             data-testid="nav-knowledge-ops"
             @click="goAdmin"
           >
@@ -61,30 +61,15 @@
 
     <main
       class="page-content"
-      :class="{ 'page-content--agent': activeSection === 'home' }"
+      :class="{ 'page-content--agent': isAgentLayout }"
     >
-      <AgentChat v-if="activeSection === 'home'" @open-community-post="openPostFromSource" @require-login="openLogin" />
-
-      <AdminReviewView
-        v-else-if="activeSection === 'admin' && authStore.isAdmin"
-        @go-login="goHome"
-        @logout="logout"
-      />
-
-      <CommunityView
-        v-else-if="activeSection === 'community' && communityView === 'list'"
-        @open-post="openPostDetail"
-      />
-
-      <PostDetailView
-        v-else-if="activeSection === 'community' && communityView === 'detail'"
-        :post-id="currentPostId"
-        @back-list="backToCommunityList"
-      />
+      <RouterView v-slot="{ Component }">
+        <component :is="Component" v-on="routeListeners" />
+      </RouterView>
     </main>
   </div>
 
-  <!-- 登录弹窗：未登录访问受限入口时弹出 -->
+  <!-- 登录弹窗：未登录访问受限入口时弹出，登录成功后回到原目标。 -->
   <el-dialog
     v-model="loginDialogVisible"
     :show-close="false"
@@ -92,110 +77,122 @@
     append-to-body
     :close-on-click-modal="true"
     class="login-dialog"
-    @closed="clearPendingLoginAction"
+    @closed="handleDialogClosed"
   >
     <LoginView @login-success="handleLoginSuccess" />
   </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { defineAsyncComponent, onMounted, ref } from 'vue'
-import AgentChat from './views/AgentChat.vue'
+import { computed, defineAsyncComponent, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from './store/auth'
 
-// 服务台首屏只同步加载主问答，登录、社区和知识运营后台按进入时再下载。
+// 登录页按需加载，首屏只加载当前路由的页面组件。
 const LoginView = defineAsyncComponent(() => import('./views/LoginView.vue'))
-const CommunityView = defineAsyncComponent(() => import('./views/CommunityView.vue'))
-const PostDetailView = defineAsyncComponent(() => import('./views/PostDetailView.vue'))
-const AdminReviewView = defineAsyncComponent(() => import('./views/AdminReviewView.vue'))
-
-type MainSection = 'home' | 'community' | 'admin'
-type CommunityViewState = 'list' | 'detail'
 
 const authStore = useAuthStore()
-const activeSection = ref<MainSection>('home')
-const communityView = ref<CommunityViewState>('list')
-const currentPostId = ref('')
+const route = useRoute()
+const router = useRouter()
 
-// 登录弹窗：登录成功后执行的回调（用于「登录后回到刚才的操作」）
 const loginDialogVisible = ref(false)
-let pendingLoginAction: (() => void) | null = null
 
-const clearPendingLoginAction = () => {
-  pendingLoginAction = null
-}
+const isAgentLayout = computed(() => route.meta.layout === 'agent')
+const isHomeActive = computed(
+  () => route.name === 'home' || route.name === 'chat' || route.name === 'chat-new',
+)
+const isCommunityActive = computed(() => route.path.startsWith('/community'))
+const isAdminActive = computed(() => route.path.startsWith('/admin'))
 
 const openLogin = () => {
-  clearPendingLoginAction()
-  loginDialogVisible.value = true
-}
-
-const requestLogin = (afterLogin?: () => void) => {
-  pendingLoginAction = afterLogin || null
   loginDialogVisible.value = true
 }
 
 const goHome = () => {
-  activeSection.value = 'home'
-}
-
-const goCommunityAfterLogin = () => {
-  activeSection.value = 'community'
-  communityView.value = 'list'
+  router.push('/')
 }
 
 const goCommunity = () => {
-  // 未登录访问校园社区 → 弹登录弹窗，登录成功后自动进入社区
-  if (!authStore.loggedIn) {
-    requestLogin(goCommunityAfterLogin)
-    return
-  }
-  goCommunityAfterLogin()
+  // 未登录时由路由守卫跳回首页并给出登录意图，登录成功后自动回到 /community。
+  router.push('/community')
 }
 
 const goAdmin = () => {
-  if (!authStore.isAdmin) {
-    activeSection.value = 'home'
-    return
-  }
-  activeSection.value = 'admin'
-}
-
-const openPostDetail = (postId: string) => {
-  currentPostId.value = postId
-  activeSection.value = 'community'
-  communityView.value = 'detail'
+  if (!authStore.isAdmin) return
+  router.push('/admin/review')
 }
 
 const openPostFromSource = (postId: string) => {
-  openPostDetail(postId)
+  if (!postId) return
+  router.push(`/community/posts/${encodeURIComponent(postId)}`)
 }
 
 const backToCommunityList = () => {
-  communityView.value = 'list'
+  router.push('/community')
 }
+
+// 只给当前页面绑定它真正会发出的事件，避免无关监听器落到根节点上。
+type RouteListener = (...args: never[]) => void
+const routeListeners = computed<Record<string, RouteListener>>(() => {
+  const listeners: Record<string, RouteListener> = {}
+
+  switch (String(route.name || '')) {
+    case 'home':
+    case 'chat':
+    case 'chat-new':
+      listeners['open-community-post'] = openPostFromSource
+      listeners['require-login'] = openLogin
+      break
+    case 'community':
+      listeners['open-post'] = openPostFromSource
+      break
+    case 'community-post':
+      listeners['back-list'] = backToCommunityList
+      break
+    case 'admin-review':
+    case 'admin-retrieval':
+      listeners['go-login'] = goHome
+      listeners.logout = logout
+      break
+    default:
+      break
+  }
+
+  return listeners
+})
 
 const handleLoginSuccess = () => {
   loginDialogVisible.value = false
-  if (pendingLoginAction) {
-    const action = pendingLoginAction
-    pendingLoginAction = null
-    action()
-    return
+
+  // 只接受站内路径，避免登录后被带到外部地址。
+  const redirect = route.query.redirect
+  if (typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//')) {
+    router.replace(redirect)
   }
-  // 默认保持当前页面（如登录前在首页发消息，登录后停留原处，由 AgentChat 自动补发）
+}
+
+const handleDialogClosed = () => {
+  // 用户取消登录时清掉一次性参数，避免刷新后再次弹出。
+  if (!route.query.login && !route.query.redirect) return
+
+  const query = { ...route.query }
+  delete query.login
+  delete query.redirect
+  router.replace({ path: route.path, query })
 }
 
 const logout = () => {
   authStore.logout()
-  activeSection.value = 'home'
-  communityView.value = 'list'
-  currentPostId.value = ''
+  router.push('/')
 }
 
-onMounted(() => {
-  authStore.hydrate()
-})
+watch(
+  () => route.query.login,
+  (value) => {
+    if (value === '1') loginDialogVisible.value = true
+  },
+  { immediate: true },
+)
 </script>
 
 
