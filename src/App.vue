@@ -6,9 +6,11 @@
     <header class="top-nav">
       <div class="top-nav__inner">
         <div class="top-nav__brand">
+          <span class="top-nav__brand-mark" aria-hidden="true">校答</span>
           <div>
+            <span class="top-nav__brand-kicker">GDEI / CAMPUS AI</span>
             <strong>数智校答</strong>
-            <span>校园智能服务台 · 可信校园事项导办</span>
+            <span class="top-nav__brand-subtitle">可信校园事项导办</span>
           </div>
         </div>
 
@@ -20,7 +22,8 @@
             data-testid="nav-service-desk"
             @click="goHome"
           >
-            智能服务台
+            <span class="top-nav__index">01</span>
+            <span>智能服务台</span>
           </button>
           <button
             type="button"
@@ -29,7 +32,8 @@
             data-testid="nav-community"
             @click="goCommunity"
           >
-            校园社区
+            <span class="top-nav__index">02</span>
+            <span>校园社区</span>
           </button>
           <button
             v-if="authStore.isAdmin"
@@ -39,7 +43,8 @@
             data-testid="nav-knowledge-ops"
             @click="goAdmin"
           >
-            知识运营后台
+            <span class="top-nav__index">03</span>
+            <span>知识运营</span>
           </button>
         </nav>
 
@@ -83,7 +88,7 @@
   <el-dialog
     v-model="loginDialogVisible"
     :show-close="false"
-    width="min(440px, calc(100vw - 24px))"
+    width="min(62rem, calc(100vw - 1.5rem))"
     append-to-body
     :close-on-click-modal="true"
     class="login-dialog"
@@ -193,59 +198,85 @@ onMounted(() => {
 })
 </script>
 
+
 <style scoped>
 :global(html),
 :global(body),
 :global(#app) {
-  min-height: 100%;
   width: 100%;
+  min-height: 100%;
   overflow-x: clip;
-}
-
-:global(body) {
-  margin: 0;
-}
-
-.app-auth-shell {
-  min-height: 100vh;
 }
 
 .app-layout {
+  position: relative;
   width: 100%;
-  min-height: 100vh;
+  min-height: 100dvh;
   overflow-x: clip;
   background:
-    radial-gradient(circle at top left, rgba(241, 255, 238, 0.98), rgba(216, 248, 206, 0.92) 42%, rgba(137, 223, 98, 0.95) 100%);
+    linear-gradient(rgba(17, 24, 29, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(17, 24, 29, 0.045) 1px, transparent 1px),
+    var(--paper);
+  background-size: 2.5rem 2.5rem;
+}
+
+.app-layout::before {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  content: "";
+  opacity: 0.34;
+  background:
+    radial-gradient(circle at 92% 9%, rgba(240, 79, 47, 0.2), transparent 22rem),
+    radial-gradient(circle at 2% 88%, rgba(14, 140, 136, 0.14), transparent 27rem);
+}
+
+.top-nav,
+.page-content {
+  position: relative;
+  z-index: 1;
 }
 
 .top-nav {
   position: sticky;
   top: 0;
   z-index: 50;
-  padding: 14px 18px 0;
-  box-sizing: border-box;
-  backdrop-filter: blur(16px);
+  padding: 0.65rem 0.75rem 0;
 }
 
 .top-nav__inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  max-width: 1680px;
+  width: min(100%, 108rem);
   margin: 0 auto;
-  padding: 14px 20px;
-  border: 1px solid rgba(103, 167, 94, 0.2);
-  border-radius: 24px;
-  background: rgba(251, 255, 248, 0.82);
-  box-shadow: 0 14px 36px rgba(55, 116, 63, 0.12);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--paper-raised) 93%, transparent);
+  box-shadow: 0 0.3rem 0 var(--ink);
+  backdrop-filter: blur(16px);
 }
 
 .top-nav__brand {
   display: flex;
   align-items: center;
-  gap: 12px;
-  color: #184e30;
+  gap: 0.7rem;
+  min-width: 0;
+  padding: 0.65rem 0.75rem;
+}
+
+.top-nav__brand-mark {
+  width: 2.85rem;
+  height: 2.85rem;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--white);
+  background: var(--signal);
+  font-family: var(--font-display);
+  font-size: 0.86rem;
+  font-weight: 900;
+  letter-spacing: -0.08em;
+  transform: rotate(-7deg);
 }
 
 .top-nav__brand strong,
@@ -254,80 +285,192 @@ onMounted(() => {
 }
 
 .top-nav__brand strong {
-  font-size: 20px;
+  margin-top: 0.05rem;
+  font-family: var(--font-display);
+  font-size: 1.12rem;
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: 0.05em;
 }
 
-.top-nav__brand span {
-  margin-top: 2px;
-  color: rgba(24, 78, 48, 0.72);
-  font-size: 13px;
+.top-nav__brand-kicker {
+  color: var(--teal);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.top-nav__brand-subtitle {
+  display: none !important;
+  margin-top: 0.18rem;
+  color: var(--ink-soft);
+  font-size: 0.72rem;
 }
 
 .top-nav__tabs {
   display: flex;
+  min-width: 0;
+  overflow-x: auto;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  scrollbar-width: none;
+}
+
+.top-nav__tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.top-nav__tab {
+  min-width: max-content;
+  min-height: 2.85rem;
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  gap: 0.45rem;
+  border: 0;
+  border-right: 1px solid var(--line);
+  padding: 0.7rem 0.9rem;
+  color: var(--ink-soft);
+  background: transparent;
+  font-size: 0.84rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: color 160ms ease, background 160ms ease;
+}
+
+.top-nav__tab:hover {
+  color: var(--ink);
+  background: var(--paper-deep);
+}
+
+.top-nav__tab--active {
+  color: var(--white);
+  background: var(--ink);
+}
+
+.top-nav__tab--active:hover {
+  color: var(--white);
+  background: var(--ink);
+}
+
+.top-nav__index {
+  color: var(--signal);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
 }
 
 .top-nav__auth {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 0.55rem;
+  min-width: 0;
+  padding: 0.55rem 0.7rem;
+}
+
+.top-nav__auth .top-nav__tab {
+  min-height: 2.45rem;
+  margin-left: auto;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.8rem;
 }
 
 .top-nav__auth-role {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 12px;
+  flex: 0 0 auto;
+  padding: 0.35rem 0.55rem;
   border-radius: 999px;
-  background: rgba(97, 167, 92, 0.14);
-  color: #2a6b3f;
-  font-size: 13px;
-  font-weight: 700;
+  color: #075f5c;
+  background: var(--teal-soft);
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  font-weight: 800;
 }
 
 .top-nav__auth-text {
-  color: rgba(24, 78, 48, 0.74);
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.top-nav__tab {
-  border: 1px solid rgba(86, 157, 90, 0.18);
-  border-radius: 999px;
-  padding: 10px 18px;
-  background: rgba(255, 255, 255, 0.74);
-  color: rgba(23, 77, 46, 0.72);
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.top-nav__tab:hover {
-  transform: translateY(-1px);
-  color: #1b5a37;
-  box-shadow: 0 10px 22px rgba(55, 116, 63, 0.1);
-}
-
-.top-nav__tab--active {
-  border-color: rgba(85, 169, 86, 0.32);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(223, 250, 214, 0.92));
-  color: #20653d;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .page-content {
   min-width: 0;
-  padding-top: 10px;
-  box-sizing: border-box;
+  padding: 0.75rem;
 }
 
-/*
- * 桌面端由应用壳层统一分配“导航 + 页面内容”的视口高度。
- * 只约束智能服务台，社区和知识运营后台继续使用正常文档滚动。
- */
-@media (min-width: 981px) {
+:global(.el-dialog.login-dialog) {
+  padding: 0;
+  background: var(--paper-raised);
+}
+
+:global(.el-dialog.login-dialog .el-dialog__header) {
+  display: none;
+}
+
+:global(.el-dialog.login-dialog .el-dialog__body) {
+  padding: 0;
+}
+
+@media (max-width: 47.99rem) {
+  .top-nav__tabs > .top-nav__tab {
+    min-width: 0;
+    flex: 1 1 0;
+    padding-inline: 0.55rem;
+  }
+}
+
+@media (min-width: 48rem) {
+  .top-nav {
+    padding: 0.9rem 1rem 0;
+  }
+
+  .top-nav__inner {
+    display: grid;
+    grid-template-columns: minmax(13rem, 1fr) auto;
+    align-items: center;
+  }
+
+  .top-nav__brand-subtitle {
+    display: block !important;
+  }
+
+  .top-nav__tabs {
+    grid-column: 1 / -1;
+  }
+
+  .top-nav__auth {
+    justify-content: flex-end;
+  }
+
+  .page-content {
+    padding: 1rem;
+  }
+}
+
+@media (min-width: 64rem) {
+  .top-nav__inner {
+    grid-template-columns: minmax(15rem, 0.8fr) auto minmax(15rem, 0.8fr);
+  }
+
+  .top-nav__tabs {
+    grid-column: auto;
+    border: 0;
+    border-left: 1px solid var(--line);
+    border-right: 1px solid var(--line);
+  }
+
+  .top-nav__tab {
+    min-height: 4.2rem;
+  }
+
+  .top-nav__auth .top-nav__tab {
+    min-height: 2.55rem;
+  }
+
   .app-layout--agent {
     height: 100dvh;
     min-height: 0;
@@ -339,59 +482,6 @@ onMounted(() => {
   .page-content--agent {
     min-height: 0;
     overflow: hidden;
-  }
-}
-
-/* ====== 登录弹窗 ====== */
-:global(.el-dialog.login-dialog) {
-  border-radius: 24px;
-  padding: 0;
-  overflow: hidden;
-  background: #fff;
-  box-shadow: 0 24px 64px rgba(30, 80, 40, 0.22);
-}
-
-:global(.el-dialog.login-dialog .el-dialog__header) {
-  display: none;
-}
-
-:global(.el-dialog.login-dialog .el-dialog__body) {
-  padding: 0;
-}
-
-@media (max-width: 1120px) {
-  .top-nav {
-    padding: 12px 12px 0;
-  }
-
-  .top-nav__inner {
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-    padding: 14px;
-  }
-
-  .top-nav__tabs {
-    width: 100%;
-    min-width: 0;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
-  }
-
-  .top-nav__auth {
-    width: 100%;
-    justify-content: space-between;
-    flex-wrap: wrap;
-  }
-
-  .top-nav__tab {
-    flex: 1 1 0;
-    min-width: 0;
-    min-height: 44px;
-    padding-inline: 10px;
   }
 }
 </style>

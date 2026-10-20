@@ -456,25 +456,44 @@ onBeforeUnmount(() => {
 })
 </script>
 
+
 <style scoped>
-.digital-human {
+.digital-human,
+.stage-shell {
+  width: 100%;
   height: 100%;
 }
 
 .stage-shell {
   position: relative;
-  height: 100%;
-  container-type: size;
-  border-radius: 20px;
   overflow: hidden;
   background:
-    radial-gradient(circle at 50% 6%, rgba(240, 251, 240, 0.55), transparent 40%),
-    linear-gradient(
-      180deg,
-      rgba(206, 228, 206, 0.92) 0%,
-      rgba(184, 227, 185, 0.94) 58%,
-      rgba(146, 211, 148, 0.95) 100%
-    );
+    radial-gradient(circle at 50% 28%, rgba(255, 255, 255, 0.55), transparent 28%),
+    linear-gradient(145deg, #c9dcd0 0%, #8ebbad 52%, #327f78 100%);
+}
+
+.stage-shell::before,
+.stage-shell::after {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+  content: "";
+}
+
+.stage-shell::before {
+  inset: 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  clip-path: polygon(0 0, 35% 0, 35% 1px, 65% 1px, 65% 0, 100% 0, 100% 100%, 0 100%);
+}
+
+.stage-shell::after {
+  right: -12%;
+  bottom: -28%;
+  width: 58%;
+  aspect-ratio: 1;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 50%;
+  box-shadow: 0 0 0 3rem rgba(255, 255, 255, 0.045), 0 0 0 6rem rgba(255, 255, 255, 0.035);
 }
 
 .video {
@@ -483,42 +502,26 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  object-position: center;
-  background: transparent;
+  object-position: center bottom;
   opacity: 0;
-  transition: opacity 420ms ease-in-out;
-  transform: scale(1);
-  transform-origin: center;
-}
-
-/*
- * 桌面端只在舞台比 9:16 视频更窄时使用 cover：
- * 此时只会裁左右安全区，不会裁掉人物头部或脚部。
- */
-@media (min-width: 981px) {
-  .video--idle {
-    scale: 1.07;
-    transform-origin: center bottom;
-  }
-
-  @container (max-aspect-ratio: 9 / 16) {
-    .video {
-      object-fit: cover;
-      object-position: center bottom;
-    }
-  }
-}
-
-.video.is-switching {
-  transform: scale(1.01);
-  transition:
-    opacity 420ms ease-in-out,
-    transform 460ms ease-out;
+  filter: saturate(0.88) contrast(1.04);
+  transform: translateY(0.35rem) scale(0.99);
+  transform-origin: center bottom;
+  transition: opacity 420ms ease, transform 520ms var(--ease-out);
 }
 
 .video.is-visible {
   opacity: 1;
-  transform: scale(1);
+  transform: translateY(0) scale(1);
+}
+
+.video.is-switching {
+  opacity: 0;
+  transform: translateY(0.55rem) scale(0.985);
+}
+
+.video--idle.is-visible {
+  transform: scale(1.045);
 }
 
 .placeholder-stage {
@@ -526,81 +529,39 @@ onBeforeUnmount(() => {
   inset: 0;
   display: grid;
   place-items: center;
-  padding: 18px;
-  box-sizing: border-box;
+  padding: 1rem;
 }
 
 .reserve-frame {
-  width: min(92%, 420px);
-  height: min(78%, 520px);
-  border-radius: 22px;
-  border: 2px dashed rgba(39, 121, 46, 0.35);
-  background: rgba(255, 255, 255, 0.25);
-  backdrop-filter: blur(4px);
+  width: min(100%, 25rem);
   display: grid;
-  align-content: center;
   justify-items: center;
-  gap: 8px;
+  gap: 0.5rem;
+  border: 1px dashed rgba(17, 24, 29, 0.66);
+  padding: 1.5rem;
+  color: var(--ink);
+  background: rgba(255, 253, 248, 0.72);
   text-align: center;
-  padding: 20px;
-  box-sizing: border-box;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
 }
 
-.reserve-icon {
-  font-size: 34px;
-  line-height: 1;
-}
-
-.reserve-title {
-  color: #14371b;
-  font-size: 18px;
-  font-weight: 800;
-}
-
-.reserve-hint {
-  color: #285533;
-  font-size: 13px;
-}
-
-.reserve-path {
-  color: #2f6d3d;
-  font-size: 12px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.65);
-}
-
-.reserve-list {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.reserve-list span {
-  font-size: 11px;
-  color: #285c34;
-  padding: 2px 7px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-}
+.reserve-icon { font-size: 2rem; }
+.reserve-title { font-family: var(--font-display); font-size: 1.2rem; font-weight: 900; }
+.reserve-hint, .reserve-path, .reserve-list { font-size: 0.75rem; }
+.reserve-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.35rem; }
+.reserve-list span, .reserve-path { border: 1px solid var(--line); padding: 0.25rem 0.4rem; background: var(--white); }
 
 .debug-box {
   position: absolute;
-  left: 10px;
-  bottom: 10px;
-  z-index: 3;
-  max-width: calc(100% - 20px);
-  padding: 8px 10px;
-  border-radius: 10px;
-  font-size: 11px;
-  line-height: 1.35;
-  color: #15321a;
-  background: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(21, 50, 26, 0.2);
-  backdrop-filter: blur(4px);
+  right: 0.6rem;
+  top: 0.6rem;
+  z-index: 4;
+  max-width: calc(100% - 1.2rem);
+  border: 1px solid var(--ink);
+  padding: 0.55rem;
+  color: var(--white);
+  background: rgba(17, 24, 29, 0.82);
+  font-family: var(--font-mono);
+  font-size: 0.61rem;
+  line-height: 1.45;
 }
 </style>

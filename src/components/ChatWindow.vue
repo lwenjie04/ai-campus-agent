@@ -71,130 +71,95 @@ watch(
 )
 </script>
 
+
 <style scoped>
 .chat-window {
   height: 100%;
   min-height: 0;
-  overflow: auto;
-  padding: 12px 12px 18px;
-  box-sizing: border-box;
-  background: transparent;
-  scrollbar-gutter: stable;
-}
-
-.chat-window::-webkit-scrollbar {
-  width: 6px;
-}
-
-.chat-window::-webkit-scrollbar-thumb {
-  background: rgba(46, 113, 53, 0.2);
-  border-radius: 999px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 1rem 0.8rem 1.5rem;
+  scrollbar-color: var(--ink) transparent;
+  scrollbar-width: thin;
 }
 
 .empty-state {
-  width: min(100%, 440px);
-  margin: 14px auto;
-  padding: 14px;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  border: 1px solid rgba(75, 142, 84, 0.15);
-  border-radius: 18px;
-  color: #24432a;
-  background: rgba(255, 255, 252, 0.82);
-  box-shadow: 0 10px 26px rgba(38, 94, 48, 0.07);
+  min-height: 13rem;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 0.9rem;
+  margin: 0.5rem;
+  border: 1px dashed var(--line-strong);
+  padding: 1.5rem;
+  text-align: center;
+  background:
+    linear-gradient(135deg, rgba(14, 140, 136, 0.1), transparent 58%),
+    var(--paper-raised);
 }
 
 .empty-copy {
-  min-width: 0;
+  max-width: 28rem;
   display: grid;
-  gap: 3px;
+  gap: 0.35rem;
 }
 
 .empty-copy strong {
-  color: #1d5b35;
-  font-size: 14px;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 900;
 }
 
 .empty-copy span {
-  color: #58705d;
-  font-size: 12px;
-  line-height: 1.5;
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+  line-height: 1.65;
 }
 
 .typing-row {
   display: flex;
-  gap: 10px;
-  align-items: flex-start;
-  margin: 16px 0;
+  align-items: flex-end;
+  gap: 0.65rem;
+  margin: 1rem 0;
 }
 
 .typing-bubble {
+  min-height: 2.8rem;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  min-height: 44px;
-  padding: 9px 14px;
-  box-sizing: border-box;
-  border: 1px solid rgba(72, 139, 83, 0.16);
-  border-radius: 7px 18px 18px;
-  color: #315c3b;
-  background: rgba(255, 255, 252, 0.92);
-  box-shadow: 0 9px 24px rgba(36, 92, 48, 0.08);
-  font-size: 13px;
-  font-weight: 600;
+  gap: 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 0.35rem 1rem 1rem;
+  padding: 0.65rem 0.85rem;
+  color: var(--ink-soft);
+  background: var(--paper-deep);
+  font-size: 0.82rem;
+  font-weight: 700;
 }
 
 .typing-dots {
   display: inline-flex;
-  align-items: center;
-  gap: 4px;
+  gap: 0.25rem;
 }
 
 .typing-dots span {
-  width: 5px;
-  height: 5px;
+  width: 0.35rem;
+  height: 0.35rem;
   border-radius: 50%;
-  background: #3daa61;
-  animation: typing-bounce 1.15s ease-in-out infinite;
+  background: var(--signal);
+  animation: chat-dot 1.1s ease-in-out infinite;
 }
 
-.typing-dots span:nth-child(2) {
-  animation-delay: 0.15s;
+.typing-dots span:nth-child(2) { animation-delay: 120ms; }
+.typing-dots span:nth-child(3) { animation-delay: 240ms; }
+
+@keyframes chat-dot {
+  50% { opacity: 0.35; transform: translateY(-0.25rem); }
 }
 
-.typing-dots span:nth-child(3) {
-  animation-delay: 0.3s;
-}
-
-@keyframes typing-bounce {
-  0%,
-  60%,
-  100% {
-    transform: translateY(0);
-    opacity: 0.42;
-  }
-  30% {
-    transform: translateY(-3px);
-    opacity: 1;
-  }
-}
-
-@media (max-width: 680px) {
+@media (min-width: 48rem) {
   .chat-window {
-    padding: 10px 8px 16px;
-    scrollbar-gutter: auto;
-  }
-
-  .empty-state {
-    padding: 12px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .typing-dots span {
-    animation: none;
+    padding: 1.2rem 1.25rem 1.8rem;
   }
 }
 </style>

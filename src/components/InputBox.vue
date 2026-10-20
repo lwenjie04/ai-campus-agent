@@ -50,112 +50,56 @@ const send = () => {
 }
 </script>
 
+
 <style scoped>
 .input-box {
-  min-width: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 52px;
-  gap: 10px;
-  align-items: center;
-}
-
-:deep(.el-input) {
   width: 100%;
-  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 3.15rem;
+  gap: 0.55rem;
+  align-items: stretch;
 }
 
 :deep(.el-input__wrapper) {
-  border-radius: 17px;
-  min-height: 52px;
-  padding: 0 16px;
-  border: 1px solid rgba(64, 127, 76, 0.13);
-  background: rgba(250, 252, 248, 0.94);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.82),
-    0 8px 18px rgba(33, 95, 40, 0.07) !important;
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease,
-    background 0.2s ease;
-}
-
-:deep(.el-input__wrapper.is-focus) {
-  border-color: rgba(47, 142, 84, 0.48);
-  background: rgba(255, 255, 252, 0.98);
-  box-shadow:
-    0 0 0 3px rgba(73, 180, 100, 0.1),
-    0 10px 22px rgba(33, 95, 40, 0.09) !important;
+  min-height: 3.15rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding-inline: 0.9rem;
+  background: var(--white);
+  box-shadow: none;
 }
 
 :deep(.el-input__inner) {
-  color: #152218;
-  font-size: 16px;
+  min-width: 0;
+  color: var(--ink);
+  font-size: 0.9rem;
+}
+
+:deep(.el-input__inner::placeholder) {
+  color: #737a78;
 }
 
 .send-btn {
-  width: 52px;
-  height: 52px;
-  min-width: 52px;
-  min-height: 52px;
-  margin: 0;
+  width: 3.15rem;
+  min-width: 3.15rem;
+  min-height: 3.15rem;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius-sm);
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 17px;
-  color: #fff;
-  background: linear-gradient(145deg, #1d6a41 0%, #319156 58%, #4cb56b 100%);
-  box-shadow:
-    0 10px 20px rgba(27, 111, 63, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    filter 0.2s ease;
+  color: var(--white);
+  background: var(--signal);
+  box-shadow: 0.22rem 0.22rem 0 var(--ink);
+}
+
+.send-btn:hover:not(:disabled) {
+  color: var(--white);
+  background: var(--signal-dark);
+  box-shadow: 0.08rem 0.08rem 0 var(--ink);
+  transform: translate(0.14rem, 0.14rem);
 }
 
 .send-btn svg {
-  width: 22px;
-  height: 22px;
-}
-
-.send-btn:hover {
-  color: #fff;
-  background: linear-gradient(145deg, #1d6a41 0%, #319156 58%, #4cb56b 100%);
-  filter: saturate(1.06) brightness(1.03);
-  transform: translateY(-1px);
-  box-shadow:
-    0 13px 24px rgba(27, 111, 63, 0.25),
-    inset 0 1px 0 rgba(255, 255, 255, 0.24);
-}
-
-.send-btn.is-disabled {
-  opacity: 0.62;
-  transform: none;
-}
-
-@media (max-width: 680px) {
-  .input-box {
-    grid-template-columns: minmax(0, 1fr) 48px;
-    gap: 8px;
-  }
-
-  :deep(.el-input__wrapper) {
-    min-height: 48px;
-    border-radius: 16px;
-  }
-
-  .send-btn {
-    width: 48px;
-    height: 48px;
-    min-width: 48px;
-    min-height: 48px;
-    border-radius: 16px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .send-btn,
-  :deep(.el-input__wrapper) {
-    transition: none;
-  }
+  width: 1.35rem;
+  height: 1.35rem;
 }
 </style>

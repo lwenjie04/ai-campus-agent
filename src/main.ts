@@ -34,6 +34,7 @@ import 'element-plus/es/components/switch/style/css'
 import 'element-plus/es/components/tab-pane/style/css'
 import 'element-plus/es/components/tabs/style/css'
 import 'element-plus/es/components/tag/style/css'
+import './styles/design-system.css'
 
 // 前端入口文件：
 // 1. 创建 Vue 应用实例

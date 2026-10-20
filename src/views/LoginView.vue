@@ -265,200 +265,172 @@ onBeforeUnmount(() => {
 })
 </script>
 
+
 <style scoped>
-/* 登录弹窗模式：不再需要全屏背景 */
 .login-card {
+  position: relative;
+  display: grid;
+  overflow: hidden;
+  background: var(--paper-raised);
+}
+
+.login-card::before {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
-  box-sizing: border-box;
+  height: 0.32rem;
+  content: "";
+  background: linear-gradient(90deg, var(--signal) 0 38%, var(--sun) 38% 62%, var(--teal) 62%);
 }
 
-.login-card--dialog {
-  padding: 30px 32px 32px;
-  border: none;
-  background: transparent;
-  box-shadow: none;
-}
-
-/* 弹窗内隐藏装饰性高亮，专注登录表单 */
-.login-card--dialog .login-highlights {
-  display: none;
-}
-
-/* 品牌头部：居中、清爽 */
-.login-card--dialog .login-kicker {
-  display: none;
-}
-
-.login-card--dialog .login-card__head {
-  text-align: center;
-  margin-bottom: 6px;
-}
-
-.login-card--dialog .login-card__head h1 {
-  margin: 4px 0 6px;
-  font-size: 26px;
-  color: #1a5c33;
-  letter-spacing: 0.02em;
-}
-
-.login-card--dialog .login-card__head p {
-  font-size: 13px;
-  color: rgba(24, 78, 48, 0.58);
-}
-
-/* tabs 居中、紧凑 */
-.login-card--dialog .login-tabs {
-  margin-top: 4px;
-}
-
-.login-card--dialog :deep(.el-tabs__header) {
-  margin-bottom: 6px;
-}
-
-/* 表单舒适 */
-.login-card--dialog .login-form {
-  margin-top: 16px;
-}
-
-.login-card--dialog :deep(.el-input__wrapper) {
-  border-radius: 10px;
-  padding: 3px 12px;
-  box-shadow: 0 0 0 1px rgba(103, 167, 94, 0.18) inset;
-}
-
-.login-card--dialog :deep(.el-input__wrapper:hover),
-.login-card--dialog :deep(.el-input__wrapper.is-focus) {
-  box-shadow: 0 0 0 1px rgba(63, 140, 82, 0.35) inset;
-}
-
-.login-card--dialog :deep(.el-form-item) {
-  margin-bottom: 16px;
-}
-
-.login-card--dialog :deep(.el-form-item__label) {
-  font-weight: 600;
-  color: #2a5c3c;
-}
-
-/* 按钮 */
-.login-card--dialog .login-actions {
-  margin-top: 14px;
-}
-
-.login-card--dialog .login-actions .el-button {
-  min-height: 42px;
-  padding: 0 22px;
-  border-radius: 999px;
-  font-weight: 700;
-}
-
-.login-card--dialog .login-actions--single {
-  justify-content: stretch;
-}
-
-.login-card--dialog .login-actions--single .el-button {
-  width: 100%;
+.login-card__head {
+  padding: 2rem 1.25rem 1rem;
+  color: var(--white);
+  background: var(--ink);
 }
 
 .login-kicker {
-  display: inline-flex;
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: rgba(122, 202, 117, 0.14);
-  color: #2f7b40;
-  font-size: 13px;
-  font-weight: 700;
+  color: var(--sun);
+  font-family: var(--font-mono);
+  font-size: 0.67rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 
 .login-card__head h1 {
-  margin: 12px 0 10px;
-  color: #184e30;
-  font-size: 34px;
+  max-width: 8ch;
+  margin: 0.75rem 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 10vw, 4.8rem);
+  font-weight: 900;
+  line-height: 1.03;
+  letter-spacing: -0.07em;
 }
 
 .login-card__head p {
-  margin: 0;
-  color: rgba(24, 78, 48, 0.72);
-  line-height: 1.75;
+  max-width: 34ch;
+  margin: 1rem 0 0;
+  color: rgba(255, 253, 248, 0.66);
+  font-size: 0.82rem;
+  line-height: 1.7;
 }
 
 .login-highlights {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin: 22px 0 18px;
+  gap: 0;
+  color: var(--white);
+  background: var(--ink);
 }
 
 .login-highlight {
-  padding: 14px 16px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(96, 162, 90, 0.14);
+  display: grid;
+  gap: 0.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  padding: 0.85rem 1.25rem;
 }
 
+.login-highlight::before {
+  color: var(--signal);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 900;
+}
+
+.login-highlight:nth-child(1)::before { content: "01 / GUIDE"; }
+.login-highlight:nth-child(2)::before { content: "02 / SHARE"; }
+.login-highlight:nth-child(3)::before { content: "03 / OPERATE"; }
+
 .login-highlight strong {
-  display: block;
-  margin-bottom: 6px;
-  color: #1f5e39;
-  font-size: 15px;
+  font-family: var(--font-display);
+  font-size: 0.94rem;
 }
 
 .login-highlight span {
-  color: rgba(24, 78, 48, 0.72);
-  line-height: 1.65;
-  font-size: 13px;
+  color: rgba(255, 253, 248, 0.58);
+  font-size: 0.72rem;
+  line-height: 1.5;
 }
 
 .login-tabs {
-  margin-top: 10px;
+  min-width: 0;
+  padding: 1rem 1.15rem 1.35rem;
+}
+
+:deep(.el-tabs__header) {
+  margin-bottom: 1rem;
+}
+
+:deep(.el-form-item__label) {
+  padding-bottom: 0.35rem;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.05em;
 }
 
 .login-form {
-  margin-top: 18px;
+  margin-top: 1rem;
 }
 
 .verify-row {
+  width: 100%;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 10px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.55rem;
 }
 
 .verify-row__button {
-  min-width: 134px;
+  width: 100%;
 }
 
 .login-actions {
   display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 8px;
-}
-
-.login-actions--single {
   justify-content: flex-end;
+  gap: 0.55rem;
+  margin-top: 0.4rem;
 }
 
-@media (max-width: 680px) {
-  .login-page {
-    padding: 16px;
-  }
+.login-actions--single :deep(.el-button) {
+  width: 100%;
+}
 
-  .login-card {
-    padding: 22px;
-  }
-
-  .login-highlights {
-    grid-template-columns: 1fr;
-  }
-
-  .verify-row,
-  .login-actions {
-    grid-template-columns: 1fr;
-    flex-direction: column;
+@media (min-width: 40rem) {
+  .verify-row {
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 
   .verify-row__button {
-    width: 100%;
+    width: auto;
+  }
+}
+
+@media (min-width: 52rem) {
+  .login-card {
+    min-height: 36rem;
+    grid-template-columns: minmax(19rem, 0.86fr) minmax(26rem, 1.14fr);
+    grid-template-rows: auto 1fr;
+  }
+
+  .login-card__head {
+    padding: 3.2rem 2.2rem 1.2rem;
+  }
+
+  .login-highlights {
+    align-content: end;
+  }
+
+  .login-highlight {
+    padding: 0.9rem 2.2rem;
+  }
+
+  .login-tabs {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    align-self: center;
+    padding: 2.5rem 2.6rem;
   }
 }
 </style>

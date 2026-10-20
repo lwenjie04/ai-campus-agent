@@ -50,90 +50,62 @@ withDefaults(
 )
 </script>
 
+
 <style scoped>
 .chat-avatar {
   position: relative;
-  width: 42px;
-  height: 42px;
-  flex: 0 0 42px;
+  width: 2.35rem;
+  height: 2.35rem;
+  flex: 0 0 2.35rem;
   display: grid;
   place-items: center;
-  box-sizing: border-box;
-  border-radius: 14px;
-}
-
-.chat-avatar svg {
-  width: 25px;
-  height: 25px;
-}
-
-.chat-avatar--assistant {
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.72);
-  background: linear-gradient(145deg, #1b653e 0%, #2f8e53 56%, #55c86c 100%);
-  box-shadow:
-    0 9px 20px rgba(24, 100, 59, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.24);
+  border: 1px solid var(--ink);
+  border-radius: 0.35rem;
+  color: var(--white);
+  background: var(--signal);
+  box-shadow: 0.18rem 0.18rem 0 var(--ink);
 }
 
 .chat-avatar--user {
-  color: #356c47;
-  border: 1px solid rgba(61, 121, 76, 0.16);
-  background: linear-gradient(145deg, rgba(250, 253, 244, 0.98), rgba(218, 240, 216, 0.96));
-  box-shadow:
-    0 7px 16px rgba(55, 116, 63, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.76);
+  color: var(--white);
+  background: var(--teal);
+  transform: rotate(3deg);
+}
+
+.chat-avatar svg {
+  width: 1.35rem;
+  height: 1.35rem;
 }
 
 .status-dot {
   position: absolute;
-  right: -2px;
-  bottom: -2px;
-  width: 10px;
-  height: 10px;
-  box-sizing: border-box;
-  border: 2px solid #f7fcf4;
+  right: -0.22rem;
+  bottom: -0.22rem;
+  width: 0.65rem;
+  height: 0.65rem;
+  border: 2px solid var(--white);
   border-radius: 50%;
-  background: #61d86d;
-  box-shadow: 0 2px 6px rgba(29, 101, 48, 0.22);
+  background: #20c67a;
 }
 
-.is-active .status-dot {
-  animation: status-pulse 1.35s ease-in-out infinite;
+.is-active {
+  animation: avatar-live 1.35s ease-in-out infinite;
 }
 
-@keyframes status-pulse {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(78, 207, 98, 0.32);
-  }
-  50% {
-    box-shadow: 0 0 0 5px rgba(78, 207, 98, 0);
-  }
+@keyframes avatar-live {
+  50% { transform: translateY(-0.16rem) rotate(-2deg); }
 }
 
-@media (max-width: 680px) {
+@media (max-width: 47.99rem) {
   .chat-avatar {
-    width: 36px;
-    height: 36px;
-    flex-basis: 36px;
-    border-radius: 12px;
+    width: 2rem;
+    height: 2rem;
+    flex-basis: 2rem;
   }
 
   .chat-avatar svg {
-    width: 22px;
-    height: 22px;
-  }
-
-  .status-dot {
-    width: 9px;
-    height: 9px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .is-active .status-dot {
-    animation: none;
+    width: 1.15rem;
+    height: 1.15rem;
   }
 }
 </style>

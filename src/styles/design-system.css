@@ -1,0 +1,203 @@
+:root {
+  color-scheme: light;
+  font-family: "MiSans", "HarmonyOS Sans SC", "Microsoft YaHei", sans-serif;
+  font-synthesis: none;
+  --paper: #f2eee5;
+  --paper-raised: #fbf8f1;
+  --paper-deep: #e6dfd2;
+  --ink: #11181d;
+  --ink-soft: #344047;
+  --line: rgba(17, 24, 29, 0.18);
+  --line-strong: rgba(17, 24, 29, 0.72);
+  --signal: #f04f2f;
+  --signal-dark: #c7371f;
+  --teal: #0e8c88;
+  --teal-soft: #d2ebe6;
+  --sun: #f2c14e;
+  --white: #fffdf8;
+  --font-display: "Noto Serif SC", "Source Han Serif SC", "Songti SC", STSong, serif;
+  --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  --shadow-sm: 0 0.75rem 2rem rgba(17, 24, 29, 0.08);
+  --shadow-lg: 0 2rem 5rem rgba(17, 24, 29, 0.16);
+  --radius-sm: 0.4rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.25rem;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 20rem;
+  background: var(--paper);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  min-width: 20rem;
+  min-height: 100vh;
+  margin: 0;
+  color: var(--ink);
+  background: var(--paper);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  color: var(--white);
+  background: var(--signal);
+}
+
+:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--signal) 72%, transparent);
+  outline-offset: 3px;
+}
+
+/* Element Plus is treated as a low-level interaction kit, not a visual identity. */
+.el-button {
+  min-height: 2.75rem;
+  border-radius: var(--radius-sm);
+  border-color: var(--line);
+  padding-inline: 1rem;
+  color: var(--ink);
+  background: var(--paper-raised);
+  font-weight: 750;
+  letter-spacing: 0.015em;
+  transition: transform 180ms var(--ease-out), box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.el-button:hover {
+  transform: translateY(-2px);
+  border-color: var(--ink);
+  color: var(--ink);
+  box-shadow: 0 0.45rem 0 var(--ink);
+}
+
+.el-button--primary,
+.el-button--success {
+  border-color: var(--ink);
+  color: var(--white);
+  background: var(--ink);
+}
+
+.el-button--primary:hover,
+.el-button--success:hover {
+  border-color: var(--signal);
+  color: var(--white);
+  background: var(--signal);
+  box-shadow: 0 0.45rem 0 var(--ink);
+}
+
+.el-input__wrapper,
+.el-select__wrapper,
+.el-textarea__inner {
+  min-height: 2.9rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--white);
+  box-shadow: none !important;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.el-input__wrapper.is-focus,
+.el-select__wrapper.is-focused,
+.el-textarea__inner:focus {
+  border-color: var(--ink);
+  box-shadow: 0 0.25rem 0 var(--sun) !important;
+}
+
+.el-tag {
+  min-height: 1.8rem;
+  border-radius: 999px;
+  border-color: var(--line);
+  color: var(--ink-soft);
+  background: transparent;
+  font-weight: 700;
+}
+
+.el-tag--success {
+  border-color: color-mix(in srgb, var(--teal) 38%, transparent);
+  color: #08605e;
+  background: var(--teal-soft);
+}
+
+.el-alert {
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--paper-deep);
+}
+
+.el-dialog {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--paper-raised);
+  box-shadow: var(--shadow-lg);
+}
+
+.el-dialog__header {
+  margin: 0;
+  padding: 1.2rem 1.4rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.el-dialog__title {
+  font-family: var(--font-display);
+  font-weight: 900;
+}
+
+.el-dialog__body {
+  padding: 1.4rem;
+}
+
+.el-dialog__footer {
+  padding: 1rem 1.4rem 1.4rem;
+}
+
+.el-tabs__item {
+  min-height: 3rem;
+  color: var(--ink-soft);
+  font-weight: 800;
+}
+
+.el-tabs__item.is-active,
+.el-tabs__item:hover {
+  color: var(--signal);
+}
+
+.el-tabs__active-bar {
+  height: 3px;
+  background: var(--signal);
+}
+
+.el-segmented {
+  --el-segmented-item-selected-bg-color: var(--ink);
+  --el-segmented-item-selected-color: var(--white);
+  min-height: 2.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--paper-deep);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
