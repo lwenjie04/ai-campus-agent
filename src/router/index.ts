@@ -1,10 +1,17 @@
-import { createRouter, createWebHistory, type RouteLocationNormalized, type RouteRecordRaw } from 'vue-router'
+import {
+  createRouter,
+  createWebHistory,
+  type RouteLocationNormalized,
+  type RouteRecordRaw,
+  type Router,
+  type RouterHistory,
+} from 'vue-router'
 import { useAuthStore } from '@/store/auth'
 
 // 页面路由与接口命名空间分开：接口统一走 /api，以下路径只负责页面。
 // 会话详情（/chat/:conversationId）要等多会话模型落地后再接入，避免把静态
 // /chat/new 误当成已存在的会话 ID。
-const routes: RouteRecordRaw[] = [
+export const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'home',
@@ -60,42 +67,54 @@ const routes: RouteRecordRaw[] = [
   },
 ]
 
-const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
-  routes,
-  scrollBehavior(to, _from, savedPosition) {
-    if (savedPosition) return savedPosition
-    if (to.hash) return { el: to.hash, behavior: 'smooth' }
-    return { top: 0 }
-  },
-})
-
 // 受限页面统一回首页并带上登录意图，登录成功后由 App.vue 按 redirect 回跳。
 const loginRedirect = (to: RouteLocationNormalized) => ({
   path: '/',
   query: { login: '1', redirect: to.fullPath },
 })
 
-let authHydrated = false
+// 守卫单独导出：测试可以复用生产路由的 meta，不挂载真实页面组件。
+export const installAuthGuard = (router: Router) => {
+  let authHydrated = false
 
-router.beforeEach((to) => {
-  const authStore = useAuthStore()
+  router.beforeEach((to) => {
+    const authStore = useAuthStore()
 
-  // 首次导航前恢复登录态，避免刷新受限页面时被误判为游客。
-  if (!authHydrated) {
-    authStore.hydrate()
-    authHydrated = true
-  }
+    // 首次导航前恢复登录态，避免刷新受限页面时被误判为游客。
+    if (!authHydrated) {
+      authStore.hydrate()
+      authHydrated = true
+    }
 
-  if (to.meta.requiresAdmin) {
-    if (!authStore.loggedIn) return loginRedirect(to)
-    if (!authStore.isAdmin) return { path: '/' }
+    if (to.meta.requiresAdmin) {
+      if (!authStore.loggedIn) return loginRedirect(to)
+      if (!authStore.isAdmin) return { path: '/' }
+      return true
+    }
+
+    if (to.meta.requiresAuth && !authStore.loggedIn) return loginRedirect(to)
+
     return true
-  }
+  })
 
-  if (to.meta.requiresAuth && !authStore.loggedIn) return loginRedirect(to)
+  return router
+}
 
-  return true
-})
+// 工厂形式便于测试用内存 history 断言守卫，生产入口使用浏览器 history。
+export const createAppRouter = (history: RouterHistory) => {
+  const router = createRouter({
+    history,
+    routes,
+    scrollBehavior(to, _from, savedPosition) {
+      if (savedPosition) return savedPosition
+      if (to.hash) return { el: to.hash, behavior: 'smooth' }
+      return { top: 0 }
+    },
+  })
+
+  return installAuthGuard(router)
+}
+
+const router = createAppRouter(createWebHistory(import.meta.env.BASE_URL))
 
 export default router
