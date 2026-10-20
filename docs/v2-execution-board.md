@@ -53,16 +53,16 @@
 | Sprint | 任务 | ✅ | 🟡 | 🔵 | ⛔ | ⬜ | 当前主攻 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | S0 | 4 | 2 | 2 | 0 | 0 | 0 | 0.3 收尾 |
-| S1 | 5 | 4 | 0 | 1 | 0 | 0 | **1.4（AI-1 已认领）** |
+| S1 | 5 | 5 | 0 | 0 | 0 | 0 | — |
 | S2 | 5 | 0 | 5 | 0 | 0 | 0 | 等 2.1 设计稿 |
 | S3 | 5 | 3 | 2 | 0 | 0 | 0 | **3.3 回归 / 4.1** |
 | S4 | 6 | 2 | 3 | 0 | 0 | 1 | **4.3 开发** |
 | S5 | 4 | 0 | 0 | 0 | 0 | 4 | 等 5.1 数据 |
 | S6 | 5 | 0 | 5 | 0 | 0 | 0 | 2.1 之后 |
 | S7 | 5 | 0 | 1 | 0 | 0 | 4 | 7.1 可提前 |
-| **合计** | **39** | **11** | **18** | **1** | **0** | **9** | — |
+| **合计** | **39** | **12** | **18** | **0** | **0** | **9** | — |
 
-> 已完成：0.1、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.5、3.1、3.2、3.5、4.1、4.2；3.3 代码就绪待浏览器回归。4.3 可继续按依赖顺序推进。实时状态以本表为准。
+> 已完成：0.1、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、3.1、3.2、3.5、4.1、4.2；3.3 代码就绪待浏览器回归。4.3 可继续按依赖顺序推进。实时状态以本表为准。
 
 ---
 
@@ -84,7 +84,7 @@
 | 1.1 | 统一前端 API 地址构造 | AI-1 | ✅ | 0.4 | `src/config/app.ts` 新增 `apiUrl()`，默认根 `/api`、origin 自动补 `/api`、绝对根透传；`llm/tts/auth/community`、`MessageItem`、`AdminReviewView` 全部改走它。证据：`npm run type-check` 通过；curl 实测 `/api/health`、`/api/community/posts` 200 |
 | 1.2 | 迁移代理与来源路径 | AI-2（主）+ AI-1 | ✅ | 1.1 | 原有代理与页面路由验收保留。提交 `a9548ff`；`node --test server/tests/api-aliases.test.mjs` 1/1 通过；`npm run build` 通过（1609 模块）；`node server/scripts/check-api-preview.mjs` 通过：`/chat/new` HTML、问答 NDJSON、下载 401/403、代理登录 200；`git diff --cached --check` 通过。 |
 | 1.3 | 引入 vue-router 并拆页面壳 | AI-1 | ✅ | 1.2 | `src/router/index.ts` + `RouterView` 页面壳；路由 `/`、`/chat`、`/chat/new`、`/community`、`/community/posts/:postId`、`/admin/review`、`/admin/retrieval`、404；懒加载拆分。证据：`777a7c7`；type-check/lint/build 通过；preview 冒烟见 1.2 |
-| 1.4 | 权限、初始访问与返回 | AI-1 | 🔵 | 1.3 | **AI-1 认领 2026-10-20**；在做：403 语义、外部直达无返回历史、取消登录不循环、游客/普通/管理员三视角直接 URL 回归 |
+| 1.4 | 权限、初始访问与返回 | AI-1 | ✅ | 1.3 | 未登录 → `/?login=1&redirect=…`（保留登录意图）；已登录非管理员 → `/403?from=…`（不再静默回首页）；`safeInternalPath` 只接受站内绝对路径；403 页无返回历史时回落首页；三视角直接访问矩阵覆盖。证据：`63ae7d2`；`npm run test:unit` 55/55；`npm run lint` 0 error；`npm run type-check` 通过 |
 | 1.5 | 建立前端测试入口 | AI-1 | ✅ | 1.3 | `vitest 3.2.7` + `jsdom` + `@vue/test-utils`；`vitest.config.ts` 与 `test:unit`（threads pool）；守卫测试复用生产路由 meta、组件打桩。证据：`8c345de`；`npm run test:unit` 4 文件 / 22 用例通过。**注意**：`release:check` 尚未纳入 `test:unit`（转 7.3） |
 
 ### Sprint 2：视觉与问答主页（3–4 天）
@@ -206,6 +206,7 @@
 
 | 日期 | 任务 ID | 执行者 | 证据（commit / 命令 / 文件） | 备注 |
 | --- | --- | --- | --- | --- |
+| 2026-10-20 | 1.4 权限与返回 | AI-1 | `63ae7d2`；`npm run test:unit` 55/55；`npm run lint` 0 error；`npm run type-check` 通过 | 403 与登录意图分离；外部直达无历史回落首页 |
 | 2026-10-20 | 4.2 取消传递到检索与模型 | AI-2（Codex） | `ab5455b`；`npm run test:server` 36/36；`npm run server:check` 53 模块通过；定向 ESLint 通过 | close 与超时合并；取消传递到 LightRAG/向量/LLM；四边界和一次性结算通过 |
 | 2026-10-20 | 4.1 运行身份与取消 | AI-1 | `0c5a877`；`npm run test:unit` 49/49（新增信号/取消/迟到 delta/重试/刷新 7 个）；type-check/lint/build 通过 | 4.2 的交接条件已满足 |
 | 2026-10-20 | 3.5 账号隔离与生命周期 | AI-1 | `91b22cb`；`npm run test:unit` 42/42（隔离/迁移 7 + TTL 5）；type-check/lint/build 通过 | 登录只接纳当前游客会话；退出停媒体并清空 |
@@ -248,6 +249,8 @@
 | 2026-10-20 | 完成 | 4.1 运行身份与取消：AbortSignal、run 校验、interrupted、停止按钮、重试；D-7 关闭，4.2 可启动 | AI-1 |
 | 2026-10-20 | 占用 | 领取 4.2；按人工决定在 4.1 完成后开展服务端取消传递 | AI-2（Codex） |
 | 2026-10-20 | 完成 | 4.2：客户端断开中止检索/模型上游；首段前回滚、首段后结算，正常响应不误判中断 | AI-2（Codex） |
+| 2026-10-20 | 占用 | 领取 1.4：先认领再检查守卫，范围限前端路由与页面 | AI-1 |
+| 2026-10-20 | 完成 | 1.4：未登录/无权限语义分离、`safeInternalPath`、403 无历史回落、三视角矩阵；55 用例通过 | AI-1 |
 
 ---
 
