@@ -120,6 +120,27 @@ export const useConversationsStore = defineStore('conversations', {
       this.summaries = repository.list(this.ownerScope)
     },
 
+    // 登录时只把当前这一条游客会话交给目标账号，不搬运其他匿名历史。
+    moveConversationToScope(conversationId: string, fromScope: string, toScope: string): boolean {
+      if (!fromScope || !toScope || fromScope === toScope) return false
+
+      const conversation = repository.load(conversationId, fromScope)
+      if (!conversation) return false
+
+      conversation.ownerScope = toScope
+      conversation.updatedAt = Date.now()
+      const outcome = repository.save(conversation)
+      if (!outcome.ok) {
+        this.storageError = outcome.reason
+        return false
+      }
+
+      // 已被移走的会话不能再留在当前活动指针上，否则下次 flush 会把它写回旧作用域。
+      if (this.active?.conversationId === conversationId) this.active = null
+      this.summaries = repository.list(this.ownerScope)
+      return true
+    },
+
     loadConversation(conversationId: string) {
       const loaded = repository.load(conversationId, this.ownerScope)
       if (!loaded) return false

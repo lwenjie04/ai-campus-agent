@@ -271,6 +271,7 @@ import { useAgentStore } from '@/store/agent'
 import { useAuthStore } from '@/store/auth'
 import { useConversationsStore, resolveOwnerScope } from '@/store/conversations'
 import { applyMessagesToConversation, conversationToMessages } from '@/services/conversation-session'
+import { clearPendingQuestion, readPendingQuestion, writePendingQuestion } from '@/services/pending-question'
 import { useRoute, useRouter } from 'vue-router'
 import HistoryDrawer from '@/components/HistoryDrawer.vue'
 
@@ -285,8 +286,6 @@ const pendingDraft = ref('')
 const pendingDraftRestored = ref(false)
 const resumeAfterLoginRequested = ref(false)
 const GUEST_TRIAL_STORAGE_KEY = 'ai-campus-agent.guest-trial.used.v1'
-const PENDING_DRAFT_STORAGE_KEY = 'ai-campus-agent.pending-question.v1'
-const PENDING_DRAFT_TTL_MS = 24 * 60 * 60 * 1000
 const guestTrialUsed = ref(false)
 
 const getLocalStorage = () => {
@@ -295,11 +294,6 @@ const getLocalStorage = () => {
   } catch {
     return null
   }
-}
-
-type StoredPendingDraft = {
-  text: string
-  savedAt: number
 }
 
 const persistGuestTrialUsed = () => {
@@ -315,11 +309,7 @@ const clearPendingDraft = () => {
   pendingDraft.value = ''
   pendingDraftRestored.value = false
   resumeAfterLoginRequested.value = false
-  try {
-    getLocalStorage()?.removeItem(PENDING_DRAFT_STORAGE_KEY)
-  } catch {
-    // 存储不可用时无需额外处理。
-  }
+  clearPendingQuestion(getLocalStorage())
 }
 
 const queuePendingDraft = (text: string) => {
@@ -327,32 +317,14 @@ const queuePendingDraft = (text: string) => {
   if (!normalized) return
   pendingDraft.value = normalized
   pendingDraftRestored.value = false
-  try {
-    const storage = getLocalStorage()
-    if (!storage) return
-    const payload: StoredPendingDraft = { text: normalized, savedAt: Date.now() }
-    storage.setItem(PENDING_DRAFT_STORAGE_KEY, JSON.stringify(payload))
-  } catch {
-    // 无痕或禁用存储时仍保留当前标签页内的待问。
-  }
+  writePendingQuestion(normalized, getLocalStorage())
 }
 
 const restorePendingDraft = () => {
-  try {
-    const raw = getLocalStorage()?.getItem(PENDING_DRAFT_STORAGE_KEY)
-    if (!raw) return
-    const parsed = JSON.parse(raw) as Partial<StoredPendingDraft>
-    const text = typeof parsed.text === 'string' ? parsed.text.trim() : ''
-    const savedAt = Number(parsed.savedAt)
-    if (!text || !Number.isFinite(savedAt) || Date.now() - savedAt > PENDING_DRAFT_TTL_MS) {
-      clearPendingDraft()
-      return
-    }
-    pendingDraft.value = text
-    pendingDraftRestored.value = true
-  } catch {
-    clearPendingDraft()
-  }
+  const stored = readPendingQuestion(getLocalStorage())
+  if (!stored) return
+  pendingDraft.value = stored.text
+  pendingDraftRestored.value = true
 }
 
 // 用户身份的允许值。

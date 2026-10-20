@@ -144,6 +144,42 @@ describe('会话 store', () => {
     expect(resolveOwnerScope('u_1')).toBe('user:u_1')
   })
 
+  it('登录时只把当前这条游客会话移入账号空间', () => {
+    const store = newStore()
+    store.createDraft()
+    store.appendMessage(makeMessage('user', '游客问题 A'))
+    store.flush()
+
+    const current = store.createDraft()
+    store.appendMessage(makeMessage('user', '游客问题 B'))
+    store.flush()
+
+    expect(store.moveConversationToScope(current.conversationId, 'guest:local', 'user:u_1')).toBe(true)
+
+    store.openScope('guest:local')
+    expect(store.summaries.map((item) => item.title)).toEqual(['游客问题 A'])
+
+    store.openScope('user:u_1')
+    expect(store.summaries.map((item) => item.title)).toEqual(['游客问题 B'])
+    expect(store.loadConversation(current.conversationId)).toBe(true)
+  })
+
+  it('不移动其他作用域的会话，也不会移动空草稿', () => {
+    const store = newStore()
+    const emptyDraft = store.createDraft()
+
+    expect(store.moveConversationToScope(emptyDraft.conversationId, 'guest:local', 'user:u_1')).toBe(false)
+    expect(store.moveConversationToScope('missing', 'guest:local', 'user:u_1')).toBe(false)
+
+    store.createDraft()
+    store.appendMessage(makeMessage('user', '游客问题'))
+    store.flush()
+    const other = store.summaries[0].conversationId
+
+    expect(store.moveConversationToScope(other, 'user:u_2', 'user:u_1')).toBe(false)
+    expect(store.summaries).toHaveLength(1)
+  })
+
   it('打开作用域时迁移旧缓存，旧记录不混入当前账号', () => {
     storage.setItem(
       LEGACY_SESSION_KEY,

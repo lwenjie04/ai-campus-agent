@@ -87,6 +87,7 @@
 import { computed, defineAsyncComponent, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from './store/auth'
+import { useSessionLifecycle } from './composables/useSessionLifecycle'
 
 // 登录页按需加载，首屏只加载当前路由的页面组件。
 const LoginView = defineAsyncComponent(() => import('./views/LoginView.vue'))
@@ -94,6 +95,9 @@ const LoginView = defineAsyncComponent(() => import('./views/LoginView.vue'))
 const authStore = useAuthStore()
 const route = useRoute()
 const router = useRouter()
+
+// 登录/退出时切换会话作用域并清理界面；注册一次即可。
+useSessionLifecycle()
 
 const loginDialogVisible = ref(false)
 
