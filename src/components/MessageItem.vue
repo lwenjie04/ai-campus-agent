@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <!-- 单条消息由品牌化头像、身份信息、消息气泡和可选来源组成。 -->
   <div class="message-row" :class="`is-${message.role}`" :data-role="message.role" data-testid="message-row">
     <ChatAvatar
@@ -119,7 +119,7 @@
 </template>
 
 <script setup lang="ts">
-import { appConfig } from '@/config/app'
+import { apiUrl } from '@/config/app'
 import type { Message } from '@/types/agent'
 import ChatAvatar from './ChatAvatar.vue'
 
@@ -160,9 +160,8 @@ const formatMessageDateTime = (createdAt?: number) => {
 // 这里要兼容完整链接、后端相对路径以及原样透传三种情况。
 const resolveSourceHref = (url?: string) => {
   if (!url) return ''
-  if (/^https?:\/\//i.test(url)) return url
-  if (url.startsWith('/')) return `${appConfig.apiBaseUrl}${url}`
-  return url
+  // 完整链接原样透传；站内相对路径统一挂到 /api 根下，且不会重复叠加 /api。
+  return apiUrl(url)
 }
 
 // 判断来源链接是否更像“文件”而不是“网页正文”，用于切换展示文案。

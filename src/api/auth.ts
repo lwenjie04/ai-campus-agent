@@ -1,7 +1,5 @@
 import axios from 'axios'
-import { appConfig } from '@/config/app'
-
-const AUTH_BASE_URL = appConfig.apiBaseUrl
+import { apiUrl } from '@/config/app'
 
 export type AuthUser = {
   id: string
@@ -30,14 +28,14 @@ export const getAuthRequestHeaders = (): Record<string, string> =>
 
 export const sendRegisterCode = async (payload: { email: string; displayName?: string }) => {
   const response = await axios.post<{ message?: string; data?: { expireMinutes: number; resendSeconds: number } }>(
-    `${AUTH_BASE_URL}/auth/send-register-code`,
+    apiUrl('/auth/send-register-code'),
     payload,
   )
   return response.data
 }
 
 export const loginByPassword = async (payload: { account: string; password: string }) => {
-  const response = await axios.post<{ data: AuthSession }>(`${AUTH_BASE_URL}/auth/login`, payload)
+  const response = await axios.post<{ data: AuthSession }>(apiUrl('/auth/login'), payload)
   return response.data.data
 }
 
@@ -48,6 +46,6 @@ export const registerUserAccount = async (payload: {
   password: string
   confirmPassword: string
 }) => {
-  const response = await axios.post<{ data: AuthUser; message?: string }>(`${AUTH_BASE_URL}/auth/register`, payload)
+  const response = await axios.post<{ data: AuthUser; message?: string }>(apiUrl('/auth/register'), payload)
   return response.data.data
 }

@@ -8,10 +8,8 @@ import type {
   CommunityReply,
   CommunityReviewListResponse,
 } from '@/types/community'
-import { appConfig } from '@/config/app'
+import { apiUrl } from '@/config/app'
 import { getAuthRequestHeaders } from '@/api/auth'
-
-const API_BASE = appConfig.apiBaseUrl
 
 type ApiEnvelope<T> = {
   code: number | string
@@ -20,7 +18,7 @@ type ApiEnvelope<T> = {
 }
 
 const request = async <T>(path: string, init?: RequestInit): Promise<T> => {
-  const response = await fetch(`${API_BASE}${path}`, {
+  const response = await fetch(apiUrl(path), {
     ...init,
     credentials: 'include',
     headers: {

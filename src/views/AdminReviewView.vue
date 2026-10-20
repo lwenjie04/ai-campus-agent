@@ -445,7 +445,7 @@ import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useCommunityStore } from '@/store/community'
 import { formatDateTime } from '@/utils/date'
-import { appConfig } from '@/config/app'
+import { apiUrl, appConfig } from '@/config/app'
 import { getAuthRequestHeaders } from '@/api/auth'
 
 defineEmits<{
@@ -467,7 +467,7 @@ const lrPending = ref(0)
 const lrFailed = ref(0)
 const lightragConsoleEnabled = computed(() => Boolean(appConfig.lightragConsoleUrl))
 
-const lrApiBase = () => `${appConfig.apiBaseUrl}/api/lightrag`
+const lrApiBase = () => apiUrl('/lightrag')
 const listLen = (arr: unknown) => (Array.isArray(arr) ? arr.length : 0)
 const lightragRequestOptions = () => ({
   headers: getAuthRequestHeaders(),

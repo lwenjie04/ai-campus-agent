@@ -1,4 +1,4 @@
-import { appConfig } from '@/config/app'
+import { apiUrl, appConfig } from '@/config/app'
 import { getAuthRequestHeaders } from '@/api/auth'
 
 // 发给后端 TTS 接口的最小请求结构。
@@ -20,7 +20,7 @@ export const requestBackendTts = async ({ text, voiceName }: TtsRequest): Promis
   }
 
   // 这里走的是普通 POST 请求，因为 TTS 返回的是完整音频文件，不需要流式解析。
-  const resp = await fetch(`${appConfig.apiBaseUrl}/tts`, {
+  const resp = await fetch(apiUrl('/tts'), {
     method: 'POST',
     headers,
     credentials: 'include',

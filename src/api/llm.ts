@@ -1,6 +1,6 @@
 import axios from 'axios'
 import type { Message, MessageSource } from '@/types/agent'
-import { appConfig } from '@/config/app'
+import { apiUrl, appConfig } from '@/config/app'
 import { getAuthRequestHeaders } from '@/api/auth'
 
 export interface ChatApiResponse {
@@ -99,7 +99,7 @@ export const sendChat = async (messages: Message[]): Promise<ChatApiResponse> =>
 
   // 非流式接口适合简单请求，直接等待后端一次性返回完整结果。
   const res = await axios.post<ChatApiResponse>(
-    `${appConfig.apiBaseUrl}/chat`,
+    apiUrl('/chat'),
     { messages },
     { headers: getAuthRequestHeaders(), withCredentials: true },
   )
@@ -123,7 +123,7 @@ export const streamChat = async (
     return reply
   }
 
-  const resp = await fetch(`${appConfig.apiBaseUrl}/chat/stream`, {
+  const resp = await fetch(apiUrl('/chat/stream'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
