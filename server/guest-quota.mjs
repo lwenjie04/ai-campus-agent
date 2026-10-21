@@ -37,7 +37,12 @@ const parseCookies = (req) => {
     if (index <= 0) continue
     const key = part.slice(0, index).trim()
     const value = part.slice(index + 1).trim()
-    if (key) result[key] = decodeURIComponent(value)
+    if (!key) continue
+    try {
+      result[key] = decodeURIComponent(value)
+    } catch {
+      result[key] = ''
+    }
   }
   return result
 }
@@ -48,6 +53,18 @@ const readSignedGuestId = (req) => {
   const [guestId, signature] = raw.split('.')
   if (!guestId || !signature || !verifyGuestId(guestId, signature)) return ''
   return guestId
+}
+
+// 反馈身份只从服务端验证过的凭据读取。若同一请求带有登录会话与游客 Cookie，
+// 调用方可按 receipt 所有者依次尝试；不读取请求体里的 owner 字段。
+export const resolveFeedbackOwners = (req) => {
+  const owners = []
+  const session = readSession(req)
+  if (session?.userId) owners.push({ ownerType: 'user', ownerId: session.userId })
+
+  const guestId = readSignedGuestId(req)
+  if (guestId) owners.push({ ownerType: 'guest', ownerId: guestId })
+  return owners
 }
 
 const serializeGuestCookie = (guestId) => {

@@ -19,6 +19,8 @@ import { handleTtsRoute } from './tts.mjs'
 import { beginChatAccess } from './guest-quota.mjs'
 import { requireAdmin } from './session.mjs'
 import { createChatCancellation, createClientDisconnectError } from './chat-cancellation.mjs'
+import { saveRequestReceipt } from './request-receipts.mjs'
+import { handleFeedbackRoute } from './feedback-route.mjs'
 
 // 读取 .env 文件并注入到 process.env。
 // 这里没有依赖 dotenv，而是自己做了一个极简解析器，便于保持后端零额外依赖。
@@ -566,6 +568,35 @@ const writeNdjson = (res, payload) => {
   res.write(`${JSON.stringify(payload)}\n`)
 }
 
+const saveFeedbackReceipt = async ({ requestId, chatAccess, sources }) => {
+  const owner =
+    chatAccess?.kind === 'authenticated' && chatAccess.session?.userId
+      ? { ownerType: 'user', ownerId: chatAccess.session.userId }
+      : chatAccess?.kind === 'guest' && chatAccess.guestId
+        ? { ownerType: 'guest', ownerId: chatAccess.guestId }
+        : null
+  if (!owner) return false
+
+  try {
+    await saveRequestReceipt({
+      requestId,
+      ...owner,
+      sourceIds: sources.map((source) => source?.sourceId).filter(Boolean),
+    })
+    return true
+  } catch (error) {
+    console.warn(
+      JSON.stringify({
+        level: 'warn',
+        requestId,
+        feedback: 'receipt_unavailable',
+        code: error?.code || 'FEEDBACK_STORAGE_UNAVAILABLE',
+      }),
+    )
+    return false
+  }
+}
+
 const buildChatError = (code, recoverySources = []) => {
   const hasRecoverySources = recoverySources.length > 0
   const message =
@@ -753,6 +784,8 @@ const handleChatStream = async (req, res) => {
         ? ragSources
         : buildRuleBasedSources(userText, classified.intent, 'real')
     const sources = adaptMessageSources(sourceCandidates)
+    const feedbackEligible = await saveFeedbackReceipt({ requestId, chatAccess, sources })
+    ensureClientConnected()
 
     writeEvent({
       type: 'meta',
@@ -761,6 +794,7 @@ const handleChatStream = async (req, res) => {
       videoCue: classified.videoCue,
       sources,
       requestId,
+      feedbackEligible,
     })
     writeEvent({ type: 'done', requestId })
     cancellation.settle('commit')
@@ -930,6 +964,7 @@ const handleChat = async (req, res) => {
       sources = ragSources.length > 0 ? ragSources : buildRuleBasedSources(userText, intent, 'real')
     }
     sources = adaptMessageSources(sources)
+    const feedbackEligible = await saveFeedbackReceipt({ requestId, chatAccess, sources })
 
     const durationMs = Date.now() - startedAt
     console.log(
@@ -956,6 +991,7 @@ const handleChat = async (req, res) => {
         videoCue,
         sources,
         requestId,
+        feedbackEligible,
       },
       chatAccess.responseHeaders,
     )
@@ -1037,6 +1073,15 @@ const server = createServer(async (req, res) => {
   })
   if (authHandled !== false) {
     return authHandled
+  }
+
+  const feedbackHandled = await handleFeedbackRoute(req, res, requestUrl, {
+    json,
+    parseJsonBody,
+    allowOrigin: ALLOW_ORIGIN,
+  })
+  if (feedbackHandled !== false) {
+    return feedbackHandled
   }
 
   // 学生社区模块接口。

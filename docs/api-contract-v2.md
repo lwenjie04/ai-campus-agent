@@ -159,7 +159,7 @@ Content-Type: application/json
 ```
 
 ```json
-{ "requestId": "server-generated-id", "value": "helpful" }
+{ "requestId": "4f9da5c8-3078-40bb-bd7c-869125aafe63", "value": "helpful" }
 ```
 
 `value` 只允许 `helpful | none`；`none` 是用户主动撤销当前有帮助选择的显式值。主体从已验证登录会话或签名游客 Cookie 得出；不能接受客户端 `userId`、`ownerScope` 或角色作为身份依据。服务端验证该主体拥有已完成且符合反馈条件的 request receipt，再执行 upsert。
@@ -167,6 +167,16 @@ Content-Type: application/json
 成功返回 `200 { "data": { "requestId": string, "value": "helpful" | "none", "updatedAt": string } }`。同一主体对同一 `requestId` 的重复相同提交幂等成功；唯一约束为主体 + requestId，后续合法值更新该行。伪造/未知 requestId、未完成回答或跨主体请求以 `409 FEEDBACK_NOT_ELIGIBLE` 拒绝；格式错误为 `400 INVALID_FEEDBACK`；限频为 `429 RATE_LIMITED`；数据库不可用为 `503 FEEDBACK_STORAGE_UNAVAILABLE`。失败时前端不得显示“已记录”，并保留重试机会。
 
 登录后的游客回答只在本次有效签名 Cookie 能验证并关联原游客主体时可操作；不因登录而把该回答改挂到任意账号。数据库唯一键提供并发幂等保障；不能以“先查再插”替代约束。MySQL 是非测试环境的持久化来源；内存实现必须由显式测试配置启用。
+
+### 7.2 补充冻结条款（2026-10-21）
+
+请求 JSON 必须且只能包含 `requestId`、`value` 两个字段；`requestId` 为问答接口生成的 UUID，`value` 为 `helpful | none`。传入 `ownerType`、`ownerId`、`ownerScope`、`userId`、角色或其他额外字段均以 `400 INVALID_FEEDBACK` 拒绝，服务端绝不采用客户端指定的主体。
+
+身份从当前有效 Bearer 登录会话和/或通过签名校验的 `campus_guest_id` Cookie 得出。请求同时带有两类凭据时，服务端依次用这些已验证主体匹配 receipt；这样用户登录后仍可凭原游客 Cookie 操作原游客回答，但不会把游客回答迁移给当前账号。缺少有效主体为 `401 FEEDBACK_IDENTITY_REQUIRED`；不存在、未完成、未归属当前凭据的 receipt 为 `409 FEEDBACK_NOT_ELIGIBLE`。
+
+限频按主体每分钟 30 次、来源 IP 每分钟 120 次，超限返回 `429 RATE_LIMITED` 并携带 `Retry-After` 秒数；当前计数在单个 Node 进程内维护。请求带 `Origin` 时必须与服务端配置的 `CORS_ORIGIN` 同源，否则返回 `403 ORIGIN_NOT_ALLOWED`。成功返回 `200 { "data": { "requestId": string, "value": "helpful" | "none", "updatedAt": string } }`；持久化不可用返回 `503 FEEDBACK_STORAGE_UNAVAILABLE`。错误响应顶层 `requestId` 是此次反馈操作的服务端追踪 ID；成功响应中的 `data.requestId` 是被反馈回答的 ID。
+
+`/api/chat/stream` 的 `meta.feedbackEligible` 和 `/api/chat` 的 `feedbackEligible` 都是布尔值，仅在成功回答的 receipt 已持久化后为 `true`。服务端在输出完成态前尝试写 receipt；写入失败不改变已经生成的答案，只返回 `false` 并记录不含正文或凭据的错误码。前端只有在该字段为 `true` 时显示或启用反馈操作；历史消息不得自行推导资格。
 
 ## 9. 来源字段
 
@@ -205,6 +215,6 @@ type MessageSource = {
 
 ## 11. 当前实现差异与验收责任
 
-当前代码的流事件尚无 `phase`，`start` 在检索后发送；来源缺 `sourceId` 与时效字段；问答 `meta` 尚无 `feedbackEligible`；`/api/feedback` 和 receipt 表尚不存在。登录接口对无效登录返回 `AUTH_INVALID`，过期会话的统一机器码需在认证接线任务补齐。本文不声称这些已实现。
+本节差异记录以 2026-10-20 契约签字时的实现状态为准：当时流事件尚无 `phase`，`start` 在检索后发送；来源缺 `sourceId` 与时效字段；问答 `meta` 尚无 `feedbackEligible`；`/api/feedback` 和 receipt 表尚不存在。后续任务的当前实现与验证状态以 [`v2-execution-board.md`](v2-execution-board.md) 为准。登录接口对无效登录返回 `AUTH_INVALID`，过期会话的统一机器码仍需在认证接线任务补齐。
 
 人工签字后，4.3 按 §4–5 实现阶段事件与单次结算，7.1 按 §8 建立只增量迁移和请求凭据，7.2 按 §8 实现反馈端点。接口测试应覆盖成功、错误、伪造归属、重复提交、取消和竞态；不得重跑包含 `DROP TABLE` 的旧 SQL。
