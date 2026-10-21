@@ -92,7 +92,7 @@
 | ID | 任务 | 主责 | 状态 | 依赖 | 完成判定 / 证据 |
 | --- | --- | --- | --- | --- | --- |
 | 2.1 | 落地颜色/字体/间距/图标 | AI-1 | ✅ | 0.2、1.3、**视觉决策** | 设计包已入库：`71dcb6b`（`docs/design/`，Figma 导出非截图）。`f511dde`：银白/深绿 token（`#F5F5F7`/`#1D1D1F`/`#005B46`/`#00664F`/`#E7F1EC`/`#D2D2D7`）、Noto Sans SC、去除页面网格/径向光晕/纸张底/黄色渐变/粗重偏移阴影、绿色胶囊按钮与输入框焦点环；SVG 已入 `public/icons` 并去掉导出背景。证据：65 单测/type-check/lint/build 通过；1440 截图 `docs/design/verify/home-1440.png`。**注**：页面布局仍是旧结构，由 2.2/2.3 替换 |
-| 2.2 | 首页与公共导航 | AI-1 | ✅ | 2.1 | `HomeView.vue` 独立：Figma hero、静态产品预览、四张常办事项卡、页脚；公共导航含问答/社区/办事指南/关于校答 + 登录；`HelpPanel` 说明面板可开；`/services` 先提供真实空态，不伪造未建数据；开始提问只进 `/chat/new` 并聚焦输入框，不发送、不建空历史。证据：`e5ba122`；`npm run home:journey` **6/6**（`server/evals/latest-home-flow.json`）；1440/390 截图 `docs/design/verify/home-new-*.png`；65 单测/type-check/lint/build 通过 |
+| 2.2 | 首页与公共导航 | AI-1 | ✅ | 2.1 | `HomeView.vue` 独立：Figma hero、静态产品预览、四张常办事项卡、页脚；公共导航含问答/社区/办事指南/关于校答 + 登录；`HelpPanel` 说明面板可开；`/services` 先提供真实空态，不伪造未建数据；开始提问只进 `/chat/new` 并聚焦输入框，不发送、不建空历史。登录/注册弹窗按 `22:35` 重做：账号标题、登录/注册页签、绿色全宽主按钮、内联错误与关闭按钮（`22f176e`，截图 `docs/design/verify/login-1440.png`、`login-390.png`）。证据：`e5ba122`；`npm run home:journey` **6/6**（`server/evals/latest-home-flow.json`）；1440/390 截图 `docs/design/verify/home-new-*.png`；65 单测/type-check/lint/build 通过 |
 | 2.3 | 响应式问答布局 | AI-1 | ✅ | 2.1 | `53a6144`：阅读列 720px + 桌面来源栏 276px；页头历史/来源/新建对话；用户右侧气泡、校答阅读式回答、复制/朗读；`SourceCard` 统一来源卡；手机“查看 N 份官方来源”面板；来源绑定最近回答 ID；长回答/多来源不挤掉固定输入区。证据：`npm run chat:layout` **5/5**（`server/evals/latest-chat-layout.json`）；截图 `docs/design/verify/chat-answer-1440.png`、`chat-sources-390.png`；70 单测/type-check/lint/build 通过 |
 | 2.4 | 输入与推荐问题 | AI-1 | 🟡 | 2.3 | 中文 IME 组合期 Enter 不发送（A04）；Shift+Enter 换行；草稿持久化；推荐问题只预填并聚焦；空值/重复提交统一处理 |
 | 2.5 | 连接问答并验证手机布局 | AI-1（主）+ AI-2（脚本矩阵） | 🟡 | 2.3、2.4 | 360/390/768/1024/1440 五宽度 0 溢出、发送控件可见；`inspect-responsive-layout` 支持宽度矩阵与截图落盘；真实流式回答正常 |
@@ -276,6 +276,7 @@
 | 2026-10-21 | 完成 | 2.2 首页与公共导航：HomeView（hero/预览/四卡）、四导航 + 关于校答面板、办事指南空态、CTA 只进 /chat/new 并聚焦不建历史；home:journey 6/6 | AI-1 |
 | 2026-10-21 | 完成 | 2.3 问答布局：720 阅读列 + 276 来源栏、消息操作、来源卡、手机来源面板、固定输入区；chat:layout 5/5 | AI-1 |
 | 2026-10-21 | 完成 | 4.4 前端：来源类型/日期/时效展示统一，缺失日期“日期未提供”，移除可信度百分比；默认不自动 TTS 改由语音卡触发 | AI-1 |
+| 2026-10-21 | 完成 | 2.2 补充：登录/注册弹窗按 22:35 重做（账号标题、页签、绿色全宽按钮、内联错误、关闭按钮）；70 单测/type-check/lint/build 通过 | AI-1 |
 
 ---
 
