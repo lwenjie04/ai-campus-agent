@@ -229,6 +229,31 @@ try {
   if (!railTitle) throw new Error('source rail title is empty')
   record('来源栏绑定当前回答', railTitle.slice(0, 30))
 
+  // 3b. 7.2 反馈：只有 feedbackEligible=true 的回答显示反馈，提交后显示已记录。
+  await waitFor(
+    async () => evaluate(`Boolean(document.querySelector('[aria-label="有帮助"]'))`),
+    'feedback actions',
+  )
+  await evaluate(`document.querySelector('[aria-label="有帮助"]').click()`)
+  const feedbackState = await waitFor(
+    async () => {
+      const text = await evaluate(`document.querySelector('.feedback-actions')?.textContent?.trim() || ''`)
+      return text.includes('已记录') ? text : undefined
+    },
+    'feedback recorded',
+  ).catch(async (error) => {
+    const debug = await evaluate(`(() => {
+      const actions = [...document.querySelectorAll('.feedback-actions')]
+      return {
+        actions: actions.map((item) => item.textContent?.trim()),
+        notices: document.querySelector('.conversation-notice')?.textContent?.trim() || '',
+      }
+    })()`)
+    throw new Error(`${error.message}: ${JSON.stringify(debug)}`)
+  })
+  record('回答反馈 helpful 已记录', feedbackState)
+  await screenshot('regression-feedback-1440.png')
+
   // 4. TTS 失败：阻断 /api/tts 后点语音卡，应出现可见提示。
   await command('Network.setBlockedURLs', { urls: ['*tts*'] })
   await evaluate(`document.querySelector('.voice-card__action').click()`)

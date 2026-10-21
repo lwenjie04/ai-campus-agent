@@ -14,6 +14,8 @@ export type ConversationMessage = {
   status: ConversationMessageStatus
   requestId?: string
   sources?: MessageSource[]
+  feedbackEligible?: boolean
+  feedback?: 'helpful' | 'none'
   errorCode?: string
   createdAt: number
   updatedAt?: number

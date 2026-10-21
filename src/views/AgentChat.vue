@@ -45,6 +45,7 @@
             :loading="store.loading"
             @narrate="speakText"
             @open-sources="openSourcePanel"
+            @feedback="handleFeedback"
             @retry="handleRetry"
           />
         </div>
@@ -276,6 +277,7 @@ import { applyMessagesToConversation, conversationToMessages } from '@/services/
 import { clearPendingQuestion, readPendingQuestion, writePendingQuestion } from '@/services/pending-question'
 import { sourceValidityNote } from '@/services/source-display'
 import type { MessageSource } from '@/types/agent'
+import type { FeedbackValue } from '@/api/feedback'
 import { useRoute, useRouter } from 'vue-router'
 import HistoryDrawer from '@/components/HistoryDrawer.vue'
 import SourceCard from '@/components/SourceCard.vue'
@@ -545,6 +547,15 @@ const handleRetry = async (messageId: string) => {
   ensureDraftForRun()
   await store.retryGeneration(messageId, runOptions())
   syncRouteAfterSend()
+}
+
+// 7.2：反馈成功后写回消息并持久化，刷新后仍显示“已记录”。
+const handleFeedback = (messageId: string | undefined, value: FeedbackValue) => {
+  if (!messageId) return
+  const target = store.messages.find((message) => message.id === messageId)
+  if (!target) return
+  target.feedback = value
+  persistActiveConversation()
 }
 
 const sendPendingDraft = async () => {

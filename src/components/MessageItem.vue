@@ -53,6 +53,12 @@
           <img src="/icons/volume-2.svg" alt="" aria-hidden="true" />
           朗读
         </button>
+        <MessageActions
+          v-if="message.feedbackEligible && message.requestId"
+          :request-id="message.requestId"
+          :initial-value="message.feedback"
+          @submitted="emit('feedback', message.id, $event)"
+        />
         <button
           v-if="hasSources"
           type="button"
@@ -82,6 +88,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref } from 'vue'
 import type { Message } from '@/types/agent'
+import type { FeedbackValue } from '@/api/feedback'
+import MessageActions from './MessageActions.vue'
 
 // 聊天区按纯文本展示，不渲染 Markdown；这里清掉模型偶尔输出的强调符号。
 const formatMessageContent = (content: string) =>
@@ -122,6 +130,7 @@ const emit = defineEmits<{
   (e: 'retry', messageId: string): void
   (e: 'narrate', content: string): void
   (e: 'openSources', messageId?: string): void
+  (e: 'feedback', messageId: string | undefined, value: FeedbackValue): void
 }>()
 
 const isAssistant = computed(() => props.message.role === 'assistant')

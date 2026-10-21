@@ -31,6 +31,8 @@ export const toConversationMessage = (message: Message, index: number): Conversa
 
   if (message.requestId) converted.requestId = message.requestId
   if (message.sources) converted.sources = message.sources
+  if (typeof message.feedbackEligible === 'boolean') converted.feedbackEligible = message.feedbackEligible
+  if (message.feedback) converted.feedback = message.feedback
   if (message.errorCode) converted.errorCode = message.errorCode
 
   return converted
@@ -47,6 +49,8 @@ export const toAgentMessage = (message: ConversationMessage): Message => {
 
   if (message.requestId) converted.requestId = message.requestId
   if (message.sources) converted.sources = message.sources
+  if (typeof message.feedbackEligible === 'boolean') converted.feedbackEligible = message.feedbackEligible
+  if (message.feedback) converted.feedback = message.feedback
   if (message.errorCode) converted.errorCode = message.errorCode
 
   return converted

@@ -401,6 +401,7 @@ export const useAgentStore = defineStore('agent', {
       let finalContent = ''
       let finalSources: MessageSource[] = []
       let finalRequestId: string | undefined
+      let finalFeedbackEligible = false
       let narrationBuffer = ''
       let narrationStarted = false
       // 4.5/2.4：默认不自动朗读，语音由来源栏“语音讲解”显式开启；后续偏好设置在此接入。
@@ -439,6 +440,7 @@ export const useAgentStore = defineStore('agent', {
               if (!isCurrentRun()) return
               finalContent = meta.content || finalContent
               finalSources = meta.sources ?? []
+              finalFeedbackEligible = meta.feedbackEligible === true
             },
           },
           controller.signal,
@@ -453,6 +455,8 @@ export const useAgentStore = defineStore('agent', {
           target.videoCue = 'teaching'
           target.sources = finalSources
           target.requestId = finalRequestId || target.requestId
+          // 只有服务端确认凭据已持久化时才允许反馈。
+          target.feedbackEligible = finalFeedbackEligible
           target.status = 'sent'
         }
 

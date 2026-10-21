@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "completedAt": "2026-10-21T07:26:26.288Z",
+  "completedAt": "2026-10-21T07:33:45.024Z",
   "mode": "isolated_real_backend_mock",
   "targetUrl": "http://127.0.0.1:4176",
   "ok": true,
@@ -29,6 +29,11 @@
       "name": "来源栏绑定当前回答",
       "ok": true,
       "detail": "关于更换两校区智能报修系统的通知"
+    },
+    {
+      "name": "回答反馈 helpful 已记录",
+      "ok": true,
+      "detail": "已记录 · 有帮助"
     },
     {
       "name": "TTS 失败提示",

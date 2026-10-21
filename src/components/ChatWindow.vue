@@ -15,6 +15,7 @@
       :message="msg"
       @narrate="emit('narrate', $event)"
       @open-sources="emit('openSources', $event)"
+      @feedback="(messageId, value) => emit('feedback', messageId, value)"
       @retry="emit('retry', $event)"
     />
 
@@ -36,6 +37,7 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import MessageItem from './MessageItem.vue'
 import type { Message } from '@/types/agent'
+import type { FeedbackValue } from '@/api/feedback'
 
 const props = defineProps<{
   messages: Message[]
@@ -46,6 +48,7 @@ const emit = defineEmits<{
   (e: 'retry', messageId: string): void
   (e: 'narrate', content: string): void
   (e: 'openSources', messageId?: string): void
+  (e: 'feedback', messageId: string | undefined, value: FeedbackValue): void
 }>()
 
 // store 通常会先插入 pending assistant 消息；仅在它缺失时显示兜底加载行，避免双重提示。

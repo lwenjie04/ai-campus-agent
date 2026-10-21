@@ -53,6 +53,10 @@ export interface Message {
   errorCode?: string
   // 请求 id 用于前后端日志关联。
   requestId?: string
+  // 仅当服务端凭据已持久化、可反馈时为 true；历史消息不自行推导。
+  feedbackEligible?: boolean
+  // 当前消息已提交的反馈值。
+  feedback?: 'helpful' | 'none'
   // 创建时间主要用于消息排序和兜底 key。
   createdAt?: number
   // 预留给数字人或其他展示逻辑的 cue。

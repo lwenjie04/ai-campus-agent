@@ -9,6 +9,7 @@ export interface ChatApiResponse {
   videoCue?: string
   sources?: MessageSource[]
   requestId?: string
+  feedbackEligible?: boolean
 }
 
 export interface StreamChatHandlers {
@@ -25,6 +26,7 @@ interface ChatStreamEvent {
   intent?: string
   videoCue?: string
   sources?: MessageSource[]
+  feedbackEligible?: boolean
   error?: {
     code?: string
     message?: string
@@ -185,6 +187,7 @@ export const streamChat = async (
         videoCue: event.videoCue,
         sources: Array.isArray(event.sources) ? event.sources : [],
         requestId: event.requestId,
+        feedbackEligible: event.feedbackEligible === true,
       }
       handlers.onMeta?.(finalMeta)
       return
