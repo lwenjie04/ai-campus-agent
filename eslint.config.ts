@@ -36,6 +36,7 @@ export default defineConfigWithVueTs(
       'server/scripts/home-flow-browser.mjs',
       'server/scripts/chat-layout-browser.mjs',
       'server/scripts/chat-stream-browser.mjs',
+      'server/scripts/regression-journey-browser.mjs',
     ],
     languageOptions: {
       globals: {

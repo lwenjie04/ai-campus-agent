@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "completedAt": "2026-10-21T07:26:26.288Z",
+  "mode": "isolated_real_backend_mock",
+  "targetUrl": "http://127.0.0.1:4176",
+  "ok": true,
+  "steps": [
+    {
+      "name": "管理员登录",
+      "ok": true,
+      "detail": "admin"
+    },
+    {
+      "name": "刷新中断保留 interrupted",
+      "ok": true,
+      "detail": "interrupted-tip visible"
+    },
+    {
+      "name": "重试后恢复回答",
+      "ok": true,
+      "detail": "retry ok"
+    },
+    {
+      "name": "跨会话晚到未串入新会话",
+      "ok": true,
+      "detail": "users=0 assistants=1"
+    },
+    {
+      "name": "来源栏绑定当前回答",
+      "ok": true,
+      "detail": "关于更换两校区智能报修系统的通知"
+    },
+    {
+      "name": "TTS 失败提示",
+      "ok": true,
+      "detail": "语音播报暂不可用，文字回答和来源不受影响。"
+    },
+    {
+      "name": "移动端自动播放拦截提示",
+      "ok": true,
+      "detail": "浏览器限制了自动播放，请再点一次「语音讲解」。"
+    },
+    {
+      "name": "过期登录隔离",
+      "ok": true,
+      "detail": "/chat/new / 这条对话不存在，或不属于当前身份，已为你新建对话"
+    }
+  ]
+}
