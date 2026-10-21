@@ -56,13 +56,13 @@
 | S1 | 5 | 5 | 0 | 0 | 0 | 0 | — |
 | S2 | 5 | 5 | 0 | 0 | 0 | 0 | — |
 | S3 | 5 | 5 | 0 | 0 | 0 | 0 | — |
-| S4 | 6 | 5 | 0 | 0 | 0 | 1 | **4.6 联测** |
+| S4 | 6 | 6 | 0 | 0 | 0 | 0 | — |
 | S5 | 4 | 0 | 0 | 0 | 0 | 4 | 等 5.1 数据 |
 | S6 | 5 | 0 | 5 | 0 | 0 | 0 | 2.1 之后 |
 | S7 | 5 | 1 | 3 | 0 | 0 | 1 | **AI-1 7.2 组件** |
-| **合计** | **39** | **23** | **10** | **0** | **0** | **6** | — |
+| **合计** | **39** | **24** | **9** | **0** | **0** | **6** | — |
 
-> 已完成：0.1、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、2.1、2.2、2.3、2.4、2.5、3.1、3.2、3.3、3.4、3.5、4.1、4.2、4.3、4.4、4.5、7.1。**S1/S2/S3 已全部完成，S4 仅剩 4.6 联测**；7.2 服务端接口与契约已交付，AI-1 组件待完成。实时状态以本表为准。
+> 已完成：0.1、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、2.1、2.2、2.3、2.4、2.5、3.1、3.2、3.3、3.4、3.5、4.1、4.2、4.3、4.4、4.5、4.6、7.1。**S1/S2/S3/S4 已全部完成**；7.2 服务端已交付、前端组件待 AI-1；6.x 与 5.x 待推进。实时状态以本表为准。
 
 ---
 
@@ -116,7 +116,7 @@
 | 4.3 | 阶段事件与额度结算 | AI-2 | ✅ | 4.2、0.4 | `4623976`；`npm run test:server` 37/37；`npm run server:check` 55 模块通过；定向 ESLint、`git diff --check` 通过。`start` 在检索前；发出真实 retrieval/generation phase；正常完成与断开竞态只结算一次 |
 | 4.4 | 来源元数据统一适配 | AI-2（主）+ AI-1（类型/展示） | ✅ | 1.2；展示依赖 2.3 | 服务端 `6112c0b`（45/45、60 模块）。前端 `53a6144`：`MessageSource` 对齐 `sourceId/type/attachments.mimeType/publishedAt/updatedAt/applicablePeriod/validity` 并删除 `confidence`；`source-display.ts` 统一类型/日期/时效文案，缺失日期显示“日期未提供”；`SourceCard` 展示类型、时效、日期、摘要、附件与原文链接；Mock 来源同步新结构。5 个 source-display 单测；70 单测/type-check/lint/build 通过 |
 | 4.5 | 按需语音控制 | AI-1（主）+ AI-2（服务端去密钥） | ✅ | 3.4、4.1 | 服务端 `f620cde`：旧共享密钥不能通过鉴权（45/45）。前端 `7a06d04` 去 `VITE_TTS_AUTH_TOKEN`；`53a6144` 默认不自动 TTS、语音卡显式开关；`5c17697`：单队列 + token 校验丢弃晚到分段/过期请求、ObjectURL 在结束/停止时释放、移动端 `NotAllowedError` 只提示一次并引导再点、游客点语音先登录并在登录后恢复朗读；文本清洗/分段抽到 `narration-text`（4 单测）。证据：`chat:layout` **11/11**（含游客语音先登录）、74 单测/type-check/lint/build 通过。真实 TTS 合成需目标环境凭据，留 7.4 验证 |
-| 4.6 | 生成/来源/媒体联测 | 共同（AI-1 主导） | 🔵 | 4.3、4.4、4.5 | 覆盖跨会话晚到、过期登录、刷新中断、重试、来源选中、TTS 失败、移动端播放限制。AI-1 已认领：先补浏览器联测脚本，再逐项修复；后端边界由 AI-2 配合 |
+| 4.6 | 生成/来源/媒体联测 | 共同（AI-1 主导） | ✅ | 4.3、4.4、4.5 | `regression:journey` **8/8**（真实后端 mock）：管理员登录；生成中刷新→interrupted→重试恢复；跨会话晚到未串入；来源栏绑定当前回答；TTS 失败提示；移动端自动播放拦截提示；过期登录隔离（清 Cookie/本地态后回 `/chat/new` 且无用户消息泄漏）。证据：`server/evals/latest-regression-journey.json`、`docs/design/verify/regression-interrupted-1440.png`；74 单测/type-check/lint 通过 |
 
 ### Sprint 5：办事指南（2–3 天）
 
@@ -209,6 +209,7 @@
 | 2026-10-21 | 7.2 部分 | AI-2（Codex） | `8840b43`；`npm run test:server` 47/47；`node server/scripts/check-server-syntax.mjs` 66 模块；定向 ESLint/oxlint、`git diff --cached --check` 通过 | 服务端路由、receipt eligibility、主体校验、限频及 API 契约已交付；等待 AI-1 `MessageActions.vue` |
 | 2026-10-21 | 7.3 部分 | AI-2（Codex） | `2036b7f`；`npm run lint`、`npm run type-check`、`npm run test:unit` 74/74、`npm run test:server` 47/47、`npm run build` 均通过；`npm run release:check` READY WITH WARNINGS（前述门禁与 Top 20 golden 均通过）；`npx prettier --check .github/workflows/quality.yml docs/ci-quality-gates-v2.md`、`git diff --check` 通过 | CI 骨架与 release 单测步骤已验证；golden/journey 的正式 CI 收口等 4.6、5.4、6.5、7.2 完成后进行 |
 | 2026-10-21 | 0.3 部分 | AI-2（Codex） | `decdf75`；`npm run test:server` 47/47；`npm run service:journey` build/type-check 通过，旅程在社区审核后等待 RAG 来源超时 | 旅程脚本改为 `/chat/new`、textarea、现有登录控件和首页 CTA；完整 10 轮待 6.5 闭环后重跑 |
+| 2026-10-21 | 4.6 生成/来源/媒体联测 | AI-1 | `regression:journey` 8/8；`server/evals/latest-regression-journey.json`；截图 `docs/design/verify/regression-interrupted-1440.png`；74 单测/type-check/lint 通过 | 刷新中断+重试、跨会话晚到、来源绑定、TTS 失败、自动播放拦截、过期登录隔离 |
 | 2026-10-21 | 2.4 输入与推荐问题 | AI-1 | `1c7a306`；`npm run chat:layout` 10/10；`server/evals/latest-chat-layout.json`；截图 `docs/design/verify/chat-suggestions-1440.png`；70 单测/type-check/lint/build 通过 | IME Enter 不发送、Shift+Enter 换行、空值/重复拦截、推荐只预填、草稿刷新恢复 |
 | 2026-10-21 | 4.5 按需语音收尾 | AI-1 | `5c17697`；`npm run chat:layout` 11/11；74 单测/type-check/lint/build 通过；`chat-layout` 含游客语音先登录 | 单队列、晚到丢弃、ObjectURL 释放、游客登录恢复、移动端播放拦截提示 |
 | 2026-10-21 | 2.5 响应式与真实流式 | AI-1 | `e793745`；`npm run responsive:matrix` 10/10；`npm run chat:stream` 2/2；`server/evals/latest-responsive-matrix.json`、`latest-chat-stream.json`；截图 `docs/design/verify/responsive/`、`chat-stream-*.png`；70 单测/type-check/lint/build 通过 | 五宽度 0 溢出、控件可见；真实 NDJSON 流式桌面+手机通过 |
@@ -288,6 +289,7 @@
 | 2026-10-21 | 完成 | 4.5 按需语音收尾：默认不自动 TTS、单队列与晚到丢弃、ObjectURL 结束即释放、移动端拦截提示、游客登录后恢复朗读；narration-text 4 单测，chat:layout 11/11 | AI-1 |
 | 2026-10-21 | 占用 | 领取 7.2 服务端反馈接口与契约补充；`docs/api-contract-v2.md` 由 AI-2 独占编辑，AI-1 组件仍按冻结契约并行实现 | AI-2（Codex） |
 | 2026-10-21 | 占用 | 领取 4.6：按协作规则先认领再联测；覆盖跨会话晚到、刷新中断、重试、来源选中、TTS 失败与移动端限制 | AI-1 |
+| 2026-10-21 | 完成 | 4.6 联测：`regression:journey` 8/8（刷新中断+重试、跨会话晚到、来源绑定、TTS 失败、移动端自动播放拦截、过期登录隔离）；S4 全部完成 | AI-1 |
 | 2026-10-21 | 部分 | 7.2 服务端 `/api/feedback` 与 receipt 接线完成，`feedbackEligible` 已进入流式/非流式回答；测试 47/47。**剩余**：AI-1 完成反馈操作组件并回归。 | AI-2（Codex） |
 | 2026-10-21 | 占用 | 领取 0.3：补跑运行基线服务端测试和浏览器旅程，并写回 `development-baseline-v2.md` | AI-2（Codex） |
 | 2026-10-21 | 部分 | 0.3 记录 `npm run test:server` 47/47；构建/类型检查通过；旅程通过访客答复、登录恢复与审核操作后，在社区知识 RAG 来源闭环断言超时。已写回基线文档。**剩余**：等待 6.5 闭环并跑完默认 10 轮。 | AI-2（Codex） |
