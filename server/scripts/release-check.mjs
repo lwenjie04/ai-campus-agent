@@ -16,6 +16,13 @@ const steps = [
     args: ['server/scripts/check-server-syntax.mjs'],
   },
   {
+    id: 'unit-tests',
+    label: '前端单元测试',
+    command: npmCommand,
+    args: ['run', 'test:unit'],
+    shell: process.platform === 'win32',
+  },
+  {
     id: 'server-tests',
     label: '会话与游客额度测试',
     command: npmCommand,
