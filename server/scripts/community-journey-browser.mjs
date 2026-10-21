@@ -99,6 +99,23 @@ try {
 
   let commandId = 0
   const command = (method, params) => sendCommand(socket, ++commandId, method, params)
+  const postSubmitRequests = []
+  socket.addEventListener('message', (event) => {
+    try {
+      const message = JSON.parse(String(event.data))
+      if (message.method !== 'Network.requestWillBeSent') return
+      const request = message.params?.request
+      if (
+        request?.method === 'POST' &&
+        typeof request.url === 'string' &&
+        request.url.includes('/api/community/posts')
+      ) {
+        postSubmitRequests.push(request.url)
+      }
+    } catch {
+      // ignore non-JSON frames
+    }
+  })
   const evaluate = async (expression) => {
     const result = await command('Runtime.evaluate', {
       expression,
@@ -127,6 +144,7 @@ try {
 
   await command('Page.enable')
   await command('Runtime.enable')
+  await command('Network.enable')
   await command('Emulation.setDeviceMetricsOverride', {
     width: 1440,
     height: 900,
@@ -253,6 +271,188 @@ try {
     throw new Error(`post reload mismatch: expected ${validTitle}, got ${reloadedTitle}`)
   }
   record('切帖按路由 ID 重新加载', reloadedTitle.slice(0, 30))
+
+  // 4. 6.2 回复草稿：刷新后恢复，显式清空后消失。
+  const setTextarea = (selector, value) =>
+    evaluate(`(() => {
+      const textarea = document.querySelector(${JSON.stringify(selector)})
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set
+      setter.call(textarea, ${JSON.stringify(value)})
+      textarea.dispatchEvent(new Event('input', { bubbles: true }))
+      return textarea.value
+    })()`)
+  const clickButtonByText = (text) =>
+    evaluate(`(() => {
+      const buttons = [...document.querySelectorAll('button')]
+      const button = buttons.find((item) => item.textContent?.trim() === ${JSON.stringify(text)})
+      if (!button) {
+        const dialogs = [...document.querySelectorAll('.el-dialog')].map((item) => ({
+          height: item.getBoundingClientRect().height,
+          text: (item.innerText || '').slice(0, 200),
+          buttons: [...item.querySelectorAll('button')].map((b) => b.textContent?.trim()).filter(Boolean),
+        }))
+        throw new Error(
+          'button not found: ' + ${JSON.stringify(text)} +
+          ' available=' + buttons.map((item) => item.textContent?.trim()).filter(Boolean).join('|') +
+          ' dialogs=' + JSON.stringify(dialogs),
+        )
+      }
+      button.click()
+      return true
+    })()`)
+
+  await waitFor(async () => evaluate(`Boolean(document.querySelector('.reply-editor textarea'))`), 'reply form')
+  await setTextarea('.reply-editor textarea', '这是未提交的回复草稿')
+  await sleep(350)
+  await command('Page.reload', {})
+  await waitFor(async () => evaluate('document.readyState === "complete"'), 'reply reload')
+  await waitFor(async () => evaluate(`Boolean(document.querySelector('.reply-editor textarea'))`), 'reply form reloaded')
+  const restoredReply = await waitFor(async () => {
+    const value = await evaluate(`document.querySelector('.reply-editor textarea').value`)
+    return value.includes('这是未提交的回复草稿') ? value : undefined
+  }, 'reply draft restored')
+  const replyHint = await evaluate(`Boolean(document.querySelector('.reply-editor .draft-hint'))`)
+  if (!replyHint) throw new Error('reply draft hint missing')
+  record('回复草稿刷新后恢复', restoredReply.slice(0, 20))
+
+  await clickButtonByText('清空草稿')
+  await sleep(250)
+  const replyAfterDiscard = await evaluate(`document.querySelector('.reply-editor textarea')?.value || ''`)
+  if (replyAfterDiscard) throw new Error('reply draft not cleared')
+  record('回复草稿可显式清空', 'cleared')
+
+  // 5. 回复提交：加载态 + 待审核提示。
+  await setTextarea('.reply-editor textarea', '这是一条自动化联测回复')
+  await command('Network.emulateNetworkConditions', {
+    offline: false,
+    latency: 900,
+    downloadThroughput: -1,
+    uploadThroughput: -1,
+  })
+  await clickButtonByText('提交回复')
+  const replyLoading = await waitFor(
+    async () =>
+      evaluate(`[...document.querySelectorAll('.reply-actions .el-button')].some((item) => item.className.includes('is-loading'))`),
+    'reply loading state',
+  )
+  if (!replyLoading) throw new Error('reply submit button did not enter loading state')
+  const replyNotice = await waitFor(
+    async () => {
+      const text = await evaluate(`document.querySelector('.reply-notice')?.textContent?.trim() || ''`)
+      return text.includes('回复已提交') ? text : undefined
+    },
+    'reply pending notice',
+    20_000,
+  )
+  await command('Network.emulateNetworkConditions', {
+    offline: false,
+    latency: 0,
+    downloadThroughput: -1,
+    uploadThroughput: -1,
+  })
+  record('回复提交与待审核提示', replyNotice)
+
+  // 6. 投稿草稿：取消保留、重开恢复、显式清空；提交防重复且只发一次请求。
+  await command('Page.navigate', { url: `${targetUrl}/community` })
+  await waitFor(async () => (await evaluate('document.readyState')) === 'complete', 'community list again')
+  await waitFor(async () => evaluate(`document.querySelectorAll('[data-testid="community-post-card"]').length > 0`), 'list cards again')
+  await clickButtonByText('发布帖子')
+  await waitFor(async () => evaluate(`Boolean(document.querySelector('.el-dialog textarea'))`), 'post dialog')
+
+  const setDialogField = (selector, value, index = 0) =>
+    evaluate(`(() => {
+      const element = document.querySelectorAll(${JSON.stringify(selector)})[${index}]
+      const proto = element.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype
+      const setter = Object.getOwnPropertyDescriptor(proto, 'value').set
+      setter.call(element, ${JSON.stringify(value)})
+      element.dispatchEvent(new Event('input', { bubbles: true }))
+      return element.value
+    })()`)
+
+  await setDialogField('.el-dialog input', '自动化草稿标题', 2)
+  await setDialogField('.el-dialog textarea', '自动化草稿正文', 0)
+  await sleep(300)
+  await clickButtonByText('取消')
+  await sleep(250)
+  await clickButtonByText('发布帖子')
+  await waitFor(async () => evaluate(`Boolean(document.querySelector('.el-dialog textarea'))`), 'post dialog reopened')
+  const restoredTitle = await evaluate(`document.querySelectorAll('.el-dialog input')[2]?.value || ''`)
+  if (restoredTitle !== '自动化草稿标题') throw new Error(`post draft not restored: ${restoredTitle}`)
+  record('投稿草稿关闭后保留', restoredTitle)
+
+  await clickButtonByText('清空草稿')
+  await sleep(250)
+  const titleAfterDiscard = await evaluate(`document.querySelectorAll('.el-dialog input')[2]?.value || ''`)
+  if (titleAfterDiscard) throw new Error('post draft not cleared explicitly')
+  record('投稿草稿可显式清空', 'cleared')
+
+  // 清空后弹窗可能被关闭，确保重新打开再提交。
+  const waitForVisiblePostDialog = () =>
+    waitFor(
+      async () =>
+        evaluate(`(() => {
+          const dialog = [...document.querySelectorAll('.el-dialog')]
+            .find((item) => Boolean(item.querySelector('textarea')))
+          return Boolean(dialog) && dialog.getBoundingClientRect().height > 0
+        })()`),
+      'visible post dialog',
+    )
+  const dialogStillOpen = await evaluate(`(() => {
+    const dialog = [...document.querySelectorAll('.el-dialog')]
+      .find((item) => Boolean(item.querySelector('textarea')))
+    return Boolean(dialog) && dialog.getBoundingClientRect().height > 0
+  })()`)
+  if (!dialogStillOpen) {
+    await clickButtonByText('发布帖子')
+  }
+  await waitForVisiblePostDialog()
+
+  const requestCountBefore = await evaluate(
+    `performance.getEntriesByType('resource').filter((entry) => entry.name.includes('/api/community/posts')).length`,
+  )
+  postSubmitRequests.length = 0
+  // 提交前再确保投稿弹窗可见（清空草稿后可能已关闭）。
+  const ensurePostDialog = async () => {
+    const visible = await evaluate(`(() => {
+      const dialog = [...document.querySelectorAll('.el-dialog')]
+        .find((item) => Boolean(item.querySelector('textarea')))
+      return Boolean(dialog) && dialog.getBoundingClientRect().height > 0
+    })()`)
+    if (!visible) {
+      await clickButtonByText('发布帖子')
+      await waitForVisiblePostDialog()
+    }
+  }
+  await ensurePostDialog()
+  await setDialogField('.el-dialog input', '自动化联测帖子', 2)
+  await setDialogField('.el-dialog textarea', '这是一条自动化联测投稿，用于验证防重复提交。', 0)
+  await clickButtonByText('提交')
+  await clickButtonByText('提交')
+  await waitFor(
+    async () => evaluate(`document.querySelector('.el-dialog') === null || !document.querySelector('.el-dialog')?.offsetParent || [...document.querySelectorAll('.el-dialog button')].some((item) => item.className.includes('is-loading'))`),
+    'post submit loading',
+  )
+  const postNotice = await waitFor(
+    async () => {
+      const text = await evaluate(`document.querySelector('.submission-notice')?.textContent?.trim() || ''`)
+      return text.includes('帖子已提交') ? text : undefined
+    },
+    'post pending notice',
+    20_000,
+  )
+  await command('Network.emulateNetworkConditions', {
+    offline: false,
+    latency: 0,
+    downloadThroughput: -1,
+    uploadThroughput: -1,
+  })
+  const requestCountAfter = await evaluate(
+    `performance.getEntriesByType('resource').filter((entry) => entry.name.includes('/api/community/posts')).length`,
+  )
+  if (postSubmitRequests.length !== 1) {
+    throw new Error(`duplicate post submission: POST requests=${postSubmitRequests.length}`)
+  }
+  record('投稿提交与防重复', `${postNotice} POST=1 resourceDelta=${requestCountAfter - requestCountBefore}`)
 
   const result = {
     version: 1,

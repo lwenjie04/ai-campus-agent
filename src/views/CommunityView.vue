@@ -6,8 +6,18 @@
         <h1>校园社区</h1>
         <p class="community-lead">同学们在这里提问、分享经验；高质量内容经审核后沉淀为社区知识来源。</p>
       </div>
-      <el-button type="primary" round class="publish-btn" @click="editorVisible = true">发布帖子</el-button>
+      <el-button type="primary" round class="publish-btn" @click="openEditor">发布帖子</el-button>
     </header>
+
+    <p
+      v-if="submissionNotice"
+      class="submission-notice"
+      :class="{ 'submission-notice--warning': submissionNoticeWarning }"
+      role="status"
+    >
+      {{ submissionNotice }}
+      <button type="button" aria-label="关闭提示" @click="submissionNotice = ''">关闭</button>
+    </p>
 
     <section class="toolbar-card">
       <div class="toolbar-row">
@@ -112,6 +122,7 @@
       destroy-on-close
     >
       <el-form label-position="top">
+        <p v-if="draftRestored" class="draft-hint">已恢复上次未提交的草稿；关闭窗口不会丢失。</p>
         <el-form-item label="昵称">
           <el-input v-model="form.authorName" maxlength="20" placeholder="例如：张同学" />
         </el-form-item>
@@ -149,8 +160,13 @@
 
       <template #footer>
         <div class="dialog-actions">
-          <el-button @click="editorVisible = false">取消</el-button>
-          <el-button type="primary" :loading="store.submitting" @click="submitPost">提交</el-button>
+          <el-button text @click="discardPostDraft">清空草稿</el-button>
+          <div class="dialog-actions__right">
+            <el-button @click="editorVisible = false">取消</el-button>
+            <el-button type="primary" :loading="submitting || store.submitting" @click="submitPost">
+              提交
+            </el-button>
+          </div>
         </div>
       </template>
     </el-dialog>
@@ -158,10 +174,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
 import { useCommunityStore } from '@/store/community'
+import { useAuthStore } from '@/store/auth'
 import { formatDate } from '@/utils/date'
 import {
   buildCommunityQuery,
@@ -169,6 +186,12 @@ import {
   communityTotalPages,
   parseCommunityQuery,
 } from '@/services/community-query'
+import {
+  clearPostDraft,
+  communityDraftScope,
+  readPostDraft,
+  savePostDraft,
+} from '@/services/community-draft'
 
 const emit = defineEmits<{
   (e: 'open-post', postId: string): void
@@ -177,6 +200,7 @@ const emit = defineEmits<{
 const route = useRoute()
 const router = useRouter()
 const store = useCommunityStore()
+const authStore = useAuthStore()
 
 const LIST_SCROLL_KEY = 'ai-campus-agent.community-list-scroll.v1'
 
@@ -185,7 +209,16 @@ const keywordInput = ref('')
 const selectedCategory = ref('')
 const sortBy = ref<'latest' | 'hot'>('latest')
 const tagInput = ref('')
+const submitting = ref(false)
+const submissionNotice = ref('')
+const submissionNoticeWarning = ref(false)
+const draftRestored = ref(false)
 let syncingQuery = false
+let noticeTimer: number | undefined
+let lastSubmit = { signature: '', at: 0 }
+
+// 6.2：草稿按登录身份隔离；关闭弹窗保留，只有显式清空或提交成功才删除。
+const draftScope = computed(() => communityDraftScope(authStore.userId || undefined))
 
 const form = ref({
   authorName: '张同学',
@@ -298,33 +331,108 @@ const restoreScroll = async () => {
   }
 }
 
+const showSubmissionNotice = (message: string, warning = false) => {
+  submissionNotice.value = message
+  submissionNoticeWarning.value = warning
+  window.clearTimeout(noticeTimer)
+  noticeTimer = window.setTimeout(() => {
+    submissionNotice.value = ''
+  }, 7000)
+}
+
+const restorePostDraft = () => {
+  const draft = readPostDraft(draftScope.value)
+  if (!draft) {
+    draftRestored.value = false
+    return
+  }
+  form.value.authorName = draft.authorName || form.value.authorName
+  form.value.category = store.meta.categories.some((item) => item.value === draft.category)
+    ? draft.category
+    : form.value.category
+  form.value.title = draft.title
+  form.value.content = draft.content
+  tagInput.value = draft.tagsText
+  draftRestored.value = true
+}
+
+const openEditor = () => {
+  restorePostDraft()
+  editorVisible.value = true
+}
+
+const discardPostDraft = () => {
+  clearPostDraft(draftScope.value)
+  form.value.title = ''
+  form.value.content = ''
+  tagInput.value = ''
+  draftRestored.value = false
+  ElMessage.success('草稿已清空')
+}
+
+// 输入变化即时写草稿；取消弹窗不触发清空逻辑。
+watch(
+  [() => form.value.authorName, () => form.value.category, () => form.value.title, () => form.value.content, tagInput, draftScope],
+  () => {
+    savePostDraft(draftScope.value, {
+      authorName: form.value.authorName,
+      category: form.value.category,
+      title: form.value.title,
+      content: form.value.content,
+      tagsText: tagInput.value,
+    })
+  },
+)
+
+// 登录态变化后切换到对应身份的草稿。
+watch(draftScope, () => {
+  restorePostDraft()
+})
+
 const submitPost = async () => {
   if (!form.value.authorName.trim() || !form.value.title.trim() || !form.value.content.trim()) {
     ElMessage.warning('请先填写昵称、标题和正文')
     return
   }
+  if (submitting.value || store.submitting) return
 
   const tags = tagInput.value
     .split(/[，,]/)
     .map((item) => item.trim())
     .filter(Boolean)
+  const payload = {
+    authorName: form.value.authorName.trim(),
+    title: form.value.title.trim(),
+    content: form.value.content.trim(),
+    category: form.value.category,
+    tags,
+  }
+  const signature = JSON.stringify(payload)
+  if (signature === lastSubmit.signature && Date.now() - lastSubmit.at < 3000) {
+    ElMessage.info('请勿重复提交')
+    return
+  }
 
+  submitting.value = true
   try {
-    await store.submitPost({
-      authorName: form.value.authorName.trim(),
-      title: form.value.title.trim(),
-      content: form.value.content.trim(),
-      category: form.value.category,
-      tags,
-    })
-
-    ElMessage.success('帖子已提交，当前默认进入待审核状态')
+    await store.submitPost(payload)
+    lastSubmit = { signature, at: Date.now() }
+    // 写入成功才算完成：先清草稿，再根据刷新结果给不同提示。
+    clearPostDraft(draftScope.value)
     editorVisible.value = false
     form.value.title = ''
     form.value.content = ''
     tagInput.value = ''
+    draftRestored.value = false
+    if (store.lastError) {
+      showSubmissionNotice('帖子已提交，但列表刷新失败，请手动刷新查看', true)
+    } else {
+      showSubmissionNotice('帖子已提交，审核通过后展示')
+    }
   } catch {
     ElMessage.error(store.lastError || '发布失败，请稍后重试')
+  } finally {
+    submitting.value = false
   }
 }
 
@@ -340,6 +448,10 @@ onMounted(async () => {
   sortBy.value = state.sort
   await loadFromState(state.page)
   await restoreScroll()
+})
+
+onBeforeUnmount(() => {
+  window.clearTimeout(noticeTimer)
 })
 
 // 浏览器前进/后退或外部改 query 时，重新按 URL 拉取；自身 replace 时跳过。
@@ -592,8 +704,53 @@ watch(
 
 .dialog-actions {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
   gap: 0.6rem;
+}
+
+.dialog-actions__right {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.submission-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0 0 1rem;
+  border: 1px solid var(--tint);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.85rem;
+  color: var(--brand);
+  background: var(--tint);
+  font-size: 0.85rem;
+}
+
+.submission-notice--warning {
+  border-color: var(--border);
+  color: var(--text);
+  background: var(--silver);
+}
+
+.submission-notice button {
+  border: 0;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  font-size: 0.8rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.draft-hint {
+  margin: 0 0 0.75rem;
+  border-radius: var(--radius-sm);
+  padding: 0.45rem 0.7rem;
+  color: var(--brand);
+  background: var(--tint);
+  font-size: 0.8rem;
 }
 
 @media (max-width: 47.99rem) {

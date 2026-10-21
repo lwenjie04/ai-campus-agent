@@ -53,6 +53,15 @@
         </div>
       </div>
 
+      <p
+        v-if="replyNotice"
+        class="reply-notice"
+        :class="{ 'reply-notice--warning': replyNoticeWarning }"
+        role="status"
+      >
+        {{ replyNotice }}
+      </p>
+
       <el-alert v-if="store.lastError" :title="store.lastError" type="warning" show-icon :closable="false" />
 
       <div v-if="store.currentReplies.length" class="reply-list">
@@ -68,6 +77,7 @@
 
       <div class="reply-editor">
         <h3>参与回复</h3>
+        <p v-if="replyDraftRestored" class="draft-hint">已恢复本对话的回复草稿；提交成功或清空后才会删除。</p>
         <el-form label-position="top">
           <el-form-item label="昵称">
             <el-input v-model="replyForm.authorName" maxlength="20" placeholder="例如：李同学" />
@@ -85,7 +95,10 @@
         </el-form>
 
         <div class="reply-actions">
-          <el-button type="primary" :loading="store.submitting" @click="submitReply">提交回复</el-button>
+          <el-button text @click="discardReplyDraft">清空草稿</el-button>
+          <el-button type="primary" :loading="replySubmitting || store.submitting" @click="submitReply">
+            提交回复
+          </el-button>
         </div>
       </div>
     </section>
@@ -93,10 +106,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useCommunityStore } from '@/store/community'
+import { useAuthStore } from '@/store/auth'
 import { formatDateTime } from '@/utils/date'
+import {
+  clearReplyDraft,
+  communityDraftScope,
+  readReplyDraft,
+  saveReplyDraft,
+} from '@/services/community-draft'
 
 const props = defineProps<{
   postId: string
@@ -107,11 +127,21 @@ defineEmits<{
 }>()
 
 const store = useCommunityStore()
+const authStore = useAuthStore()
 
 const replyForm = ref({
   authorName: '李同学',
   content: '',
 })
+const replySubmitting = ref(false)
+const replyNotice = ref('')
+const replyNoticeWarning = ref(false)
+const replyDraftRestored = ref(false)
+let replyNoticeTimer: number | undefined
+let lastReplySignature = { signature: '', at: 0 }
+
+// 6.2：回复草稿按身份 + 帖子 ID 隔离。
+const draftScope = computed(() => communityDraftScope(authStore.userId || undefined))
 
 const categoryLabel = computed(() => {
   const category = store.currentPost?.category
@@ -121,22 +151,79 @@ const categoryLabel = computed(() => {
 
 
 
+const showReplyNotice = (message: string, warning = false) => {
+  replyNotice.value = message
+  replyNoticeWarning.value = warning
+  window.clearTimeout(replyNoticeTimer)
+  replyNoticeTimer = window.setTimeout(() => {
+    replyNotice.value = ''
+  }, 7000)
+}
+
+const restoreReplyDraft = (postId: string) => {
+  if (!postId) return
+  const draft = readReplyDraft(draftScope.value, postId)
+  if (!draft) {
+    replyDraftRestored.value = false
+    return
+  }
+  replyForm.value.authorName = draft.authorName || replyForm.value.authorName
+  replyForm.value.content = draft.content
+  replyDraftRestored.value = true
+}
+
+const discardReplyDraft = () => {
+  clearReplyDraft(draftScope.value, props.postId)
+  replyForm.value.content = ''
+  replyDraftRestored.value = false
+  ElMessage.success('回复草稿已清空')
+}
+
+// 输入变化即时写草稿；离开或刷新后仍可恢复。
+watch(
+  [() => replyForm.value.authorName, () => replyForm.value.content, () => props.postId, draftScope],
+  () => {
+    saveReplyDraft(draftScope.value, props.postId, {
+      authorName: replyForm.value.authorName,
+      content: replyForm.value.content,
+    })
+  },
+)
+
 const submitReply = async () => {
   if (!store.currentPost) return
   if (!replyForm.value.authorName.trim() || !replyForm.value.content.trim()) {
     ElMessage.warning('请先填写昵称和回复内容')
     return
   }
+  if (replySubmitting.value || store.submitting) return
 
+  const payload = {
+    authorName: replyForm.value.authorName.trim(),
+    content: replyForm.value.content.trim(),
+  }
+  const signature = JSON.stringify(payload)
+  if (signature === lastReplySignature.signature && Date.now() - lastReplySignature.at < 3000) {
+    ElMessage.info('请勿重复提交')
+    return
+  }
+
+  replySubmitting.value = true
   try {
-    await store.submitReply(store.currentPost.id, {
-      authorName: replyForm.value.authorName.trim(),
-      content: replyForm.value.content.trim(),
-    })
+    await store.submitReply(store.currentPost.id, payload)
+    lastReplySignature = { signature, at: Date.now() }
+    clearReplyDraft(draftScope.value, store.currentPost.id)
     replyForm.value.content = ''
-    ElMessage.success('回复已提交，当前默认进入待审核状态')
+    replyDraftRestored.value = false
+    if (store.lastError) {
+      showReplyNotice('回复已提交，但详情刷新失败，请手动刷新查看', true)
+    } else {
+      showReplyNotice('回复已提交，审核通过后展示')
+    }
   } catch {
     ElMessage.error(store.lastError || '提交回复失败')
+  } finally {
+    replySubmitting.value = false
   }
 }
 
@@ -155,6 +242,11 @@ onMounted(async () => {
     await store.loadMeta()
   }
   await store.loadPostDetail(props.postId)
+  restoreReplyDraft(props.postId)
+})
+
+onBeforeUnmount(() => {
+  window.clearTimeout(replyNoticeTimer)
 })
 
 // 同一组件在 /community/posts/:postId 之间切换时不会重新挂载，需要按新 ID 重新加载。
@@ -162,7 +254,10 @@ watch(
   () => props.postId,
   async (postId) => {
     if (!postId) return
+    replyForm.value.content = ''
+    replyDraftRestored.value = false
     await store.loadPostDetail(postId)
+    restoreReplyDraft(postId)
   },
 )
 </script>
@@ -508,5 +603,40 @@ watch(
   padding: 0;
   background: transparent;
   box-shadow: none;
+}
+</style>
+
+<style scoped>
+/* 6.2：回复提交状态与草稿提示。 */
+.reply-notice {
+  margin: 0 0 0.9rem;
+  border: 1px solid var(--tint);
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 0.8rem;
+  color: var(--brand);
+  background: var(--tint);
+  font-size: 0.82rem;
+}
+
+.reply-notice--warning {
+  border-color: var(--border);
+  color: var(--text);
+  background: var(--silver);
+}
+
+.draft-hint {
+  margin: 0 0 0.75rem;
+  border-radius: var(--radius-sm);
+  padding: 0.45rem 0.7rem;
+  color: var(--brand);
+  background: var(--tint);
+  font-size: 0.8rem;
+}
+
+.reply-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
 }
 </style>

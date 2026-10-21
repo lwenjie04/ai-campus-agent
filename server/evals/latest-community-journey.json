@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "completedAt": "2026-10-21T07:42:20.941Z",
+  "completedAt": "2026-10-21T08:04:44.589Z",
   "mode": "isolated_real_backend_memory",
   "targetUrl": "http://127.0.0.1:4176",
   "ok": true,
@@ -39,6 +39,36 @@
       "name": "切帖按路由 ID 重新加载",
       "ok": true,
       "detail": "转专业后课程补退选怎么操作？"
+    },
+    {
+      "name": "回复草稿刷新后恢复",
+      "ok": true,
+      "detail": "这是未提交的回复草稿"
+    },
+    {
+      "name": "回复草稿可显式清空",
+      "ok": true,
+      "detail": "cleared"
+    },
+    {
+      "name": "回复提交与待审核提示",
+      "ok": true,
+      "detail": "回复已提交，审核通过后展示"
+    },
+    {
+      "name": "投稿草稿关闭后保留",
+      "ok": true,
+      "detail": "自动化草稿标题"
+    },
+    {
+      "name": "投稿草稿可显式清空",
+      "ok": true,
+      "detail": "cleared"
+    },
+    {
+      "name": "投稿提交与防重复",
+      "ok": true,
+      "detail": "帖子已提交，审核通过后展示 关闭 POST=1 resourceDelta=2"
     }
   ]
 }
