@@ -115,7 +115,7 @@
 | 4.2 | 取消传递到检索与模型 | AI-2 | ✅ | 4.1（按人工决定可先行） | `ab5455b`；`npm run test:server` 36/36；`npm run server:check` 53 模块通过；定向 ESLint 通过。req/res/socket 断开与超时信号合并；LightRAG、向量检索和模型流接收取消信号；首段前回滚、断开且首段后结算；正常 finish 不报中断；四个边界测试通过 |
 | 4.3 | 阶段事件与额度结算 | AI-2 | ✅ | 4.2、0.4 | `4623976`；`npm run test:server` 37/37；`npm run server:check` 55 模块通过；定向 ESLint、`git diff --check` 通过。`start` 在检索前；发出真实 retrieval/generation phase；正常完成与断开竞态只结算一次 |
 | 4.4 | 来源元数据统一适配 | AI-2（主）+ AI-1（类型/展示） | 🟡 | 1.2；展示依赖 2.3 | 服务端部分完成：`6112c0b`；`npm run test:server` 45/45；`npm run server:check` 60 模块通过；定向 ESLint 与 `git diff --check` 通过。统一适配 RAG/LightRAG/规则来源；响应含稳定 `sourceId` 与时效字段，下载路径统一到 `/api/kb/download`，不输出可信度分数。**剩余**：AI-1 在 2.3 后完成前端类型/展示、缺失日期文案和可信度百分比清理 |
-| 4.5 | 按需语音控制 | AI-1（主）+ AI-2（去密钥） | 🟡 | 3.4、4.1 | 默认不自动 TTS；`useNarration` 单队列、分段、晚到 Blob 丢弃、ObjectURL 释放；**删除 `TTS_AUTH_TOKEN` 前端旁路**；游客登录后恢复播放 |
+| 4.5 | 按需语音控制 | AI-1（主）+ AI-2（服务端去密钥） | 🟡 | 3.4、4.1 | AI-2 服务端部分：`f620cde`；`npm run test:server` 45/45；`npm run server:check` 60 模块；定向 ESLint 与 `git diff --check` 通过；旧共享密钥不能通过鉴权。**剩余**：AI-1 移除 `VITE_TTS_AUTH_TOKEN` 配置及 Authorization 覆盖；完成按需播放队列、取消/释放资源和游客登录后恢复 |
 | 4.6 | 生成/来源/媒体联测 | 共同（AI-1 主导） | ⬜ | 4.3、4.4、4.5 | 覆盖跨会话晚到、过期登录、刷新中断、重试、来源选中、TTS 失败、移动端播放限制 |
 
 ### Sprint 5：办事指南（2–3 天）
@@ -178,7 +178,7 @@
 | --- | --- | --- | --- | --- |
 | D-1 | 视觉方向：Figma 深绿 vs 现有纸质/橙绿 | 2.1–2.3、6.1、6.3 | ✅ 已决定：按 Figma 深绿 `#005B46` 重做 | 人工 |
 | D-2 | 8-18 前端 WIP 是提交存档还是丢弃 | 0.1、全部后续 diff | ✅ 已决定：提交存档（`61756be`），2.1 时再替换 | 人工 |
-| D-3 | `TTS_AUTH_TOKEN` 共享密钥是否删除 | 4.5、7.4 | ⛔ 待决定 | 人工 + AI-2 |
+| D-3 | `TTS_AUTH_TOKEN` 共享密钥是否删除 | 4.5、7.4 | ✅ 已决定：移除共享密钥，TTS 统一使用登录会话鉴权 | 人工 |
 | D-4 | `mobile-uniapp/src` 迁移是否单独提交 | 0.1、仓库整洁 | ✅ 已单独提交 `4af3c89` | 人工 |
 | D-5 | `src/project-text/exports/` 261 个 JSON（0.26 MB）是否移出 | 仓库整洁 | ⬜ 未处理 | 人工 |
 | D-6 | **4.1 依赖已解除**：3.1/3.2/3.5 ✅，3.3 代码就绪（仅差浏览器回归）；4.1 可开工，回归与 4.1 浏览器验证合并做 | 4.1、4.2、4.5 | ✅ 已解除 | AI-1 做 4.1 |
@@ -212,6 +212,8 @@
 | 2026-10-21 | 完成 | 7.1 在 MySQL 8.0.39 隔离实例应用迁移并验证凭据读回、反馈幂等更新、主体隔离和唯一约束；7.2 前置解除 | AI-2（Codex） |
 | 2026-10-21 | 占用 | 领取 4.4 服务端部分：统一规则来源、知识库命中与 LightRAG 来源元数据 | AI-2（Codex） |
 | 2026-10-21 | 部分 | 4.4 服务端来源适配提交 `6112c0b`；`npm run test:server` 45/45，语法检查 60 个模块，定向 ESLint 通过 | AI-2（Codex） |
+| 2026-10-21 | 决策 | D-3 移除 `TTS_AUTH_TOKEN` 共享密钥，TTS 统一使用登录会话鉴权 | 人工 |
+| 2026-10-21 | 部分 | 4.5 服务端去密钥提交 `f620cde`；`npm run test:server` 45/45；`npm run server:check` 60 模块；定向 ESLint 与 `git diff --check` 通过。**剩余**：AI-1 清理前端 token 注入并完成按需播放流程 | AI-2（Codex） |
 | 2026-10-20 | 3.4 登录意图 | AI-1 | `f3920b8`；`npm run auth-intent:journey` 5/5；`server/evals/latest-auth-intent-journey.json`；`npm run test:unit` 65/65；lint/type-check/build 通过 | 浏览器回归发现并修复 `chat-detail` 未绑定 `require-login` |
 | 2026-10-20 | 3.3 会话路由与历史 | AI-1 | `3c12a46` + `153e61c`；`npm run conversation:journey` 8/8；`server/evals/latest-conversation-journey.json`；`npm run test:unit` 55/55 | 真实 Chrome 回归：路由、刷新、历史、草稿、无效 ID、后退 |
 | 2026-10-20 | 1.4 权限与返回 | AI-1 | `63ae7d2`；`npm run test:unit` 55/55；`npm run lint` 0 error；`npm run type-check` 通过 | 403 与登录意图分离；外部直达无历史回落首页 |
