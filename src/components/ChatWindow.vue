@@ -96,7 +96,7 @@ watch(
   padding: 1.5rem;
   text-align: center;
   background:
-    linear-gradient(135deg, rgba(14, 140, 136, 0.1), transparent 58%),
+    linear-gradient(135deg, rgba(0, 91, 70, 0.06), transparent 58%),
     var(--paper-raised);
 }
 

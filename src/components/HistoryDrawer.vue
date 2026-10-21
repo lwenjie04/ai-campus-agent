@@ -136,8 +136,8 @@ const formatTime = (timestamp: number) => {
   margin: 0 0 0.65rem;
   border: 1px dashed var(--signal);
   padding: 0.5rem 0.6rem;
-  color: #a82c19;
-  background: #fff0ec;
+  color: var(--text);
+  background: var(--silver);
   font-size: 0.76rem;
   line-height: 1.5;
 }

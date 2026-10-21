@@ -63,7 +63,7 @@ withDefaults(
   border-radius: 0.35rem;
   color: var(--white);
   background: var(--signal);
-  box-shadow: 0.18rem 0.18rem 0 var(--ink);
+  box-shadow: none;
 }
 
 .chat-avatar--user {
@@ -85,7 +85,7 @@ withDefaults(
   height: 0.65rem;
   border: 2px solid var(--white);
   border-radius: 50%;
-  background: #20c67a;
+  background: var(--brand);
 }
 
 .is-active {

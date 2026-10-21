@@ -271,7 +271,7 @@ onMounted(async () => {
   padding: 1.5rem 1.2rem;
   color: var(--white);
   background: var(--ink);
-  box-shadow: 0 0.35rem 0 var(--signal);
+  box-shadow: var(--shadow-sm);
 }
 
 .community-hero::after {
@@ -334,7 +334,7 @@ onMounted(async () => {
 
 .toolbar-card {
   padding: 0.9rem;
-  box-shadow: 0 0.25rem 0 var(--teal);
+  box-shadow: var(--shadow-sm);
 }
 
 .toolbar-row {
@@ -424,7 +424,7 @@ onMounted(async () => {
 
 .post-card:hover {
   z-index: 1;
-  background: #fff7e4;
+  background: var(--tint);
   transform: translateY(-0.2rem);
 }
 

@@ -183,9 +183,9 @@ watch(
   border-radius: var(--radius-md);
   padding: 1.2rem;
   background:
-    linear-gradient(120deg, rgba(240, 79, 47, 0.14), transparent 48%),
+    linear-gradient(120deg, rgba(0, 91, 70, 0.08), transparent 48%),
     var(--paper-raised);
-  box-shadow: 0 0.3rem 0 var(--ink);
+  box-shadow: var(--shadow-sm);
 }
 
 .detail-kicker {

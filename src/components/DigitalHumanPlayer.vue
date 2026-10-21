@@ -478,7 +478,7 @@ onBeforeUnmount(() => {
   overflow: hidden;
   background:
     radial-gradient(circle at 50% 28%, rgba(255, 255, 255, 0.55), transparent 28%),
-    linear-gradient(145deg, #c9dcd0 0%, #8ebbad 52%, #327f78 100%);
+    linear-gradient(145deg, var(--tint) 0%, var(--soft) 52%, var(--border) 100%);
 }
 
 .stage-shell::before,
@@ -546,10 +546,10 @@ onBeforeUnmount(() => {
   display: grid;
   justify-items: center;
   gap: 0.5rem;
-  border: 1px dashed rgba(17, 24, 29, 0.66);
+  border: 1px dashed var(--border);
   padding: 1.5rem;
   color: var(--ink);
-  background: rgba(255, 253, 248, 0.72);
+  background: var(--white);
   text-align: center;
 }
 

@@ -253,7 +253,7 @@ const emit = defineEmits<{
 }
 
 .message-time {
-  color: #747b78;
+  color: var(--faint);
   font-family: var(--font-mono);
   font-size: 0.61rem;
 }
@@ -268,7 +268,7 @@ const emit = defineEmits<{
   padding: 0.72rem 0.85rem;
   color: var(--ink);
   background: var(--paper-raised);
-  box-shadow: 0.18rem 0.18rem 0 var(--paper-deep);
+  box-shadow: none;
   font-size: 0.9rem;
   line-height: 1.72;
 }
@@ -325,7 +325,7 @@ const emit = defineEmits<{
   padding: 0.75rem;
   color: var(--ink);
   background: var(--white);
-  box-shadow: 0.2rem 0.2rem 0 var(--paper-deep);
+  box-shadow: none;
   scrollbar-width: thin;
 }
 
@@ -393,7 +393,7 @@ const emit = defineEmits<{
 }
 
 .confidence-chip {
-  color: #08605e;
+  color: var(--brand);
   background: var(--teal-soft);
 }
 
@@ -439,8 +439,8 @@ const emit = defineEmits<{
   margin-top: 0.5rem;
   border-left: 0.2rem solid var(--sun);
   padding: 0.5rem;
-  color: #6d4a00;
-  background: #fff4ce;
+  color: var(--muted);
+  background: var(--tint);
   font-size: 0.73rem;
   line-height: 1.5;
 }
@@ -449,8 +449,8 @@ const emit = defineEmits<{
   margin-top: 0.55rem;
   border: 1px solid color-mix(in srgb, var(--signal) 55%, transparent);
   padding: 0.5rem 0.65rem;
-  color: #a82c19;
-  background: #fff0ec;
+  color: var(--text);
+  background: var(--silver);
   font-size: 0.76rem;
 }
 

@@ -862,20 +862,12 @@ onMounted(() => {
   border-radius: var(--radius-md);
   color: var(--white);
   background: var(--ink);
-  box-shadow: 0 0.35rem 0 var(--signal);
+  box-shadow: var(--shadow-sm);
 }
 
 .left-stage::before {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
+  display: none;
   content: "";
-  background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px),
-    linear-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px);
-  background-size: 2.2rem 2.2rem;
-  mask-image: linear-gradient(to bottom, black, transparent 78%);
 }
 
 .brand-bar {
@@ -933,7 +925,7 @@ onMounted(() => {
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: var(--radius-sm);
-  background: #c7d8ce;
+  background: var(--tint);
 }
 
 .stage-status {
@@ -960,8 +952,8 @@ onMounted(() => {
   width: 0.45rem;
   height: 0.45rem;
   border-radius: 50%;
-  background: #6df0b1;
-  box-shadow: 0 0 0 0.22rem rgba(109, 240, 177, 0.16);
+  background: var(--brand);
+  box-shadow: 0 0 0 0.22rem rgba(0, 91, 70, 0.16);
   animation: status-pulse 2.2s ease-in-out infinite;
 }
 
@@ -977,15 +969,13 @@ onMounted(() => {
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-md);
   background: var(--paper-raised);
-  box-shadow: 0 0.35rem 0 var(--ink);
+  box-shadow: var(--shadow-sm);
 }
 
 .chat-header {
   border-bottom: 1px solid var(--line-strong);
   padding: 1.1rem;
-  background:
-    linear-gradient(135deg, rgba(242, 193, 78, 0.17), transparent 58%),
-    var(--paper-raised);
+  background: var(--white);
 }
 
 .header-main,
@@ -1033,7 +1023,7 @@ onMounted(() => {
   padding: 0.45rem 0.6rem;
   border: 1px solid var(--line);
   border-radius: 999px;
-  color: #08605e;
+  color: var(--brand);
   background: var(--teal-soft);
   font-size: 0.68rem;
   font-weight: 800;
@@ -1126,7 +1116,7 @@ onMounted(() => {
   margin-top: 0.9rem;
   border-left: 0.3rem solid var(--sun);
   padding: 0.8rem;
-  background: #fff4ce;
+  background: var(--tint);
 }
 
 .conversation-notice {
@@ -1141,8 +1131,8 @@ onMounted(() => {
 
 .conversation-notice--warn {
   border-left-color: var(--signal);
-  color: #a82c19;
-  background: #fff0ec;
+  color: var(--text);
+  background: var(--silver);
 }
 
 .resume-draft__copy {
@@ -1190,10 +1180,7 @@ onMounted(() => {
 .chat-body {
   min-height: 0;
   overflow: hidden;
-  background:
-    linear-gradient(rgba(17, 24, 29, 0.035) 1px, transparent 1px),
-    var(--white);
-  background-size: 100% 2rem;
+  background: var(--white);
 }
 
 .chat-actions-bar {

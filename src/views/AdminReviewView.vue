@@ -677,7 +677,7 @@ onMounted(async () => {
   padding: 1.4rem;
   color: var(--white);
   background: var(--ink);
-  box-shadow: 0 0.35rem 0 var(--teal);
+  box-shadow: var(--shadow-sm);
 }
 
 .admin-hero::after {
@@ -772,7 +772,7 @@ onMounted(async () => {
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-sm);
   background: var(--paper-raised);
-  box-shadow: 0 0.2rem 0 var(--ink);
+  box-shadow: var(--shadow-sm);
 }
 
 .admin-subnav__tab {

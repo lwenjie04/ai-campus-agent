@@ -89,26 +89,25 @@ const send = () => {
 }
 
 :deep(.el-input__inner::placeholder) {
-  color: #737a78;
+  color: var(--faint);
 }
 
 .send-btn {
   width: 3.15rem;
   min-width: 3.15rem;
   min-height: 3.15rem;
-  border: 1px solid var(--ink);
-  border-radius: var(--radius-sm);
+  border: 0;
+  border-radius: 50%;
   padding: 0;
   color: var(--white);
   background: var(--signal);
-  box-shadow: 0.22rem 0.22rem 0 var(--ink);
+  box-shadow: none;
 }
 
 .send-btn:hover:not(:disabled) {
   color: var(--white);
   background: var(--signal-dark);
-  box-shadow: 0.08rem 0.08rem 0 var(--ink);
-  transform: translate(0.14rem, 0.14rem);
+  box-shadow: none;
 }
 
 .send-btn svg {
