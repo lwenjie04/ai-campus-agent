@@ -59,10 +59,10 @@
 | S4 | 6 | 5 | 0 | 0 | 0 | 1 | **4.6 联测** |
 | S5 | 4 | 0 | 0 | 0 | 0 | 4 | 等 5.1 数据 |
 | S6 | 5 | 0 | 5 | 0 | 0 | 0 | 2.1 之后 |
-| S7 | 5 | 1 | 1 | 1 | 0 | 2 | **7.2 接口 + 契约** |
-| **合计** | **39** | **23** | **8** | **1** | **0** | **7** | — |
+| S7 | 5 | 1 | 2 | 0 | 0 | 2 | **AI-1 完成 7.2 组件；AI-2 接着做 0.3** |
+| **合计** | **39** | **23** | **9** | **0** | **0** | **7** | — |
 
-> 已完成：0.1、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、2.1、2.2、2.3、2.4、2.5、3.1、3.2、3.3、3.4、3.5、4.1、4.2、4.3、4.4、4.5、7.1。**S1/S2/S3 已全部完成，S4 仅剩 4.6 联测**；7.2 可启动。实时状态以本表为准。
+> 已完成：0.1、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、2.1、2.2、2.3、2.4、2.5、3.1、3.2、3.3、3.4、3.5、4.1、4.2、4.3、4.4、4.5、7.1。**S1/S2/S3 已全部完成，S4 仅剩 4.6 联测**；7.2 服务端接口与契约已交付，AI-1 组件待完成。实时状态以本表为准。
 
 ---
 
@@ -142,7 +142,7 @@
 | ID | 任务 | 主责 | 状态 | 依赖 | 完成判定 / 证据 |
 | --- | --- | --- | --- | --- | --- |
 | 7.1 | 请求凭据与反馈增量表 | AI-2 | ✅ | 4.3、0.4 | `4bd44ac`；`npm run test:server` 41/41；`npm run server:check` 58 模块；定向 ESLint、`git diff --check` 通过；MySQL 8.0.39 隔离测试库实测迁移、凭据读回、反馈 upsert/更新、主体隔离与唯一行数=1 |
-| 7.2 | 反馈接口与操作 | AI-2（接口）+ AI-1（组件） | 🔵 | 7.1、3.4 | AI-2（Codex）领取服务端接口与契约；AI-1 组件按冻结契约独立推进。 |
+| 7.2 | 反馈接口与操作 | AI-2（接口）+ AI-1（组件） | 🟡 | 7.1、3.4 | AI-2 服务端与契约提交 `8840b43`；`npm run test:server` 47/47，`server:check` 66 模块，定向 ESLint/oxlint 通过。**剩余**：AI-1 完成 `MessageActions.vue`，只在 `feedbackEligible` 时开放 helpful/none，并按该契约处理成功、限频与可重试错误。 |
 | 7.3 | CI 与可重复门禁 | AI-2 | ⬜ | 1.5、4.6、5.4、6.5、7.2 | `.github/workflows/quality.yml` 合并 lint/type-check/test:unit/test:server/golden/build/journey；干净数据、固定端口、Chrome 跨平台；`release:check` 纳入单元测试 |
 | 7.4 | 目标环境验证与性能 | 共同 | ⬜ | 7.3 | 真模型/MySQL/SMTP/TTS/HTTPS/反代实测并留证；50 条金标；首字/总耗时/取消耗时/资源体积；`RELEASE_LIVE_VALIDATION_CONFIRMED` 不得伪造 |
 | 7.5 | 交付、回滚与试用记录 | 人工 + AI-2 | 🟡 | 7.4 | `docs/releases/v2-handoff.md`：版本/迁移/构建清单、可验证回滚步骤、未完成项；`product-status.md` 更新（现为 8-12、13/13 口径过期） |
@@ -206,6 +206,7 @@
 
 | 日期 | 任务 ID | 执行者 | 证据（commit / 命令 / 文件） | 备注 |
 | --- | --- | --- | --- | --- |
+| 2026-10-21 | 7.2 部分 | AI-2（Codex） | `8840b43`；`npm run test:server` 47/47；`node server/scripts/check-server-syntax.mjs` 66 模块；定向 ESLint/oxlint、`git diff --cached --check` 通过 | 服务端路由、receipt eligibility、主体校验、限频及 API 契约已交付；等待 AI-1 `MessageActions.vue` |
 | 2026-10-21 | 2.4 输入与推荐问题 | AI-1 | `1c7a306`；`npm run chat:layout` 10/10；`server/evals/latest-chat-layout.json`；截图 `docs/design/verify/chat-suggestions-1440.png`；70 单测/type-check/lint/build 通过 | IME Enter 不发送、Shift+Enter 换行、空值/重复拦截、推荐只预填、草稿刷新恢复 |
 | 2026-10-21 | 4.5 按需语音收尾 | AI-1 | `5c17697`；`npm run chat:layout` 11/11；74 单测/type-check/lint/build 通过；`chat-layout` 含游客语音先登录 | 单队列、晚到丢弃、ObjectURL 释放、游客登录恢复、移动端播放拦截提示 |
 | 2026-10-21 | 2.5 响应式与真实流式 | AI-1 | `e793745`；`npm run responsive:matrix` 10/10；`npm run chat:stream` 2/2；`server/evals/latest-responsive-matrix.json`、`latest-chat-stream.json`；截图 `docs/design/verify/responsive/`、`chat-stream-*.png`；70 单测/type-check/lint/build 通过 | 五宽度 0 溢出、控件可见；真实 NDJSON 流式桌面+手机通过 |
@@ -284,6 +285,7 @@
 | 2026-10-21 | 完成 | 2.5 响应式与流式：`inspect-responsive-layout` 宽度矩阵 + 逐宽度截图；首页/问答 360-1440 共 10 组 0 溢出；真实 `/api/chat/stream` 桌面 1440 与手机 390 均通过 | AI-1 |
 | 2026-10-21 | 完成 | 4.5 按需语音收尾：默认不自动 TTS、单队列与晚到丢弃、ObjectURL 结束即释放、移动端拦截提示、游客登录后恢复朗读；narration-text 4 单测，chat:layout 11/11 | AI-1 |
 | 2026-10-21 | 占用 | 领取 7.2 服务端反馈接口与契约补充；`docs/api-contract-v2.md` 由 AI-2 独占编辑，AI-1 组件仍按冻结契约并行实现 | AI-2（Codex） |
+| 2026-10-21 | 部分 | 7.2 服务端 `/api/feedback` 与 receipt 接线完成，`feedbackEligible` 已进入流式/非流式回答；测试 47/47。**剩余**：AI-1 完成反馈操作组件并回归。 | AI-2（Codex） |
 
 ---
 
