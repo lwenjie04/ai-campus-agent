@@ -59,10 +59,10 @@
 | S4 | 6 | 3 | 2 | 0 | 0 | 1 | 等 AI-1 完成 2.3/4.4 展示 |
 | S5 | 4 | 0 | 0 | 0 | 0 | 4 | 等 5.1 数据 |
 | S6 | 5 | 0 | 5 | 0 | 0 | 0 | 2.1 之后 |
-| S7 | 5 | 0 | 2 | 0 | 0 | 3 | 等 7.1 MySQL 验证 |
-| **合计** | **39** | **15** | **16** | **0** | **0** | **8** | — |
+| S7 | 5 | 1 | 1 | 0 | 0 | 3 | **7.2 可启动** |
+| **合计** | **39** | **16** | **15** | **0** | **0** | **8** | — |
 
-> 已完成：0.1、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、3.1、3.2、3.3、3.4、3.5、4.1、4.2、4.3。S1/S3 已全部完成；4.4 服务端已提交，待 AI-1 类型/展示部分；7.1 数据层代码已提交，待专用 MySQL 测试库验证；2.x 等设计稿。实时状态以本表为准。
+> 已完成：0.1、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、3.1、3.2、3.3、3.4、3.5、4.1、4.2、4.3、7.1。S1/S3 已全部完成；4.4 服务端已提交，待 AI-1 类型/展示部分；7.2 可启动；2.x 等设计稿。实时状态以本表为准。
 
 ---
 
@@ -141,7 +141,7 @@
 
 | ID | 任务 | 主责 | 状态 | 依赖 | 完成判定 / 证据 |
 | --- | --- | --- | --- | --- | --- |
-| 7.1 | 请求凭据与反馈增量表 | AI-2 | 🟡 | 4.3、0.4 | 已完成：`4bd44ac`；`npm run test:server` 41/41；`npm run server:check` 58 模块；定向 ESLint 与 `git diff --check` 通过。增量 SQL 无 DROP，测试内存需显式开启。**剩余**：在专用 MySQL 测试库应用新迁移并验证 receipt/feedback 持久化与唯一约束；未验证前不开始 7.2 |
+| 7.1 | 请求凭据与反馈增量表 | AI-2 | ✅ | 4.3、0.4 | `4bd44ac`；`npm run test:server` 41/41；`npm run server:check` 58 模块；定向 ESLint、`git diff --check` 通过；MySQL 8.0.39 隔离测试库实测迁移、凭据读回、反馈 upsert/更新、主体隔离与唯一行数=1 |
 | 7.2 | 反馈接口与操作 | AI-2（接口）+ AI-1（组件） | ⬜ | 7.1、3.4 | `POST /api/feedback` 支持 helpful/none；主体来自会话/签名 Cookie；唯一约束幂等；限频；伪造 requestId 与跨账号被拒；`MessageActions.vue` |
 | 7.3 | CI 与可重复门禁 | AI-2 | ⬜ | 1.5、4.6、5.4、6.5、7.2 | `.github/workflows/quality.yml` 合并 lint/type-check/test:unit/test:server/golden/build/journey；干净数据、固定端口、Chrome 跨平台；`release:check` 纳入单元测试 |
 | 7.4 | 目标环境验证与性能 | 共同 | ⬜ | 7.3 | 真模型/MySQL/SMTP/TTS/HTTPS/反代实测并留证；50 条金标；首字/总耗时/取消耗时/资源体积；`RELEASE_LIVE_VALIDATION_CONFIRMED` 不得伪造 |
@@ -206,8 +206,10 @@
 
 | 日期 | 任务 ID | 执行者 | 证据（commit / 命令 / 文件） | 备注 |
 | --- | --- | --- | --- | --- |
+| 2026-10-21 | 7.1 请求凭据与反馈增量表 | AI-2（Codex） | `4bd44ac`；`npm run test:server` 41/41；`npm run server:check` 58 模块；MySQL 8.0.39 隔离库实测迁移及 receipt/feedback 持久化、唯一约束 | 测试实例已关闭，数据目录已清理 |
 | 2026-10-20 | 4.3 阶段事件与额度结算 | AI-2（Codex） | `4623976`；`npm run test:server` 37/37；`npm run server:check` 55 模块；定向 ESLint 与 `git diff --check` 通过 | start 前移至检索前；新增 retrieval/generation phase 与单次结算竞态覆盖 |
 | 2026-10-20 | 部分 | 7.1 数据层代码提交 `4bd44ac`；服务端测试 41/41，语法检查 58 模块通过 | AI-2（Codex） |
+| 2026-10-21 | 完成 | 7.1 在 MySQL 8.0.39 隔离实例应用迁移并验证凭据读回、反馈幂等更新、主体隔离和唯一约束；7.2 前置解除 | AI-2（Codex） |
 | 2026-10-21 | 占用 | 领取 4.4 服务端部分：统一规则来源、知识库命中与 LightRAG 来源元数据 | AI-2（Codex） |
 | 2026-10-21 | 部分 | 4.4 服务端来源适配提交 `6112c0b`；`npm run test:server` 45/45，语法检查 60 个模块，定向 ESLint 通过 | AI-2（Codex） |
 | 2026-10-20 | 3.4 登录意图 | AI-1 | `f3920b8`；`npm run auth-intent:journey` 5/5；`server/evals/latest-auth-intent-journey.json`；`npm run test:unit` 65/65；lint/type-check/build 通过 | 浏览器回归发现并修复 `chat-detail` 未绑定 `require-login` |
