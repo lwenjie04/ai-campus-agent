@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "completedAt": "2026-10-21T03:45:58.525Z",
+  "completedAt": "2026-10-21T03:58:15.450Z",
   "mode": "isolated_frontend_mock",
   "targetUrl": "http://127.0.0.1:4177",
   "ok": true,
@@ -34,6 +34,11 @@
       "name": "推荐问题只预填并聚焦",
       "ok": true,
       "detail": "需要准备什么材料？"
+    },
+    {
+      "name": "游客语音入口先登录",
+      "ok": true,
+      "detail": "require-login"
     },
     {
       "name": "IME 组合期 Enter 不发送",

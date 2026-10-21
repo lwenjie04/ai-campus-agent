@@ -245,6 +245,29 @@ try {
   record('推荐问题只预填并聚焦', suggestions[0])
   await screenshot('chat-suggestions-1440.png')
 
+  // 游客点语音入口先登录，登录成功后才允许 TTS。
+  await evaluate(`document.querySelector('.voice-card__action').click()`)
+  await waitFor(
+    async () => evaluate(`(() => {
+      const dialog = document.querySelector('.el-dialog.login-dialog')
+      return Boolean(dialog) && dialog.getBoundingClientRect().height > 0
+    })()`),
+    'login dialog from voice',
+  )
+  record('游客语音入口先登录', 'require-login')
+  await waitFor(
+    async () => evaluate(`Boolean(document.querySelector('.login-panel__close'))`),
+    'lazy login panel',
+  )
+  await evaluate(`document.querySelector('.login-panel__close').click()`)
+  await waitFor(
+    async () => evaluate(`(() => {
+      const dialog = document.querySelector('.el-dialog.login-dialog')
+      return !dialog || dialog.getBoundingClientRect().height === 0
+    })()`),
+    'login dialog closed',
+  )
+
   // IME 组合期 Enter 只确认候选词，不发送。
   await setTextarea('输入法组合测试')
   const beforeIme = await assistantCount()

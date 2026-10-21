@@ -54,6 +54,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { appConfig } from '@/config/app'
 import { requestBackendTts } from '@/api/tts'
+import { normalizeNarrationText, splitNarrationText } from '@/services/narration-text'
 
 const props = defineProps<{
   cueKey: string
@@ -67,6 +68,7 @@ const emit = defineEmits<{
   (e: 'request-idle'): void
   (e: 'narration-ended'): void
   (e: 'narration-error'): void
+  (e: 'narration-blocked'): void
 }>()
 
 // 视频和语音分开管理：mp4 负责画面，TTS 负责朗读文本。
@@ -80,6 +82,8 @@ const narrationQueue = ref<string[]>([])
 const narrationProcessing = ref(false)
 // 一次播报只提示一次失败，避免逐段失败刷屏。
 let narrationErrorNotified = false
+// 移动端自动播放被浏览器拦截时只提示一次。
+let narrationBlockedNotified = false
 const lastVideoSrc = ref('')
 const videoSwitching = ref(false)
 
@@ -93,11 +97,6 @@ const debugState = ref({
   missingVideos: [] as string[],
 })
 
-const TTS_SEGMENT_MAX_LENGTH = 140
-
-// 腾讯云 TextToVoice 基础语音合成接口对中文长度限制较严，
-// 官方文档给出的上限是 150 个汉字左右。这里保守收紧到 140，
-// 避免长回答第一段就因为超限失败，导致讲解视频瞬间回到待机状态。
 const normalizedCue = computed(() => (props.cueKey || 'idle').trim() || 'idle')
 const isIdleLoop = computed(() => normalizedCue.value === 'idle')
 const currentVideoSrc = computed(
@@ -175,6 +174,7 @@ const checkRequiredVideos = async () => {
 const stopNarration = () => {
   narrationToken.value += 1
   narrationErrorNotified = false
+  narrationBlockedNotified = false
   narrationQueue.value = []
   narrationProcessing.value = false
   const audioEl = narrationAudioRef.value
@@ -187,61 +187,6 @@ const stopNarration = () => {
     URL.revokeObjectURL(activeAudioUrl.value)
     activeAudioUrl.value = ''
   }
-}
-
-// 清理 markdown 痕迹，避免 TTS 把符号也读出来。
-const normalizeNarrationText = (raw: string) =>
-  raw
-    .replace(/[`*_#>-]/g, ' ')
-    .replace(/\[(.*?)\]\((.*?)\)/g, '$1')
-    .replace(/\s+/g, ' ')
-    .trim()
-
-// 当前端一次请求整段长文本失败时，退回到按句子分段的保守策略。
-// 这样可以兼容腾讯云长文本任务超时、资源包限制或偶发失败等场景。
-const splitNarrationText = (raw: string, maxLength = TTS_SEGMENT_MAX_LENGTH) => {
-  const normalized = normalizeNarrationText(raw)
-  if (!normalized) return []
-  if (normalized.length <= maxLength) return [normalized]
-
-  const coarseParts = normalized
-    .split(/(?<=[。！？；;.!?\n])/)
-    .map((part) => part.trim())
-    .filter(Boolean)
-
-  const result: string[] = []
-  let buffer = ''
-
-  const flushBuffer = () => {
-    const text = buffer.trim()
-    if (text) result.push(text)
-    buffer = ''
-  }
-
-  for (const part of coarseParts) {
-    if (!part) continue
-
-    if (part.length > maxLength) {
-      flushBuffer()
-      let start = 0
-      while (start < part.length) {
-        result.push(part.slice(start, start + maxLength).trim())
-        start += maxLength
-      }
-      continue
-    }
-
-    const next = buffer ? `${buffer} ${part}`.trim() : part
-    if (next.length > maxLength) {
-      flushBuffer()
-      buffer = part
-    } else {
-      buffer = next
-    }
-  }
-
-  flushBuffer()
-  return result
 }
 
 const playAudioBlob = async (blob: Blob, token: number) => {
@@ -257,9 +202,18 @@ const playAudioBlob = async (blob: Blob, token: number) => {
   activeAudioUrl.value = audioUrl
 
   await new Promise<void>((resolve) => {
+    const releaseUrl = () => {
+      // 播放结束或失败后立即释放 ObjectURL，避免长会话累积内存。
+      if (activeAudioUrl.value === audioUrl) {
+        URL.revokeObjectURL(audioUrl)
+        activeAudioUrl.value = ''
+      }
+    }
+
     const finish = () => {
       audioEl.onended = null
       audioEl.onerror = null
+      releaseUrl()
       resolve()
     }
 
@@ -267,7 +221,14 @@ const playAudioBlob = async (blob: Blob, token: number) => {
     audioEl.onerror = finish
     audioEl.src = audioUrl
 
-    void audioEl.play().catch(finish)
+    void audioEl.play().catch((error: unknown) => {
+      const name = error instanceof Error ? error.name : ''
+      if (name === 'NotAllowedError' && token === narrationToken.value && !narrationBlockedNotified) {
+        narrationBlockedNotified = true
+        emit('narration-blocked')
+      }
+      finish()
+    })
   })
 }
 

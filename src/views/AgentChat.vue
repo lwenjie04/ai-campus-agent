@@ -170,6 +170,7 @@
       @request-idle="onGreetingEnded"
       @narration-ended="onNarrationEnded"
       @narration-error="onNarrationError"
+      @narration-blocked="onNarrationBlocked"
     />
 
     <!-- 用户设置改为弹窗形式，避免直接挤占阅读区高度。 -->
@@ -669,6 +670,8 @@ const activeAnswerText = computed(() => {
 })
 
 const narrating = ref(false)
+// 游客点语音时先登录；登录成功后恢复刚才要朗读的回答。
+const pendingNarrationAfterLogin = ref(false)
 
 // 2.4 推荐问题：根据上一条回答里的关键词给两个可预填的问题，只预填不发送。
 const followUpSuggestions = computed(() => {
@@ -703,12 +706,33 @@ const openSourcePanel = (messageId?: string) => {
   sourceDrawerOpen.value = true
 }
 
+const startNarration = (content: string) => {
+  const text = content.trim()
+  if (!text) return
+  store.triggerNarration(text)
+  narrating.value = true
+}
+
 const speakText = (text: string) => {
   const content = String(text || '').trim()
   if (!content) return
-  store.triggerNarration(content)
-  narrating.value = true
+  // TTS 需要登录会话；游客先走登录，成功后自动恢复朗读。
+  if (!authStore.loggedIn) {
+    pendingNarrationAfterLogin.value = true
+    emit('require-login')
+    return
+  }
+  startNarration(content)
 }
+
+watch(
+  () => authStore.loggedIn,
+  (loggedIn) => {
+    if (!loggedIn || !pendingNarrationAfterLogin.value) return
+    pendingNarrationAfterLogin.value = false
+    if (activeAnswerText.value) startNarration(activeAnswerText.value)
+  },
+)
 
 const toggleNarration = () => {
   if (narrating.value) {
@@ -834,6 +858,12 @@ const onNarrationEnded = () => {
 const onNarrationError = () => {
   narrating.value = false
   conversationNotice.value = '语音播报暂不可用，文字回答和来源不受影响。'
+}
+
+// 移动端浏览器可能拦截异步 TTS 的自动播放，提示用户再点一次。
+const onNarrationBlocked = () => {
+  narrating.value = false
+  conversationNotice.value = '浏览器限制了自动播放，请再点一次「语音讲解」。'
 }
 
 // 跨标签页只刷新历史列表；正在生成的会话保持不动，避免旧标签页覆盖新回答。
