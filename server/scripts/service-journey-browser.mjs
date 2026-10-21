@@ -100,13 +100,15 @@ try {
   await command('Runtime.enable')
   await command('Network.enable')
 
-  const setInputAndClick = (question) => `(() => {
-    const input = document.querySelector('.input-box input')
+  const setInputAndClick = (question) => `(async () => {
+    const input = document.querySelector('.input-box textarea')
     const button = document.querySelector('.input-box .send-btn')
     if (!input || !button) return false
-    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set
+    const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set
     setter.call(input, ${JSON.stringify(question)})
     input.dispatchEvent(new Event('input', { bubbles: true }))
+    await new Promise((resolve) => requestAnimationFrame(resolve))
+    if (button.disabled) return false
     button.click()
     return true
   })()`
@@ -123,8 +125,8 @@ try {
     await command('Network.clearBrowserCookies')
     await command('Page.navigate', { url: targetUrl })
     await waitForExpression(
-      `document.readyState === 'complete' && Boolean(document.querySelector('.input-box input'))`,
-      `round ${round} home page`,
+      `document.readyState === 'complete' && Boolean(document.querySelector('.input-box textarea'))`,
+      `round ${round} chat page`,
     )
 
     const firstQuestion = '普通本科生申请转专业需要什么条件？'
@@ -188,8 +190,7 @@ try {
 
     const loginSubmitted = await evaluate(`(() => {
       const inputs = [...document.querySelectorAll('.el-dialog.login-dialog input')]
-      const button = [...document.querySelectorAll('.el-dialog.login-dialog button')]
-        .find((item) => item.textContent?.includes('登录并继续'))
+      const button = document.querySelector('.el-dialog.login-dialog .login-submit')
       if (inputs.length < 2 || !button) return false
       const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set
       setter.call(inputs[0], ${JSON.stringify(adminAccount)})
@@ -274,7 +275,13 @@ try {
         button?.click()
         return Boolean(button)
       })()`)
-      await waitForExpression(`Boolean(document.querySelector('.input-box input'))`, 'round 1 return home')
+      await waitForExpression(`Boolean(document.querySelector('.hero__cta'))`, 'round 1 return to product home')
+      await evaluate(`(() => {
+        const button = document.querySelector('.hero__cta')
+        button?.click()
+        return Boolean(button)
+      })()`)
+      await waitForExpression(`Boolean(document.querySelector('.input-box textarea'))`, 'round 1 start a new chat')
       const communityQuestion = '转专业后课程补退选怎么操作？'
       await evaluate(setInputAndClick(communityQuestion))
       await waitForExpression(

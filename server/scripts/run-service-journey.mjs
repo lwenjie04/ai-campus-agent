@@ -111,7 +111,7 @@ try {
     cwd: root,
     env: {
       ...commonEnv,
-      JOURNEY_TARGET_URL: `http://${host}:${previewPort}`,
+      JOURNEY_TARGET_URL: process.env.JOURNEY_TARGET_URL || `http://${host}:${previewPort}/chat/new`,
       JOURNEY_ADMIN_ACCOUNT: adminAccount,
       JOURNEY_ADMIN_PASSWORD: adminPassword,
       JOURNEY_ROUNDS: String(rounds),

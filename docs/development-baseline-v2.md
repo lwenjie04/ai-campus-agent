@@ -51,11 +51,11 @@
 | `npm run rag:test:service` | ✅ 20/20，top1 100%，阈值 90% | 金标仍为 20 条 |
 | `node server/tests/rag-confidence.test.mjs` | ✅ 2/2 | 进程内直跑 |
 | `node server/index.mjs` + curl | ✅ `/api/health`、`/health`、`/api/community/posts`、`/community/posts` 均 200；`/api/unknown` 返回 JSON 404；`/api/chat/stream` 返回 `start → delta×N → meta → done` | 端口 3100、`LLM_PROVIDER_MODE=mock` |
-| `npm run build` | ✅ 通过（一次沙箱外执行） | 1590 模块，7.36s；产物检查：无 `/api/api`，生产包 `apiBaseUrl` 解析为 `/api` |
-| `npm run test:server` | ⛔ 环境阻断 | `node --test` 为每个文件 spawn 子进程，沙箱返回 `EPERM`；**不是用例失败** |
-| `npm run service:journey` | 未执行 | 依赖浏览器与多进程，需在 CI 或普通终端补跑 |
+| `npm run build`（由 `npm run service:journey` 调用） | ✅ 通过（普通终端、工作区临时目录） | 1650 模块，约 6.2s；type-check 与 Vite build 均通过 |
+| `npm run test:server` | ✅ 47/47 通过（普通终端） | 含 `/api/feedback` 端到端用例；HTTP 子进程测试需在沙箱外执行 |
+| `JOURNEY_ROUNDS=1 npm run service:journey` | 🟡 部分通过 | Chrome、backend、preview 启动；构建/type-check、访客答复、登录意图恢复、登录和后台审核步骤通过；最终等待“审核通过的社区知识出现在 RAG 来源”超时。当前旅程已更新为 `/chat/new`、自动增高 textarea、当前登录按钮与首页 CTA；完整 10 轮未完成，需等 6.5 闭环再复跑 |
 
-> 因此本基线**不能宣称“31/31 后端测试通过”与“浏览器旅程通过”**；这两项是 0.3 的剩余动作。构建已单独通过，但构建产物尚未在预览服务器上做 `/chat/new` 刷新实测。
+> 0.3 的服务端测试和构建基线已验证；浏览器旅程揭示 6.5 社区审核到 RAG 的闭环缺口，当前仍不能宣称旅程通过或完成 0.3。`server/evals/latest-service-journey.json` 只在全轮成功后写出，本次失败没有生成完整旅程结果文件。
 
 ---
 
