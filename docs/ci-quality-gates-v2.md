@@ -1,19 +1,52 @@
 # V2 CI 与可重复验证约定
 
-## 当前质量工作流
+`.github/workflows/quality.yml` 在 `push`、`pull_request` 和 `workflow_dispatch` 时运行。各 job 使用独立 runner，不共享数据库、端口或临时索引；所有 job 超时均不超过 30 分钟。
 
-`.github/workflows/quality.yml` 在 push、pull request 和手动触发时运行 `lint`、`type-check`、`test:unit`、`test:server` 与生产构建。当前使用 Ubuntu runner 和 Node.js 24；工作流仅授予仓库只读权限，不依赖部署凭据。
+## 核心质量 job
 
-这只是 7.3 的第一阶段。RAG golden、服务旅程和发布预检的全量接入等 4.6、5.4、6.5 与 7.2 完成后再补齐。工作流目前不运行 `release:check`，因为它还包含向量索引、golden 等需要单独准备数据的检查。
+`quality` 检查发布资产与服务端语法，然后依次运行 lint、type-check、前端单测、普通服务端测试和生产构建。服务端集成测试 `test:mysql:review` 不属于内存测试入口，单独由 MySQL job 执行。
 
-## 浏览器旅程约定
+该 job 不需要真实密钥。`check-release-assets` 在 CI mock 配置下可以输出配置警告；缺少仓库必须文件或检测到错误配置仍会失败。
 
-- 服务旅程只允许串行占用 `127.0.0.1:3000` 后端和 `127.0.0.1:4173` Vite preview；可通过 `JOURNEY_BACKEND_PORT` 与 `JOURNEY_PREVIEW_PORT` 覆盖。启动前检查端口空闲，结束时关闭两个服务。
-- 使用 mock LLM、内存认证、禁用 TTS/LightRAG，并为每次旅程生成随机管理员密码和签名密钥。不要连接开发者 MySQL 或真实模型。
-- 浏览器用户目录由 `mkdtemp` 在系统临时目录创建，旅程结束后清理。新增旅程时，输入和生成数据放到该次运行独占的临时目录；不要复用 `server/data/` 或 `rag_storage/` 作为临时数据目录。
-- 浏览器脚本优先读取 `CHROME_PATH`。Linux runner 应显式指向安装好的 Chrome/Chromium 可执行文件（例如 `/usr/bin/google-chrome`）；Windows 使用 `C:\Program Files\Google\Chrome\Application\chrome.exe` 或设置 `CHROME_PATH`；macOS 使用 Chrome 应用包内的 `.../Google Chrome` 可执行文件或设置 `CHROME_PATH`。CI 接入浏览器旅程时，应在同一个 job 中安装浏览器并传入此变量，不依赖 runner 恰好预装浏览器。
-- 当前服务旅程使用固定默认结果 `server/evals/latest-service-journey.json`，因此不能并行运行多个服务旅程实例。若要并行矩阵运行，先为每个 job 配置独立结果路径和独立端口。
+## 浏览器旅程 job
 
-## 发布预检
+`browser-journeys` 安装 Chrome stable，并显式设置 `CHROME_PATH`。`npm run build` 只执行一次，之后 `ci:browser-journeys` 启动 `node server/index.mjs` 和 Vite preview（`127.0.0.1:3000`、`127.0.0.1:4176`），等待 `/health` 和 preview 可访问，再串行运行以下旅程：
 
-`npm run release:check` 额外包含 `npm run test:unit`。它仍会继续执行后端测试、向量就绪、RAG golden 和生产构建；任何步骤失败都会使命令非零退出。CI 阶段完成前，使用工作流的独立 lint/type-check/unit/server/build 步骤作为稳定门禁。
+- `admin:journey`
+- `community:journey`
+- `regression:journey`
+- `closed-loop:journey`
+- `home:journey`
+- `chat:layout`
+- `chat:stream`
+- `responsive:matrix`
+
+每个脚本必须成功退出，结果 JSON 必须满足 `ok === true` 且所有步骤成功。runner 还核对管理员“只重试生成”请求数、普通投稿 `POST=1`、社区来源回链和越权 `403` 等关键断言。服务关闭由 runner 的 `finally` 清理。
+
+旅程环境固定使用 `MYSQL_PORT=1`、`AUTH_ALLOW_MEMORY_FALLBACK=true`、`LLM_PROVIDER_MODE=mock`、`LIGHTRAG_PRIMARY=false`、`RAG_VECTOR_ENABLED=false`、`TTS_PROVIDER=disabled`、`FEEDBACK_TEST_MEMORY=true`。管理员账号与密码、`AUTH_SESSION_SECRET`、`GUEST_COOKIE_SECRET` 在 runner 内随机生成；管理员环境变量与各旅程变量一致。`CORS_ORIGIN` 为 preview 源，不读取开发者 `.env` 或连接真实服务。
+
+本轮 JSON 写到 `server/evals/ci/`，截图写到 `docs/design/verify/ci/`。旅程失败时上传这些结果与截图，避免把仓库内上次成功的 `latest-*.json` 误当成当前 run 证据。
+
+## 独立服务旅程 job
+
+`service-journey` 单独安装 Chrome 并运行 `npm run service:journey`。这个脚本自己 build，独占 `127.0.0.1:3000` 后端与 `127.0.0.1:4173` preview，默认执行 10 轮。随后 `ci:service-journey:assert` 必须确认 `passedRounds >= 10`、`communityClosureVerified === true`、`pendingQuestionRecoveryVerified === true`。结果写入 `server/evals/ci/latest-service-journey.json`。
+
+## Golden job
+
+`golden-top20` 在独立 runner 上按顺序执行 `npm run kb:prepare:offline` 和 `npm run rag:test:service -- --limit 20 --vector --json --output server/evals/ci/latest-rag-golden-ci.json`，再断言实际条目数为 20 且达到数据集阈值。失败不允许 `continue-on-error` 或跳过，报告始终作为 artifact 上传。
+
+CI 目前只锁定仓库已有 **Top 20**；Top 50 需要 5.4 的人工核对数据，准备好之前不补造样本，也不阻止 Top 20 job 运行。
+
+## MySQL 审核事务 job
+
+`mysql-review` 启动一次性的 `mysql:8.0` service，只使用 `ai_campus_agent_ci` 数据库。`npm run test:mysql:review` 的安全守卫要求 `MYSQL_REVIEW_TEST=1`、`CI=true` 和准确的测试库名；该入口不会被普通 `npm run test:server` 调用。
+
+测试通过 `server/sql/community-review-ci.sql` 创建所需表。该文件只包含 `CREATE TABLE IF NOT EXISTS`，不建库、不删除表、不执行旧的 `community-feature-v1.sql`。测试覆盖 MySQL 8 连接、pending-only 状态转换、同状态幂等、相反状态 409、并发审核单次提交、回复审核、未审核生成拒绝、生成失败后的仅生成重试、三次并发生成一条知识记录以及 `post_id` 唯一键。报告写到 `server/evals/ci/latest-mysql-review-ci.json` 并上传；job 结束后 GitHub 丢弃 MySQL service。
+
+## 发布验证边界
+
+workflow 不设置 `RELEASE_LIVE_VALIDATION_CONFIRMED`，也不连接真实模型、部署数据库、SMTP、TTS 或 HTTPS 环境。这个变量只由人工在 7.4 目标环境验收通过后设置。
+
+CI 将 `release:check` 拆成单独可诊断的门禁，并用离线 hash 索引跑完整 Top 20；不直接运行 monolithic `release:check`，因为它复用发布环境的向量就绪配置和默认 Golden 参数，既会与显式 Node/测试/构建 job 重复，也不能替代 Top 20 离线向量检查。发布前仍按 [release-checklist.md](release-checklist.md) 执行目标环境验证与 `release:gate`。
+
+7.3 的远端验收仍需在真实 push/PR workflow 全绿后登记 run URL、耗时与 artifacts。此文档和本地验证本身不代表 GitHub Actions 已运行通过。

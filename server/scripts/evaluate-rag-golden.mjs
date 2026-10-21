@@ -1,5 +1,5 @@
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
 
 const DEFAULT_GOLDEN_PATH = 'server/evals/campus-service-golden-questions.json'
 
@@ -11,6 +11,7 @@ const parseArgs = (argv) => {
     useVector: false,
     threshold: null,
     json: false,
+    output: '',
   }
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -21,6 +22,7 @@ const parseArgs = (argv) => {
     else if (arg === '--threshold') args.threshold = Number(argv[++index])
     else if (arg === '--vector') args.useVector = true
     else if (arg === '--json') args.json = true
+    else if (arg === '--output') args.output = argv[++index] || ''
   }
 
   return args
@@ -92,8 +94,15 @@ const main = async () => {
     status: accuracy >= threshold ? 'pass' : 'fail',
   }
 
+  const report = JSON.stringify({ summary, results }, null, 2)
+  if (args.output) {
+    const outputPath = resolve(process.cwd(), args.output)
+    mkdirSync(dirname(outputPath), { recursive: true })
+    writeFileSync(outputPath, `${report}\n`, 'utf8')
+  }
+
   if (args.json) {
-    console.log(JSON.stringify({ summary, results }, null, 2))
+    console.log(report)
   } else {
     for (const result of results) {
       const icon = result.passed ? 'PASS' : 'FAIL'

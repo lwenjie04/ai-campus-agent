@@ -1,8 +1,9 @@
 import { randomBytes } from 'node:crypto'
 import { spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
+import { mkdir } from 'node:fs/promises'
 import net from 'node:net'
-import { resolve } from 'node:path'
+import { dirname, resolve } from 'node:path'
 
 const backendPort = Number.parseInt(process.env.JOURNEY_BACKEND_PORT || '3000', 10)
 const previewPort = Number.parseInt(process.env.JOURNEY_PREVIEW_PORT || '4173', 10)
@@ -22,7 +23,8 @@ const assertPortAvailable = (port) =>
     server.listen(port, host, () => server.close(resolvePromise))
   })
 
-const sleep = (milliseconds) => new Promise((resolvePromise) => setTimeout(resolvePromise, milliseconds))
+const sleep = (milliseconds) =>
+  new Promise((resolvePromise) => setTimeout(resolvePromise, milliseconds))
 const waitForUrl = async (url, timeoutMilliseconds = 15_000) => {
   const startedAt = Date.now()
   while (Date.now() - startedAt < timeoutMilliseconds) {
@@ -44,6 +46,11 @@ const adminAccount = 'service-journey-admin'
 const adminPassword = `journey-${randomBytes(18).toString('base64url')}`
 const childSecret = () => randomBytes(32).toString('base64url')
 const commonEnv = { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' }
+const resultPath = resolve(
+  root,
+  process.env.JOURNEY_RESULT_PATH || 'server/evals/latest-service-journey.json',
+)
+await mkdir(dirname(resultPath), { recursive: true })
 const backend = spawn(process.execPath, ['server/index.mjs'], {
   cwd: root,
   env: {
@@ -111,11 +118,12 @@ try {
     cwd: root,
     env: {
       ...commonEnv,
-      JOURNEY_TARGET_URL: process.env.JOURNEY_TARGET_URL || `http://${host}:${previewPort}/chat/new`,
+      JOURNEY_TARGET_URL:
+        process.env.JOURNEY_TARGET_URL || `http://${host}:${previewPort}/chat/new`,
       JOURNEY_ADMIN_ACCOUNT: adminAccount,
       JOURNEY_ADMIN_PASSWORD: adminPassword,
       JOURNEY_ROUNDS: String(rounds),
-      JOURNEY_RESULT_PATH: resolve(root, 'server/evals/latest-service-journey.json'),
+      JOURNEY_RESULT_PATH: resultPath,
       JOURNEY_PROFILE: 'isolated_mock',
       JOURNEY_LLM_MODE: 'mock',
       JOURNEY_LIGHTRAG_MODE: 'disabled',

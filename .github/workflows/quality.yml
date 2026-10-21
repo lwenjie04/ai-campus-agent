@@ -34,6 +34,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Validate release assets and backend syntax
+        run: |
+          node server/scripts/check-release-assets.mjs
+          npm run server:check
+
       - name: Lint
         run: npm run lint
 
@@ -48,3 +53,218 @@ jobs:
 
       - name: Production build
         run: npm run build
+
+  browser-journeys:
+    name: Browser journeys
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CI: true
+      NO_COLOR: '1'
+      MYSQL_PORT: '1'
+      AUTH_ALLOW_MEMORY_FALLBACK: 'true'
+      LLM_PROVIDER_MODE: mock
+      LIGHTRAG_PRIMARY: 'false'
+      RAG_VECTOR_ENABLED: 'false'
+      TTS_PROVIDER: disabled
+      FEEDBACK_TEST_MEMORY: 'true'
+      CORS_ORIGIN: http://127.0.0.1:4176
+      PORT: '3000'
+      HOST: 127.0.0.1
+      VITE_LOCAL_API_TARGET: http://127.0.0.1:3000
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chrome and set CHROME_PATH
+        run: |
+          curl -fsSL --retry 3 \
+            https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
+            --output "$RUNNER_TEMP/google-chrome-stable.deb"
+          sudo apt-get update
+          sudo apt-get install --yes "$RUNNER_TEMP/google-chrome-stable.deb"
+          chrome_path="$(command -v google-chrome-stable || command -v google-chrome)"
+          echo "CHROME_PATH=$chrome_path" >> "$GITHUB_ENV"
+          "$chrome_path" --version
+
+      - name: Build once for browser journeys
+        run: npm run build
+
+      - name: Start services and run browser journeys serially
+        run: npm run ci:browser-journeys
+
+      - name: Upload browser journey results and screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-journeys-${{ github.run_id }}
+          path: |
+            server/evals/ci/**
+            docs/design/verify/ci/**
+          if-no-files-found: warn
+          retention-days: 14
+
+  service-journey:
+    name: Isolated service journey
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CI: true
+      NO_COLOR: '1'
+      MYSQL_PORT: '1'
+      AUTH_ALLOW_MEMORY_FALLBACK: 'true'
+      LLM_PROVIDER_MODE: mock
+      LIGHTRAG_PRIMARY: 'false'
+      RAG_VECTOR_ENABLED: 'false'
+      TTS_PROVIDER: disabled
+      FEEDBACK_TEST_MEMORY: 'true'
+      CORS_ORIGIN: http://127.0.0.1:4173
+      JOURNEY_BACKEND_PORT: '3000'
+      JOURNEY_PREVIEW_PORT: '4173'
+      JOURNEY_ROUNDS: '10'
+      JOURNEY_RESULT_PATH: server/evals/ci/latest-service-journey.json
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chrome and set CHROME_PATH
+        run: |
+          curl -fsSL --retry 3 \
+            https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
+            --output "$RUNNER_TEMP/google-chrome-stable.deb"
+          sudo apt-get update
+          sudo apt-get install --yes "$RUNNER_TEMP/google-chrome-stable.deb"
+          chrome_path="$(command -v google-chrome-stable || command -v google-chrome)"
+          echo "CHROME_PATH=$chrome_path" >> "$GITHUB_ENV"
+          "$chrome_path" --version
+
+      - name: Build, run 10 service rounds, and assert closure
+        run: |
+          npm run service:journey
+          npm run ci:service-journey:assert
+
+      - name: Upload service journey results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: service-journey-${{ github.run_id }}
+          path: server/evals/ci/latest-service-journey.json
+          if-no-files-found: warn
+          retention-days: 14
+
+  golden-top20:
+    name: Offline RAG Golden Top 20
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CI: true
+      NO_COLOR: '1'
+      MYSQL_PORT: '1'
+      LIGHTRAG_PRIMARY: 'false'
+      RAG_VECTOR_ENABLED: 'true'
+      LLM_PROVIDER_MODE: mock
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prepare local offline index
+        run: npm run kb:prepare:offline
+
+      - name: Evaluate the locked Top 20 Golden set
+        run: >-
+          npm run rag:test:service -- --limit 20 --vector --json
+          --output server/evals/ci/latest-rag-golden-ci.json
+
+      - name: Assert Golden count and threshold
+        run: npm run ci:golden:assert
+
+      - name: Upload Golden report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-top20-${{ github.run_id }}
+          path: server/evals/ci/latest-rag-golden-ci.json
+          if-no-files-found: warn
+          retention-days: 14
+
+  mysql-review:
+    name: MySQL 8 review transactions
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci-root-password
+          MYSQL_DATABASE: ai_campus_agent_ci
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --host=127.0.0.1 --user=root --password=ci-root-password --silent"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    env:
+      CI: true
+      NO_COLOR: '1'
+      MYSQL_REVIEW_TEST: '1'
+      MYSQL_REVIEW_RESULT_PATH: server/evals/ci/latest-mysql-review-ci.json
+      MYSQL_HOST: 127.0.0.1
+      MYSQL_PORT: '3306'
+      MYSQL_USER: root
+      MYSQL_PASSWORD: ci-root-password
+      MYSQL_DATABASE: ai_campus_agent_ci
+      AUTH_SESSION_SECRET: ci-mysql-review-session-secret-at-least-32-chars
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test MySQL review state, concurrency, and generation idempotency
+        run: npm run test:mysql:review
+
+      - name: Upload MySQL integration report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mysql-review-${{ github.run_id }}
+          path: server/evals/ci/latest-mysql-review-ci.json
+          if-no-files-found: warn
+          retention-days: 14

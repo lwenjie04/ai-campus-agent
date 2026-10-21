@@ -1,12 +1,9 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-// 这个文件先作为社区功能后续接 MySQL 的统一入口。
-// 当前阶段我们还没有正式引入 mysql2 等驱动，因此这里只提供：
-// 1. 环境变量读取
-// 2. 配置结构整理
-// 3. 一个明确的占位 query 方法
-// 后面真正接数据库时，只需要在这里替换实现，业务层文件可以尽量不改。
+// MySQL entry point for community, feedback, and receipt persistence.
+// Ignored env files fill only process values that were not supplied by the
+// caller; the mysql2/promise pool is created lazily on the first query.
 
 const loadEnvFile = (filePath) => {
   if (!existsSync(filePath)) return
@@ -134,4 +131,14 @@ export const withMySqlTransaction = async (operation) => {
   } finally {
     connection.release()
   }
+}
+
+// Close the lazily-created pool after an isolated database integration test.
+export const closeMySqlPool = async () => {
+  const currentPoolPromise = poolPromise
+  poolPromise = null
+  if (!currentPoolPromise) return
+
+  const pool = await currentPoolPromise
+  await pool.end()
 }
