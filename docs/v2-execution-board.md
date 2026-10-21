@@ -74,7 +74,7 @@
 | --- | --- | --- | --- | --- | --- |
 | 0.1 | 固定当前工作基线 | 人工 + AI-1 | ✅ | 无 | 49 项改动已分 5 批提交（`4af3c89`、`61756be`、`364b6b8`、`46d754d`、`73f4d21`）；`docs/development-baseline-v2.md` 记录归属与恢复方式 |
 | 0.2 | 补齐 Figma 页面与状态 | 人工 | 🟡 | 0.1 | 登录/注册、历史、来源、讲解、账号、搜索、事项列表/详情、社区/后台各状态的稿件齐全；交互说明已存在但不可替代稿件 |
-| 0.3 | 固定运行与依赖基线 | AI-2 | 🟡 | 0.1 | `decdf75`；`npm run test:server` 47/47；`service:journey` 已修正路由/控件假设。**6.5 已证明“社区审核→RAG 来源”闭环可用**；**剩余**：Codex 复跑 `service:journey` 默认 10 轮并写回基线。 |
+| 0.3 | 固定运行与依赖基线 | AI-2 | 🟡 | 0.1 | `decdf75`；`npm run test:server` 47/47；`6.5` 已证明“社区审核→RAG 来源”闭环。`5dda2a6` 修正服务旅程仍使用已删除的 `.source-link` 选择器为 `.rail-source__title`，`npm run service:journey` **10/10** 通过（9.6s，isolated mock，含待恢复问题刷新/确认与社区知识 RAG 来源），证据 `server/evals/latest-service-journey.json`。**剩余**：Codex 将该复跑写回 `docs/development-baseline-v2.md` 并确认 0.3。 |
 | 0.4 | 定义状态、API 与开放顺序 | AI-2（起草）+ 人工（签字） | ✅ | 0.1 | `api-contract-v2.md` 经人工签字冻结；提交 `de0f47c`。验证：`git diff --cached --check` 通过；`git show --check --stat HEAD` 未发现空白错误。 |
 
 ### Sprint 1：API 隔离与路由（2–3 天）
@@ -365,6 +365,7 @@
 | 2026-10-21 | 交接 | 6.4 交接清单入库（§5.2）：状态机/幂等/并发 guard、通过+生成分步与只重试剩余、重复生成唯一性、测试矩阵与前端配合项；AI-2 可认领 | AI-1 |
 | 2026-10-21 | 完成 | 6.4 收口：前端结构化错误/拒绝确认/部分失败重试已验；隔离 MySQL8 schema 上 9/9 真实事务通过并清理；6.4 ✅，D-8 关闭，可复跑 MySQL 测试留 7.3 | AI-1 |
 | 2026-10-21 | 完成 | 6.5 闭环：失败注入→只重试生成→知识审核→问答返回社区来源→回链帖子；普通账号 /403 + API 403；LightRAG 未配置降级；closed-loop:journey 9/9；S6 全部完成 | AI-1 |
+| 2026-10-21 | 部分 | 0.3 服务旅程：修正失效 `.source-link` 选择器后 `service:journey` 10/10（9.6s），社区知识 RAG 来源与待恢复问题均通过；证据 `server/evals/latest-service-journey.json`；待 Codex 写回基线文档 | AI-1（代跑） |
 | 2026-10-21 | 完成 | 6.4 前端：保留结构化社区 API 错误；拒绝二次确认、行级 loading、通过+生成部分失败独立面板与只重试生成（不重复 approve）；admin:journey 11/11；专用 MySQL 事务实测仍待 D-8 | AI-1 |
 
 ---
