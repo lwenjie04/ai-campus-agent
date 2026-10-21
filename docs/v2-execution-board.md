@@ -58,11 +58,11 @@
 | S3 | 5 | 5 | 0 | 0 | 0 | 0 | — |
 | S4 | 6 | 6 | 0 | 0 | 0 | 0 | — |
 | S5 | 4 | 0 | 0 | 0 | 0 | 4 | 等 5.1 数据 |
-| S6 | 5 | 4 | 1 | 0 | 0 | 0 | **6.5 联测** |
+| S6 | 5 | 5 | 0 | 0 | 0 | 0 | — |
 | S7 | 5 | 2 | 2 | 0 | 0 | 1 | **7.3 / 6.x** |
-| **合计** | **39** | **29** | **4** | **0** | **0** | **6** | — |
+| **合计** | **39** | **30** | **3** | **0** | **0** | **6** | — |
 
-> 已完成：0.1、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、2.1、2.2、2.3、2.4、2.5、3.1、3.2、3.3、3.4、3.5、4.1、4.2、4.3、4.4、4.5、4.6、6.1、6.2、6.3、6.4、7.1、7.2。**S1/S2/S3/S4 已全部完成，S6 仅剩 6.5 联测**；5.x 等人工数据，7.3 等 5.4/6.5。实时状态以本表为准。
+> 已完成：0.1、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、2.1、2.2、2.3、2.4、2.5、3.1、3.2、3.3、3.4、3.5、4.1、4.2、4.3、4.4、4.5、4.6、6.1、6.2、6.3、6.4、6.5、7.1、7.2。**S1/S2/S3/S4/S6 已全部完成**；0.3 可随 6.5 复跑 10 轮；5.x 等人工数据，7.3 等 5.4/6.5（6.5 已解除），7.4/7.5 待后续。实时状态以本表为准。
 
 ---
 
@@ -74,7 +74,7 @@
 | --- | --- | --- | --- | --- | --- |
 | 0.1 | 固定当前工作基线 | 人工 + AI-1 | ✅ | 无 | 49 项改动已分 5 批提交（`4af3c89`、`61756be`、`364b6b8`、`46d754d`、`73f4d21`）；`docs/development-baseline-v2.md` 记录归属与恢复方式 |
 | 0.2 | 补齐 Figma 页面与状态 | 人工 | 🟡 | 0.1 | 登录/注册、历史、来源、讲解、账号、搜索、事项列表/详情、社区/后台各状态的稿件齐全；交互说明已存在但不可替代稿件 |
-| 0.3 | 固定运行与依赖基线 | AI-2 | 🟡 | 0.1 | `decdf75`；`npm run test:server` 47/47；`service:journey` 已在普通终端运行，build/type-check 与前半旅程通过，最终“社区审核→RAG 来源”断言超时。已修正脚本的当前路由/控件假设。**剩余**：与 6.5 一起修复或确认该闭环，并完成默认 10 轮旅程。 |
+| 0.3 | 固定运行与依赖基线 | AI-2 | 🟡 | 0.1 | `decdf75`；`npm run test:server` 47/47；`service:journey` 已修正路由/控件假设。**6.5 已证明“社区审核→RAG 来源”闭环可用**；**剩余**：Codex 复跑 `service:journey` 默认 10 轮并写回基线。 |
 | 0.4 | 定义状态、API 与开放顺序 | AI-2（起草）+ 人工（签字） | ✅ | 0.1 | `api-contract-v2.md` 经人工签字冻结；提交 `de0f47c`。验证：`git diff --cached --check` 通过；`git show --check --stat HEAD` 未发现空白错误。 |
 
 ### Sprint 1：API 隔离与路由（2–3 天）
@@ -135,7 +135,7 @@
 | 6.2 | 投稿/回复/草稿 | AI-1 | ✅ | 6.1、3.5 | `e7b8c1a`：`community-draft` 按 ownerScope 隔离（游客/用户、回复按帖子 ID）；投稿与回复取消/刷新保留，显式“清空草稿”或提交成功才删除；`submitting` + 3 秒同负载去重阻止重复提交；待审核提示与“已提交但刷新失败”独立提示；切帖清空旧回复草稿状态。证据：4 个草稿单测；`community:journey` **13/13**（含草稿恢复/清空、POST 请求数=1 的防重复校验，`server/evals/latest-community-journey.json`）；90 单测/type-check/lint/build 通过 |
 | 6.3 | 后台路由与界面 | AI-1 | ✅ | 1.4、2.1 | `d098593`：`/admin/review` 与 `/admin/retrieval` 页签双向同步，刷新保持；审核/检索面板复用现有队列与 LightRAG 状态接口；银白/深绿视觉与响应式统计、队列、状态卡；手机 390 可审核、0 溢出；未登录直达回首页且后台接口返回 401。证据：`npm run admin:journey` **7/7**（`server/evals/latest-admin-journey.json`；截图 `admin-review-1440.png`、`admin-retrieval-1440.png`、`admin-review-390.png`）；90 单测/type-check/lint/build 通过 |
 | 6.4 | 审核状态与部分失败 | AI-2 + AI-1 | ✅ | 6.2、6.3 | 后端 `f065ba2`：`test:server` 56/56、定向 12/12；契约 §12。前端 `271e3e1`：结构化社区 API 错误、拒绝二次确认、行级 loading、通过+生成部分失败独立面板与“只重试生成”；`admin:journey` 11/11（approve=1/generate=2）。**隔离 MySQL 实测**：本地 MySQL8 新建 `ai_campus_agent_test_64`，应用建表后执行 9 项真实事务校验（通过/拒绝幂等与相反终态 409、并发 approve/reject 单次、回复状态机、未审核生成拒绝、生成幂等、三次并发生成同一 knowledgeId 且仅一行、`post_id` 唯一键 ER_DUP_ENTRY），全部通过后删除 schema，未写默认库；证据 `server/evals/latest-mysql-review-validation.json`。剩余（不阻塞 6.4）：可复跑 MySQL 测试待 7.3 纳入 CI。90 单测/type-check/lint/build 通过 |
-| 6.5 | 后台与社区闭环验证 | 共同 | 🔵 | 6.4、4.4 | 覆盖失败重试、来源返回、普通账号越权、LightRAG 未配置；正式数据不被 Mock 旅程写入。AI-1 已认领：失败注入→部分失败→只重试生成→审核知识→问答来源回链，再补普通账号 403、LightRAG 未配置与内存隔离证据 |
+| 6.5 | 后台与社区闭环验证 | 共同 | ✅ | 6.4、4.4 | `5ddd69c`：新增 `closed-loop:journey` **9/9**：注入 generate 失败→部分失败面板→只重试生成（approve=1/generate=2）→审核知识→问答返回**社区经验**来源→来源回链 `/community/posts/:id`；普通账号后台路由 `/403` 且 API 403；LightRAG 未配置时检索页显示“未连接”且问答走关键词降级；后端以 `MYSQL_PORT=1` 内存模式运行，正式数据不被写入。顺带修复 `App.vue` 对 AgentChat camelCase `openCommunityPost` 的 v-on 绑定（此前来源“查看来源帖子”点击无反应）。证据：`server/evals/latest-closed-loop-journey.json`；截图 `closed-loop-source-1440.png`、`closed-loop-partial-failure-1440.png`、`closed-loop-retrieval-1440.png`、`closed-loop-forbidden-1440.png`；90 单测/type-check/lint/build 通过 |
 
 ### Sprint 7：反馈与发布（3–4 天）
 
@@ -257,6 +257,7 @@
 
 | 日期 | 任务 ID | 执行者 | 证据（commit / 命令 / 文件） | 备注 |
 | --- | --- | --- | --- | --- |
+| 2026-10-21 | 6.5 闭环验证 | AI-1 | `5ddd69c`；`npm run closed-loop:journey` 9/9；`server/evals/latest-closed-loop-journey.json`；截图 `closed-loop-source-1440.png` 等 4 张；90 单测/type-check/lint/build 通过 | 失败重试→知识审核→社区来源回链；普通账号 403；LightRAG 未配置降级；内存隔离不写正式数据；修复 App 来源回链事件绑定 |
 | 2026-10-21 | 6.4 MySQL 事务实测 | AI-1（代跑） | `server/evals/latest-mysql-review-validation.json`；本地 MySQL8 独立 schema `ai_campus_agent_test_64`，9/9 通过后已删除 | 状态机幂等/409、并发单次、回复状态机、未审核拒绝、生成幂等、三次并发生成一行、唯一键；可复跑测试留 7.3 |
 | 2026-10-21 | 6.4 前端阶段 | AI-1 | `271e3e1`；`npm run admin:journey` 11/11；90 单测/type-check/lint/build 通过；截图 `docs/design/verify/admin-knowledge-failure-1440.png` | 社区 API 保留结构化错误；拒绝确认、行级 loading、生成失败独立面板与只重试生成；重复点击 approve=1/generate=2 |
 | 2026-10-21 | 6.4 后端阶段 | AI-2（Codex） | `f065ba2`；`npm run test:server` 56/56；定向 `community-review.test.mjs` + `community-auth.test.mjs` 12/12；语法检查 70 模块；定向 ESLint、`git diff --check` 通过 | SQL/内存审核状态机、审核日志单次写入、知识生成失败契约与 post_id 幂等已交付；真实 MySQL 事务联测和 AI-1 前端交互待收口 |
@@ -363,6 +364,7 @@
 | 2026-10-21 | 占用 | 领取 6.3：审核/检索双路由页签同步、银白视觉、手机可审核与 401/403 边界验证 | AI-1 |
 | 2026-10-21 | 交接 | 6.4 交接清单入库（§5.2）：状态机/幂等/并发 guard、通过+生成分步与只重试剩余、重复生成唯一性、测试矩阵与前端配合项；AI-2 可认领 | AI-1 |
 | 2026-10-21 | 完成 | 6.4 收口：前端结构化错误/拒绝确认/部分失败重试已验；隔离 MySQL8 schema 上 9/9 真实事务通过并清理；6.4 ✅，D-8 关闭，可复跑 MySQL 测试留 7.3 | AI-1 |
+| 2026-10-21 | 完成 | 6.5 闭环：失败注入→只重试生成→知识审核→问答返回社区来源→回链帖子；普通账号 /403 + API 403；LightRAG 未配置降级；closed-loop:journey 9/9；S6 全部完成 | AI-1 |
 | 2026-10-21 | 完成 | 6.4 前端：保留结构化社区 API 错误；拒绝二次确认、行级 loading、通过+生成部分失败独立面板与只重试生成（不重复 approve）；admin:journey 11/11；专用 MySQL 事务实测仍待 D-8 | AI-1 |
 
 ---
