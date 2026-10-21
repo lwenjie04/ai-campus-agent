@@ -122,7 +122,7 @@ try {
   await command('Page.navigate', { url: `${targetUrl}/chat/new` })
   await waitFor(async () => evaluate('document.readyState === "complete"'), 'chat page load')
   await waitFor(
-    async () => evaluate(`Boolean(document.querySelector('.input-box input'))`),
+    async () => evaluate(`Boolean(document.querySelector('.input-box textarea'))`),
     'chat composer',
   )
   record('问答页渲染', '/chat/new')
@@ -143,7 +143,7 @@ try {
   record('桌面阅读区 + 来源栏 + 底部输入区', 'rail + composer in viewport')
 
   // 用前端 Mock 发一条能命中来源的示例问题（构建需 VITE_USE_MOCK_CHAT=true）。
-  await evaluate(`document.querySelector('.input-box input').focus()`)
+  await evaluate(`document.querySelector('.input-box textarea').focus()`)
   await command('Input.insertText', { text: '选课在哪里查课表？' })
   await sleep(300)
   await evaluate(`document.querySelector('.send-btn').click()`)
@@ -206,6 +206,116 @@ try {
   )
   record('手机来源入口与面板', 'source-hint → source-sheet')
   await screenshot('chat-sources-390.png')
+
+  await evaluate(`document.querySelector('.source-sheet__close').click()`)
+  await command('Emulation.setDeviceMetricsOverride', {
+    width: 1440,
+    height: 900,
+    deviceScaleFactor: 1,
+    mobile: false,
+  })
+  await sleep(300)
+
+  const setTextarea = (value) =>
+    evaluate(`(() => {
+      const textarea = document.querySelector('.input-box textarea')
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set
+      setter.call(textarea, ${JSON.stringify(value)})
+      textarea.dispatchEvent(new Event('input', { bubbles: true }))
+      textarea.focus()
+      return textarea.value
+    })()`)
+  const assistantCount = () => evaluate(`document.querySelectorAll('[data-role="assistant"]').length`)
+
+  // 2.4 推荐问题：只预填并聚焦，不发送。
+  const suggestions = await evaluate(
+    `[...document.querySelectorAll('.composer-suggestion')].map((item) => item.textContent.trim())`,
+  )
+  if (suggestions.length < 2) throw new Error(`suggestions missing: ${suggestions.join(',')}`)
+  const countBeforeSuggestion = await assistantCount()
+  await evaluate(`document.querySelector('.composer-suggestion').click()`)
+  const suggestionState = await evaluate(`(() => {
+    const textarea = document.querySelector('.input-box textarea')
+    return { value: textarea?.value || '', focused: document.activeElement === textarea }
+  })()`)
+  if (suggestionState.value !== suggestions[0] || !suggestionState.focused) {
+    throw new Error(`suggestion did not prefill/focus: ${JSON.stringify(suggestionState)}`)
+  }
+  if ((await assistantCount()) !== countBeforeSuggestion) throw new Error('suggestion auto-sent a message')
+  record('推荐问题只预填并聚焦', suggestions[0])
+  await screenshot('chat-suggestions-1440.png')
+
+  // IME 组合期 Enter 只确认候选词，不发送。
+  await setTextarea('输入法组合测试')
+  const beforeIme = await assistantCount()
+  const imeResult = await evaluate(`(() => {
+    const textarea = document.querySelector('.input-box textarea')
+    const event = new KeyboardEvent('keydown', {
+      key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true, cancelable: true,
+    })
+    Object.defineProperty(event, 'isComposing', { value: true })
+    textarea.dispatchEvent(event)
+    return {
+      value: textarea.value,
+      defaultPrevented: event.defaultPrevented,
+      count: document.querySelectorAll('[data-role="assistant"]').length,
+    }
+  })()`)
+  if (imeResult.defaultPrevented || imeResult.count !== beforeIme) {
+    throw new Error(`IME enter caused a send: ${JSON.stringify(imeResult)}`)
+  }
+  record('IME 组合期 Enter 不发送', imeResult.value)
+  await setTextarea('')
+
+  // Shift+Enter 换行，不发送。
+  await setTextarea('第一行')
+  await command('Input.dispatchKeyEvent', {
+    type: 'keyDown',
+    key: 'Enter',
+    code: 'Enter',
+    text: '\r',
+    unmodifiedText: '\r',
+    windowsVirtualKeyCode: 13,
+    nativeVirtualKeyCode: 13,
+    modifiers: 8,
+  })
+  await command('Input.dispatchKeyEvent', {
+    type: 'keyUp',
+    key: 'Enter',
+    code: 'Enter',
+    windowsVirtualKeyCode: 13,
+    nativeVirtualKeyCode: 13,
+    modifiers: 8,
+  })
+  await sleep(150)
+  await command('Input.insertText', { text: '第二行' })
+  const multiline = await evaluate(`document.querySelector('.input-box textarea').value`)
+  if (!multiline.includes('\n')) throw new Error('Shift+Enter did not insert a newline')
+  record('Shift+Enter 换行', JSON.stringify(multiline))
+  await setTextarea('')
+
+  // 空白输入不发送。
+  const beforeEmpty = await assistantCount()
+  await setTextarea('   ')
+  await evaluate(`document.querySelector('.send-btn').click()`)
+  await sleep(200)
+  if ((await assistantCount()) !== beforeEmpty) throw new Error('blank input sent a message')
+  record('空值不发送')
+
+  // 当前会话草稿刷新后恢复。
+  await setTextarea('这是未发送的草稿')
+  await sleep(500)
+  await command('Page.reload', {})
+  await waitFor(
+    async () => evaluate(`Boolean(document.querySelector('.input-box textarea'))`),
+    'composer after reload',
+  )
+  const restored = await waitFor(async () => {
+    const value = await evaluate(`document.querySelector('.input-box textarea').value`)
+    return value.includes('这是未发送的草稿') ? value : undefined
+  }, 'draft restored')
+  record('草稿刷新后恢复', restored.slice(0, 30))
+  await setTextarea('')
 
   const result = {
     version: 1,

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "completedAt": "2026-10-21T02:52:59.504Z",
+  "completedAt": "2026-10-21T03:45:58.525Z",
   "mode": "isolated_frontend_mock",
   "targetUrl": "http://127.0.0.1:4177",
   "ok": true,
@@ -29,6 +29,30 @@
       "name": "手机来源入口与面板",
       "ok": true,
       "detail": "source-hint → source-sheet"
+    },
+    {
+      "name": "推荐问题只预填并聚焦",
+      "ok": true,
+      "detail": "需要准备什么材料？"
+    },
+    {
+      "name": "IME 组合期 Enter 不发送",
+      "ok": true,
+      "detail": "输入法组合测试"
+    },
+    {
+      "name": "Shift+Enter 换行",
+      "ok": true,
+      "detail": "\"第一行\\n第二行\""
+    },
+    {
+      "name": "空值不发送",
+      "ok": true
+    },
+    {
+      "name": "草稿刷新后恢复",
+      "ok": true,
+      "detail": "这是未发送的草稿"
     }
   ]
 }

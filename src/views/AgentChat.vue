@@ -77,6 +77,19 @@
             </button>
           </div>
 
+          <div v-if="followUpSuggestions.length > 0" class="composer-suggestions">
+            <button
+              v-for="suggestion in followUpSuggestions"
+              :key="suggestion"
+              type="button"
+              class="composer-suggestion"
+              @click="applySuggestion(suggestion)"
+            >
+              {{ suggestion }}
+              <img src="/icons/chevron-right.svg" alt="" aria-hidden="true" />
+            </button>
+          </div>
+
           <InputBox
             ref="inputBoxRef"
             v-model="draftText"
@@ -279,6 +292,7 @@ const pendingDraftRestored = ref(false)
 const pendingDraftVisible = ref(false)
 const resumeAfterLoginRequested = ref(false)
 const GUEST_TRIAL_STORAGE_KEY = 'ai-campus-agent.guest-trial.used.v1'
+const NEW_CHAT_DRAFT_KEY = 'ai-campus-agent.chat-new-draft.v1'
 const guestTrialUsed = ref(false)
 
 const getLocalStorage = () => {
@@ -286,6 +300,23 @@ const getLocalStorage = () => {
     return typeof window !== 'undefined' ? window.localStorage : null
   } catch {
     return null
+  }
+}
+
+// /chat/new 还没有历史会话时，草稿先写这个键，刷新后仍能恢复。
+const readNewChatDraft = () => {
+  try {
+    return getLocalStorage()?.getItem(NEW_CHAT_DRAFT_KEY) || ''
+  } catch {
+    return ''
+  }
+}
+
+const clearNewChatDraft = () => {
+  try {
+    getLocalStorage()?.removeItem(NEW_CHAT_DRAFT_KEY)
+  } catch {
+    // 无痕或禁用存储时忽略。
   }
 }
 
@@ -407,6 +438,7 @@ const startNewConversation = () => {
   conversationNotice.value = ''
   historyOpen.value = false
   draftText.value = ''
+  clearNewChatDraft()
   store.resetSession()
   void router.push('/chat/new')
 }
@@ -479,6 +511,7 @@ const handleSend = async (text: string) => {
 
   ensureDraftForRun()
   const result = await store.sendMessage(text, runOptions())
+  if (result.ok) clearNewChatDraft()
   if (!authStore.loggedIn && result.ok) {
     persistGuestTrialUsed()
     syncRouteAfterSend()
@@ -520,6 +553,7 @@ const sendPendingDraft = async () => {
   consumeQuestionIntent()
   const result = await store.sendMessage(draft, runOptions())
   if (result.ok) {
+    clearNewChatDraft()
     clearPendingDraft()
     syncRouteAfterSend()
     return
@@ -569,9 +603,20 @@ watch(
 
 // 输入中的草稿写入当前会话，切走或刷新后仍能恢复。
 watch(draftText, (value) => {
-  if (!conversations.active) return
-  if (conversations.active.draft === value) return
-  conversations.setDraft(value)
+  if (conversations.active && conversations.active.draft !== value) {
+    conversations.setDraft(value)
+  }
+
+  // /chat/new 还没有历史会话时单独落一个草稿键，刷新后仍能恢复。
+  try {
+    const storage = getLocalStorage()
+    if (route.name === 'chat-new') {
+      if (value.trim()) storage?.setItem(NEW_CHAT_DRAFT_KEY, value)
+      else storage?.removeItem(NEW_CHAT_DRAFT_KEY)
+    }
+  } catch {
+    // 无痕或禁用存储时忽略。
+  }
 })
 
 // 校徽是否加载失败。
@@ -624,6 +669,27 @@ const activeAnswerText = computed(() => {
 })
 
 const narrating = ref(false)
+
+// 2.4 推荐问题：根据上一条回答里的关键词给两个可预填的问题，只预填不发送。
+const followUpSuggestions = computed(() => {
+  if (store.loading) return []
+  const lastAnswer = [...visibleMessages.value]
+    .reverse()
+    .find((message) => message.role === 'assistant' && message.content.trim())
+  if (!lastAnswer) return []
+
+  const content = lastAnswer.content
+  const suggestions: string[] = []
+  if (/材料|证明|证件|盖章/.test(content)) suggestions.push('需要准备什么材料？')
+  if (/通知|时间|截止|年份|有效期/.test(content)) suggestions.push('帮我找最新通知')
+  if (suggestions.length === 0) suggestions.push('需要准备什么材料？', '帮我找最新通知')
+  return suggestions.slice(0, 2)
+})
+
+const applySuggestion = (suggestion: string) => {
+  draftText.value = suggestion
+  void nextTick(() => inputBoxRef.value?.focus())
+}
 
 watch(
   () => store.narrationTick,
@@ -840,7 +906,8 @@ onMounted(() => {
     void restoreConversation(routeConversationId)
   } else if (route.name === 'chat-new') {
     activeConversationId.value = conversations.createDraft().conversationId
-    // 从首页“开始提问”进入时聚焦输入框；只聚焦，不自动发送，也不进历史。
+    // /chat/new 刷新后恢复未发送草稿，再聚焦输入框；只恢复，不自动发送。
+    if (!draftText.value) draftText.value = readNewChatDraft()
     void nextTick(() => inputBoxRef.value?.focus())
   }
 })
@@ -1541,6 +1608,35 @@ onMounted(() => {
   background: var(--white);
   font-size: 0.78rem;
   cursor: pointer;
+}
+
+.composer-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.55rem;
+}
+
+.composer-suggestion {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  border: 0;
+  padding: 0.3rem 0.1rem;
+  color: var(--link);
+  background: transparent;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.composer-suggestion:hover {
+  color: var(--brand-hover);
+  text-decoration: underline;
+}
+
+.composer-suggestion img {
+  width: 0.8rem;
+  height: 0.8rem;
 }
 
 .composer-note {
