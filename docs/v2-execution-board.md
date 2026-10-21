@@ -56,13 +56,13 @@
 | S1 | 5 | 5 | 0 | 0 | 0 | 0 | — |
 | S2 | 5 | 5 | 0 | 0 | 0 | 0 | — |
 | S3 | 5 | 5 | 0 | 0 | 0 | 0 | — |
-| S4 | 6 | 4 | 1 | 0 | 0 | 1 | 4.5 / 4.6 |
+| S4 | 6 | 5 | 0 | 0 | 0 | 1 | **4.6 联测** |
 | S5 | 4 | 0 | 0 | 0 | 0 | 4 | 等 5.1 数据 |
 | S6 | 5 | 0 | 5 | 0 | 0 | 0 | 2.1 之后 |
 | S7 | 5 | 1 | 1 | 0 | 0 | 3 | **7.2 可启动** |
-| **合计** | **39** | **22** | **9** | **0** | **0** | **8** | — |
+| **合计** | **39** | **23** | **8** | **0** | **0** | **8** | — |
 
-> 已完成：0.1、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、2.1、2.2、2.3、2.4、2.5、3.1、3.2、3.3、3.4、3.5、4.1、4.2、4.3、4.4、7.1。**S1/S2/S3 已全部完成**；前端剩余 4.5 收尾与 4.6 联测；7.2 可启动。实时状态以本表为准。
+> 已完成：0.1、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、2.1、2.2、2.3、2.4、2.5、3.1、3.2、3.3、3.4、3.5、4.1、4.2、4.3、4.4、4.5、7.1。**S1/S2/S3 已全部完成，S4 仅剩 4.6 联测**；7.2 可启动。实时状态以本表为准。
 
 ---
 
@@ -115,7 +115,7 @@
 | 4.2 | 取消传递到检索与模型 | AI-2 | ✅ | 4.1（按人工决定可先行） | `ab5455b`；`npm run test:server` 36/36；`npm run server:check` 53 模块通过；定向 ESLint 通过。req/res/socket 断开与超时信号合并；LightRAG、向量检索和模型流接收取消信号；首段前回滚、断开且首段后结算；正常 finish 不报中断；四个边界测试通过 |
 | 4.3 | 阶段事件与额度结算 | AI-2 | ✅ | 4.2、0.4 | `4623976`；`npm run test:server` 37/37；`npm run server:check` 55 模块通过；定向 ESLint、`git diff --check` 通过。`start` 在检索前；发出真实 retrieval/generation phase；正常完成与断开竞态只结算一次 |
 | 4.4 | 来源元数据统一适配 | AI-2（主）+ AI-1（类型/展示） | ✅ | 1.2；展示依赖 2.3 | 服务端 `6112c0b`（45/45、60 模块）。前端 `53a6144`：`MessageSource` 对齐 `sourceId/type/attachments.mimeType/publishedAt/updatedAt/applicablePeriod/validity` 并删除 `confidence`；`source-display.ts` 统一类型/日期/时效文案，缺失日期显示“日期未提供”；`SourceCard` 展示类型、时效、日期、摘要、附件与原文链接；Mock 来源同步新结构。5 个 source-display 单测；70 单测/type-check/lint/build 通过 |
-| 4.5 | 按需语音控制 | AI-1（主）+ AI-2（服务端去密钥） | 🟡 | 3.4、4.1 | 服务端 `f620cde`：旧共享密钥不能通过鉴权（45/45）。前端 `7a06d04`：删除 `VITE_TTS_AUTH_TOKEN` 与 Authorization 覆盖，仅登录会话 + `credentials: include`；失败提示。`53a6144`：默认不再自动 TTS，回答完成后由来源栏“语音讲解”显式开启/停止，播报状态跟随 store。**剩余**：语音队列单队列/晚到 Blob 丢弃/ObjectURL 释放、游客登录后恢复播放、移动端播放限制 |
+| 4.5 | 按需语音控制 | AI-1（主）+ AI-2（服务端去密钥） | ✅ | 3.4、4.1 | 服务端 `f620cde`：旧共享密钥不能通过鉴权（45/45）。前端 `7a06d04` 去 `VITE_TTS_AUTH_TOKEN`；`53a6144` 默认不自动 TTS、语音卡显式开关；`5c17697`：单队列 + token 校验丢弃晚到分段/过期请求、ObjectURL 在结束/停止时释放、移动端 `NotAllowedError` 只提示一次并引导再点、游客点语音先登录并在登录后恢复朗读；文本清洗/分段抽到 `narration-text`（4 单测）。证据：`chat:layout` **11/11**（含游客语音先登录）、74 单测/type-check/lint/build 通过。真实 TTS 合成需目标环境凭据，留 7.4 验证 |
 | 4.6 | 生成/来源/媒体联测 | 共同（AI-1 主导） | ⬜ | 4.3、4.4、4.5 | 覆盖跨会话晚到、过期登录、刷新中断、重试、来源选中、TTS 失败、移动端播放限制 |
 
 ### Sprint 5：办事指南（2–3 天）
@@ -207,6 +207,7 @@
 | 日期 | 任务 ID | 执行者 | 证据（commit / 命令 / 文件） | 备注 |
 | --- | --- | --- | --- | --- |
 | 2026-10-21 | 2.4 输入与推荐问题 | AI-1 | `1c7a306`；`npm run chat:layout` 10/10；`server/evals/latest-chat-layout.json`；截图 `docs/design/verify/chat-suggestions-1440.png`；70 单测/type-check/lint/build 通过 | IME Enter 不发送、Shift+Enter 换行、空值/重复拦截、推荐只预填、草稿刷新恢复 |
+| 2026-10-21 | 4.5 按需语音收尾 | AI-1 | `5c17697`；`npm run chat:layout` 11/11；74 单测/type-check/lint/build 通过；`chat-layout` 含游客语音先登录 | 单队列、晚到丢弃、ObjectURL 释放、游客登录恢复、移动端播放拦截提示 |
 | 2026-10-21 | 2.5 响应式与真实流式 | AI-1 | `e793745`；`npm run responsive:matrix` 10/10；`npm run chat:stream` 2/2；`server/evals/latest-responsive-matrix.json`、`latest-chat-stream.json`；截图 `docs/design/verify/responsive/`、`chat-stream-*.png`；70 单测/type-check/lint/build 通过 | 五宽度 0 溢出、控件可见；真实 NDJSON 流式桌面+手机通过 |
 | 2026-10-21 | 2.2 首页与公共导航 | AI-1 | `e5ba122`；`npm run home:journey` 6/6；`server/evals/latest-home-flow.json`；1440/390 截图；65 单测/type-check/lint/build 通过 | HomeView、四导航、帮助面板、办事指南空态、CTA 聚焦且不建历史 |
 | 2026-10-21 | 2.1 设计 token | AI-1 | `71dcb6b` + `f511dde`；`npm run test:unit` 65/65；type-check/lint/build 通过；证据截图 `docs/design/verify/home-1440.png` | token/字体/图标/去纸张网格已完成；布局由 2.2/2.3 替换 |
@@ -281,6 +282,7 @@
 | 2026-10-21 | 完成 | 2.2 补充：登录/注册弹窗按 22:35 重做（账号标题、页签、绿色全宽按钮、内联错误、关闭按钮）；70 单测/type-check/lint/build 通过 | AI-1 |
 | 2026-10-21 | 完成 | 2.4 输入与推荐：textarea 自动增高、IME Enter 不发送、Shift+Enter 换行、空值/重复拦截、推荐问题只预填聚焦、/chat/new 草稿刷新恢复；chat:layout 10/10 | AI-1 |
 | 2026-10-21 | 完成 | 2.5 响应式与流式：`inspect-responsive-layout` 宽度矩阵 + 逐宽度截图；首页/问答 360-1440 共 10 组 0 溢出；真实 `/api/chat/stream` 桌面 1440 与手机 390 均通过 | AI-1 |
+| 2026-10-21 | 完成 | 4.5 按需语音收尾：默认不自动 TTS、单队列与晚到丢弃、ObjectURL 结束即释放、移动端拦截提示、游客登录后恢复朗读；narration-text 4 单测，chat:layout 11/11 | AI-1 |
 
 ---
 
