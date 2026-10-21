@@ -115,7 +115,7 @@
 | 4.2 | 取消传递到检索与模型 | AI-2 | ✅ | 4.1（按人工决定可先行） | `ab5455b`；`npm run test:server` 36/36；`npm run server:check` 53 模块通过；定向 ESLint 通过。req/res/socket 断开与超时信号合并；LightRAG、向量检索和模型流接收取消信号；首段前回滚、断开且首段后结算；正常 finish 不报中断；四个边界测试通过 |
 | 4.3 | 阶段事件与额度结算 | AI-2 | ✅ | 4.2、0.4 | `4623976`；`npm run test:server` 37/37；`npm run server:check` 55 模块通过；定向 ESLint、`git diff --check` 通过。`start` 在检索前；发出真实 retrieval/generation phase；正常完成与断开竞态只结算一次 |
 | 4.4 | 来源元数据统一适配 | AI-2（主）+ AI-1（类型/展示） | 🟡 | 1.2；展示依赖 2.3 | 服务端部分完成：`6112c0b`；`npm run test:server` 45/45；`npm run server:check` 60 模块通过；定向 ESLint 与 `git diff --check` 通过。统一适配 RAG/LightRAG/规则来源；响应含稳定 `sourceId` 与时效字段，下载路径统一到 `/api/kb/download`，不输出可信度分数。**剩余**：AI-1 在 2.3 后完成前端类型/展示、缺失日期文案和可信度百分比清理 |
-| 4.5 | 按需语音控制 | AI-1（主）+ AI-2（服务端去密钥） | 🟡 | 3.4、4.1 | AI-2 服务端部分：`f620cde`；`npm run test:server` 45/45；`npm run server:check` 60 模块；定向 ESLint 与 `git diff --check` 通过；旧共享密钥不能通过鉴权。**剩余**：AI-1 移除 `VITE_TTS_AUTH_TOKEN` 配置及 Authorization 覆盖；完成按需播放队列、取消/释放资源和游客登录后恢复 |
+| 4.5 | 按需语音控制 | AI-1（主）+ AI-2（服务端去密钥） | 🟡 | 3.4、4.1 | 服务端 `f620cde`：旧共享密钥不能通过鉴权（45/45）。前端 `7a06d04`：删除 `VITE_TTS_AUTH_TOKEN` 与 Authorization 覆盖，仅带登录会话 + `credentials: include`；TTS 与分段兜底都失败时播放器只发一次 `narration-error`，问答页显示“语音播报暂不可用，文字回答和来源不受影响”。**剩余**：按需播放队列、统一取消/ObjectURL 释放、游客登录后恢复播放 |
 | 4.6 | 生成/来源/媒体联测 | 共同（AI-1 主导） | ⬜ | 4.3、4.4、4.5 | 覆盖跨会话晚到、过期登录、刷新中断、重试、来源选中、TTS 失败、移动端播放限制 |
 
 ### Sprint 5：办事指南（2–3 天）
@@ -267,6 +267,7 @@
 | 2026-10-20 | 完成 | 1.4：未登录/无权限语义分离、`safeInternalPath`、403 无历史回落、三视角矩阵；55 用例通过 | AI-1 |
 | 2026-10-20 | 完成 | 3.3 浏览器回归：`conversation:journey` 8/8（登录、两轮会话、刷新、历史切换、草稿、无效 ID、后退） | AI-1 |
 | 2026-10-20 | 完成 | 3.4 登录意图：可序列化 intent + 24h TTL、守卫/问答页登记、只执行一次、取消保留、刷新确认；`auth-intent:journey` 5/5 | AI-1 |
+| 2026-10-21 | 部分 | 4.5 前端去共享密钥：删除 `VITE_TTS_AUTH_TOKEN`/Authorization 覆盖，仅登录会话；TTS 失败提示；65 单测/type-check/lint/build 通过，dev server 已重启 | AI-1 |
 
 ---
 
