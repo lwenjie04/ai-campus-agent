@@ -108,3 +108,30 @@ export const query = async (sql, params = []) => {
   const [rows] = await pool.query(sql, params)
   return rows
 }
+
+export const withMySqlTransaction = async (operation) => {
+  const pool = await getPool()
+  const connection = await pool.getConnection()
+  let transactionStarted = false
+
+  try {
+    await connection.beginTransaction()
+    transactionStarted = true
+
+    const transactionQuery = async (sql, params = []) => {
+      const [rows] = await connection.query(sql, params)
+      return rows
+    }
+
+    const result = await operation(transactionQuery)
+    await connection.commit()
+    return result
+  } catch (error) {
+    if (transactionStarted) {
+      await connection.rollback().catch(() => {})
+    }
+    throw error
+  } finally {
+    connection.release()
+  }
+}

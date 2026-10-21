@@ -138,9 +138,11 @@ type AuthIntent = {
 | 404 | `NOT_FOUND` | 请求资源/API 不存在；保持 JSON，不返回 SPA HTML。 |
 | 409 | `FEEDBACK_NOT_ELIGIBLE` | 请求凭据不存在、未完成或不属于当前主体。 |
 | 409 | `FEEDBACK_CONFLICT` | 唯一键竞争/不可接受的反馈状态；重复相同提交应幂等成功。 |
+| 409 | `REVIEW_STATE_CONFLICT` | 帖子或回复已经进入相反终态；错误包含当前 `currentStatus`，服务端不改写状态、不写重复审核日志。 |
+| 409 | `POST_NOT_APPROVED` | 社区知识生成目标帖子尚未审核通过；错误包含当前 `postStatus`，不可重试生成。 |
 | 413 | `BODY_TOO_LARGE` | 请求体超过限制。 |
 | 429 | `RATE_LIMITED`、`AUTH_LOGIN_LOCKED` | 限频；可使用 `Retry-After`，等待后由用户重试。 |
-| 502/503 | `LLM_*`、`RETRIEVAL_UNAVAILABLE`、`FEEDBACK_STORAGE_UNAVAILABLE` | 上游或持久化不可用；不得谎报反馈已记录。 |
+| 502/503 | `LLM_*`、`RETRIEVAL_UNAVAILABLE`、`FEEDBACK_STORAGE_UNAVAILABLE`、`KNOWLEDGE_GENERATION_FAILED` | 上游或持久化不可用；知识生成错误带 `retryable`、`postStatus`，并可带已知 `knowledgeId`。 |
 | 500 | `INTERNAL_ERROR` | 通用服务错误；响应不泄漏内部堆栈、配置或凭据。 |
 
 具体模块可保留现有机器码（例如 `GUEST_RATE_LIMITED`），但前端映射需在同一语义组内兼容。日志可关联 `requestId`，不得记录完整问答、登录票据、Cookie、验证码或 API 密钥。
@@ -218,3 +220,18 @@ type MessageSource = {
 本节差异记录以 2026-10-20 契约签字时的实现状态为准：当时流事件尚无 `phase`，`start` 在检索后发送；来源缺 `sourceId` 与时效字段；问答 `meta` 尚无 `feedbackEligible`；`/api/feedback` 和 receipt 表尚不存在。后续任务的当前实现与验证状态以 [`v2-execution-board.md`](v2-execution-board.md) 为准。登录接口对无效登录返回 `AUTH_INVALID`，过期会话的统一机器码仍需在认证接线任务补齐。
 
 人工签字后，4.3 按 §4–5 实现阶段事件与单次结算，7.1 按 §8 建立只增量迁移和请求凭据，7.2 按 §8 实现反馈端点。接口测试应覆盖成功、错误、伪造归属、重复提交、取消和竞态；不得重跑包含 `DROP TABLE` 的旧 SQL。
+
+## 12. 社区审核与知识生成（6.4 补充冻结条款，2026-10-21）
+
+### 帖子与回复审核状态
+
+- `POST /api/community/review/posts/:id/approve|reject` 与 `POST /api/community/review/replies/:id/approve|reject` 只允许 `pending → approved` 或 `pending → rejected`。
+- 对仍为 `pending` 的记录，服务端以原子 `UPDATE ... WHERE id = ? AND status = 'pending'` 执行转换。仅真实转换写一条 review log；并发 approve/reject 只能有一个转换成功。
+- 重放已达成的相同目标状态返回 `200`，与首次成功使用相同成功响应且不再写 review log。已进入相反终态时返回 `409`：`{ "error": { "code": "REVIEW_STATE_CONFLICT", "currentStatus": "approved" | "rejected", "retryable": false } }`。
+- 审核端点需要管理员身份；无会话返回 `401`，普通账号返回 `403`。
+
+### 通过与知识生成分步
+
+- 帖子 approve 与 `POST /api/community/knowledge/generate` 保持为两个独立请求。知识生成只接受 `postStatus = "approved"` 的帖子；否则返回 `409 { "error": { "code": "POST_NOT_APPROVED", "retryable": false, "postStatus": "pending" | "rejected" } }`。
+- 同一帖子至多对应一条 `community_knowledge`。数据库以 `post_id` 唯一约束作最终保护，并在事务内锁定/读取帖子、检查现有知识条目、插入条目、更新帖子知识状态和写生成日志。对已生成的帖子重复请求返回同一 `knowledgeId` 与现有状态，不新增行、不把已审核的知识重置为待审。
+- 生成失败不会回滚帖子已通过的审核状态。返回 JSON 错误 `{ "error": { "code": "KNOWLEDGE_GENERATION_FAILED", "retryable": boolean, "postStatus": "approved", "knowledgeId"?: string } }`；HTTP `503` 表示可重试的暂时故障，HTTP `500` 表示当前不可自动重试。`knowledgeId` 仅在服务端能确认已有持久化条目时返回。客户端据此显示“帖子已通过，知识生成失败”，重试时只再次调用 generate，不重复 approve。

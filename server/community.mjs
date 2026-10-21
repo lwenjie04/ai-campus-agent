@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { isMySqlConfigured, query } from './mysql.mjs'
+import { isMySqlConfigured, query, withMySqlTransaction } from './mysql.mjs'
 import { requireAdmin, requireSession } from './session.mjs'
 
 // 社区模块的定位：
@@ -54,6 +54,30 @@ const mockReplies = [
 ]
 
 const mockKnowledge = []
+const mockReviewLogs = []
+let nextMockKnowledgeGenerationFailure = null
+
+const assertCommunityTestHelpersEnabled = () => {
+  if (process.env.COMMUNITY_ENABLE_TEST_HELPERS !== 'true') {
+    throw new Error('COMMUNITY_TEST_HELPERS_DISABLED')
+  }
+}
+
+export const communityTestSupport = Object.freeze({
+  snapshot() {
+    assertCommunityTestHelpersEnabled()
+    return {
+      posts: mockPosts.map((item) => ({ ...item, tags: [...(item.tags || [])] })),
+      replies: mockReplies.map((item) => ({ ...item })),
+      knowledge: mockKnowledge.map((item) => ({ ...item, keywords: [...(item.keywords || [])] })),
+      reviewLogs: mockReviewLogs.map((item) => ({ ...item })),
+    }
+  },
+  failNextKnowledgeGeneration(error = new Error('SIMULATED_KNOWLEDGE_GENERATION_FAILURE')) {
+    assertCommunityTestHelpersEnabled()
+    nextMockKnowledgeGenerationFailure = error
+  },
+})
 
 // 数据库离线时，RAG 仍可读取管理员已经审核通过的进程内社区知识。
 // 返回副本，避免检索层意外修改审核模块的状态。
@@ -75,12 +99,41 @@ export const getApprovedMockCommunityKnowledge = () =>
 
 const ok = (res, data, message = 'ok') => json(res, 200, { code: 0, message, data })
 const badRequest = (res, message) => json(res, 400, { code: 4001, message, data: null })
-const notFound = (res, message = '未找到对应资源') => json(res, 404, { code: 4044, message, data: null })
+const notFound = (res, message = '未找到对应资源') =>
+  json(res, 404, { code: 4044, message, data: null })
 const authFailure = (res, error) =>
   json(res, error?.statusCode || 401, {
     code: error?.code || 'AUTH_REQUIRED',
     message: error?.message || '请先登录',
     data: null,
+  })
+
+const createReviewStateConflictError = (currentStatus) => {
+  const error = new Error('审核状态已被其他操作更新')
+  error.code = 'REVIEW_STATE_CONFLICT'
+  error.statusCode = 409
+  error.currentStatus = currentStatus
+  return error
+}
+
+const reviewStateConflictResponse = (res, currentStatus) =>
+  json(res, 409, {
+    error: {
+      code: 'REVIEW_STATE_CONFLICT',
+      message: '审核状态已被其他操作更新，请刷新后重试',
+      currentStatus,
+      retryable: false,
+    },
+  })
+
+const postNotApprovedErrorResponse = (res, postStatus) =>
+  json(res, 409, {
+    error: {
+      code: 'POST_NOT_APPROVED',
+      message: '帖子尚未审核通过，不能生成社区知识',
+      retryable: false,
+      postStatus,
+    },
   })
 
 let json = null
@@ -206,9 +259,7 @@ const listPostsFromMySql = async (requestUrl) => {
   }
 
   const orderBy =
-    sortBy === 'hot'
-      ? 'reply_count DESC, like_count DESC, created_at DESC'
-      : 'created_at DESC'
+    sortBy === 'hot' ? 'reply_count DESC, like_count DESC, created_at DESC' : 'created_at DESC'
 
   const whereSql = `WHERE ${where.join(' AND ')}`
 
@@ -371,7 +422,10 @@ const getReviewPostDetailFromMySql = async (postId) => {
 
 // 缓存 MySQL 可用性探测结果，避免每个社区请求都 SELECT 1。
 // 失败后冷却期内继续走 mock，冷却结束再重新探测。
-const MYSQL_PROBE_COOLDOWN_MS = Math.max(10_000, Number(process.env.MYSQL_PROBE_COOLDOWN_MS || 30_000))
+const MYSQL_PROBE_COOLDOWN_MS = Math.max(
+  10_000,
+  Number(process.env.MYSQL_PROBE_COOLDOWN_MS || 30_000),
+)
 let mySqlAvailability = null
 let mySqlAvailabilityCheckedAt = 0
 
@@ -402,7 +456,9 @@ const listPosts = (requestUrl) => {
   const page = Math.max(1, Number(requestUrl.searchParams.get('page') || 1))
   const pageSize = Math.min(50, Math.max(1, Number(requestUrl.searchParams.get('pageSize') || 10)))
   const category = String(requestUrl.searchParams.get('category') || '').trim()
-  const keyword = String(requestUrl.searchParams.get('keyword') || '').trim().toLowerCase()
+  const keyword = String(requestUrl.searchParams.get('keyword') || '')
+    .trim()
+    .toLowerCase()
   const sortBy = String(requestUrl.searchParams.get('sortBy') || 'latest')
 
   let rows = mockPosts.filter((post) => post.status === 'approved')
@@ -627,8 +683,11 @@ const createReply = async (req, res, postId) => {
   )
 }
 
-const writeReviewLog = async ({ targetType, targetId, action, reviewer = 'admin', note = '' }) => {
-  await query(
+const writeReviewLog = async (
+  { targetType, targetId, action, reviewer = 'admin', note = '' },
+  runQuery = query,
+) => {
+  await runQuery(
     `
       INSERT INTO community_review_logs (
         target_type,
@@ -852,58 +911,74 @@ const updateKnowledgeStatusFromMock = (knowledgeId, status) => {
   }
 }
 
-const updatePostStatusInMySql = async (postId, status, action, note = '', reviewer = 'admin') => {
-  const rows = await query(
-    `
-      SELECT id
-      FROM community_posts
-      WHERE id = ?
-      LIMIT 1
-    `,
-    [postId],
-  )
+const updatePostStatusInMySql = async (postId, status, action, note = '', reviewer = 'admin') =>
+  withMySqlTransaction(async (transactionQuery) => {
+    const result = await transactionQuery(
+      `
+        UPDATE community_posts
+        SET status = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ? AND status = 'pending'
+      `,
+      [status, postId],
+    )
 
-  if (!rows.length) {
-    const err = new Error('POST_NOT_FOUND')
-    err.code = 'POST_NOT_FOUND'
-    throw err
-  }
+    if (!result?.affectedRows) {
+      const rows = await transactionQuery(
+        `
+          SELECT id, status
+          FROM community_posts
+          WHERE id = ?
+          LIMIT 1
+        `,
+        [postId],
+      )
 
-  await query(
-    `
-      UPDATE community_posts
-      SET status = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `,
-    [status, postId],
-  )
+      if (!rows.length) {
+        const err = new Error('POST_NOT_FOUND')
+        err.code = 'POST_NOT_FOUND'
+        throw err
+      }
+      if (rows[0].status === status) return { id: postId, status }
+      throw createReviewStateConflictError(rows[0].status)
+    }
 
-  await writeReviewLog({
-    targetType: 'post',
-    targetId: postId,
-    action,
-    reviewer,
-    note,
+    await writeReviewLog(
+      {
+        targetType: 'post',
+        targetId: postId,
+        action,
+        reviewer,
+        note,
+      },
+      transactionQuery,
+    )
+
+    return { id: postId, status }
   })
 
-  return {
-    id: postId,
-    status,
-  }
-}
-
-const updatePostStatus = (res, postId, status, message) => {
+const updatePostStatus = (res, postId, status, message, reviewer = 'admin') => {
   const post = mockPosts.find((item) => item.id === postId)
   if (!post) return notFound(res, '帖子不存在')
+  if (post.status === status) return ok(res, { id: post.id, status: post.status }, message)
+  if (post.status !== 'pending') return reviewStateConflictResponse(res, post.status)
 
   post.status = status
   post.updatedAt = new Date().toISOString()
+  mockReviewLogs.push({
+    targetType: 'post',
+    targetId: postId,
+    action: status === 'approved' ? 'approve' : 'reject',
+    reviewer,
+    note: status === 'approved' ? '帖子审核通过' : '帖子已拒绝',
+  })
   return ok(res, { id: post.id, status: post.status }, message)
 }
 
-const updateReplyStatus = (res, replyId, status, message) => {
+const updateReplyStatus = (res, replyId, status, message, reviewer = 'admin') => {
   const reply = mockReplies.find((item) => item.id === replyId)
   if (!reply) return notFound(res, '回复不存在')
+  if (reply.status === status) return ok(res, { id: reply.id, status: reply.status }, message)
+  if (reply.status !== 'pending') return reviewStateConflictResponse(res, reply.status)
 
   reply.status = status
   reply.updatedAt = new Date().toISOString()
@@ -915,39 +990,65 @@ const updateReplyStatus = (res, replyId, status, message) => {
     post.updatedAt = new Date().toISOString()
   }
 
+  mockReviewLogs.push({
+    targetType: 'reply',
+    targetId: replyId,
+    action: status === 'approved' ? 'approve' : 'reject',
+    reviewer,
+    note: status === 'approved' ? '回复审核通过' : '回复已拒绝',
+  })
+
   return ok(res, { id: reply.id, status: reply.status }, message)
 }
 
-const updateReplyStatusInMySql = async (replyId, status, action, note = '', reviewer = 'admin') => {
-  const rows = await query(
-    `
-      SELECT id, post_id
-      FROM community_replies
-      WHERE id = ?
-      LIMIT 1
-    `,
-    [replyId],
-  )
+const updateReplyStatusInMySql = async (replyId, status, action, note = '', reviewer = 'admin') =>
+  withMySqlTransaction(async (transactionQuery) => {
+    const result = await transactionQuery(
+      `
+        UPDATE community_replies
+        SET status = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ? AND status = 'pending'
+      `,
+      [status, replyId],
+    )
 
-  if (!rows.length) {
-    const err = new Error('REPLY_NOT_FOUND')
-    err.code = 'REPLY_NOT_FOUND'
-    throw err
-  }
+    if (!result?.affectedRows) {
+      const rows = await transactionQuery(
+        `
+          SELECT id, status
+          FROM community_replies
+          WHERE id = ?
+          LIMIT 1
+        `,
+        [replyId],
+      )
 
-  const postId = rows[0].post_id
+      if (!rows.length) {
+        const err = new Error('REPLY_NOT_FOUND')
+        err.code = 'REPLY_NOT_FOUND'
+        throw err
+      }
+      if (rows[0].status === status) return { id: replyId, status }
+      throw createReviewStateConflictError(rows[0].status)
+    }
 
-  await query(
-    `
-      UPDATE community_replies
-      SET status = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `,
-    [status, replyId],
-  )
+    const replies = await transactionQuery(
+      `
+        SELECT post_id
+        FROM community_replies
+        WHERE id = ?
+        LIMIT 1
+      `,
+      [replyId],
+    )
+    const postId = replies[0]?.post_id
+    if (!postId) {
+      const err = new Error('REPLY_NOT_FOUND')
+      err.code = 'REPLY_NOT_FOUND'
+      throw err
+    }
 
-  if (status === 'approved') {
-    await query(
+    await transactionQuery(
       `
         UPDATE community_posts
         SET
@@ -956,44 +1057,34 @@ const updateReplyStatusInMySql = async (replyId, status, action, note = '', revi
             FROM community_replies
             WHERE post_id = ? AND status = 'approved'
           ),
-          last_replied_at = CURRENT_TIMESTAMP,
+          last_replied_at = CASE WHEN ? = 'approved' THEN CURRENT_TIMESTAMP ELSE last_replied_at END,
           updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `,
-      [postId, postId],
+      [postId, status, postId],
     )
-  } else {
-    await query(
-      `
-        UPDATE community_posts
-        SET
-          reply_count = (
-            SELECT COUNT(*)
-            FROM community_replies
-            WHERE post_id = ? AND status = 'approved'
-          ),
-          updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-      `,
-      [postId, postId],
-    )
-  }
 
-  await writeReviewLog({
-    targetType: 'reply',
-    targetId: replyId,
-    action,
-    reviewer,
-    note,
+    await writeReviewLog(
+      {
+        targetType: 'reply',
+        targetId: replyId,
+        action,
+        reviewer,
+        note,
+      },
+      transactionQuery,
+    )
+
+    return { id: replyId, status }
   })
 
-  return {
-    id: replyId,
-    status,
-  }
-}
-
-const updateKnowledgeStatusInMySql = async (knowledgeId, status, action, note = '', reviewer = 'admin') => {
+const updateKnowledgeStatusInMySql = async (
+  knowledgeId,
+  status,
+  action,
+  note = '',
+  reviewer = 'admin',
+) => {
   const rows = await query(
     `
       SELECT id, post_id
@@ -1064,10 +1155,7 @@ const buildCommunityKnowledgeSummary = ({ post, replies }) => {
 }
 
 const buildCommunityKnowledgeContent = ({ post, replies }) => {
-  const sections = [
-    `主题：${post.title}`,
-    `主帖内容：${post.content}`,
-  ]
+  const sections = [`主题：${post.title}`, `主帖内容：${post.content}`]
 
   if (replies.length > 0) {
     sections.push(
@@ -1106,157 +1194,176 @@ const buildCommunityKnowledgeKeywords = ({ post, replies }) => {
 }
 
 const generateKnowledgeInMySql = async (postId, reviewer = 'admin') => {
-  const posts = await query(
-    `
-      SELECT
-        id,
-        author_name,
-        author_role,
-        title,
-        content,
-        category,
-        tags,
-        status,
-        reply_count,
-        like_count,
-        view_count,
-        created_at,
-        updated_at
-      FROM community_posts
-      WHERE id = ?
-      LIMIT 1
-    `,
-    [postId],
-  )
+  try {
+    return await withMySqlTransaction(async (transactionQuery) => {
+      const posts = await transactionQuery(
+        `
+          SELECT
+            id,
+            author_name,
+            author_role,
+            title,
+            content,
+            category,
+            tags,
+            status,
+            reply_count,
+            like_count,
+            view_count,
+            created_at,
+            updated_at
+          FROM community_posts
+          WHERE id = ?
+          LIMIT 1
+          FOR UPDATE
+        `,
+        [postId],
+      )
 
-  if (!posts.length) {
-    const err = new Error('POST_NOT_FOUND')
-    err.code = 'POST_NOT_FOUND'
-    throw err
-  }
+      if (!posts.length) {
+        const err = new Error('POST_NOT_FOUND')
+        err.code = 'POST_NOT_FOUND'
+        throw err
+      }
 
-  const post = mapMySqlPost(posts[0])
-  const replies = (
-    await query(
-      `
-        SELECT
-          id,
-          post_id,
-          author_name,
-          author_role,
-          content,
-          status,
-          like_count,
-          created_at,
-          updated_at
-        FROM community_replies
-        WHERE post_id = ? AND status = 'approved'
-        ORDER BY created_at ASC
-      `,
-      [postId],
-    )
-  ).map(mapMySqlReply)
+      const post = mapMySqlPost(posts[0])
+      if (post.status !== 'approved') {
+        const err = new Error('POST_NOT_APPROVED')
+        err.code = 'POST_NOT_APPROVED'
+        err.postStatus = post.status
+        throw err
+      }
 
-  const knowledgeId = `ck_${randomUUID().slice(0, 8)}`
-  const title = `学生社区经验总结：${post.title}`
-  const summary = buildCommunityKnowledgeSummary({ post, replies })
-  const content = buildCommunityKnowledgeContent({ post, replies })
-  const keywords = buildCommunityKnowledgeKeywords({ post, replies })
+      const existingRows = await transactionQuery(
+        `
+          SELECT id, status, summary
+          FROM community_knowledge
+          WHERE post_id = ?
+          LIMIT 1
+          FOR UPDATE
+        `,
+        [postId],
+      )
+      if (existingRows.length) {
+        return {
+          knowledgeId: existingRows[0].id,
+          status: existingRows[0].status,
+          summary: existingRows[0].summary,
+        }
+      }
 
-  const existingRows = await query(
-    `
-      SELECT id
-      FROM community_knowledge
-      WHERE post_id = ?
-      LIMIT 1
-    `,
-    [postId],
-  )
+      const replies = (
+        await transactionQuery(
+          `
+            SELECT
+              id,
+              post_id,
+              author_name,
+              author_role,
+              content,
+              status,
+              like_count,
+              created_at,
+              updated_at
+            FROM community_replies
+            WHERE post_id = ? AND status = 'approved'
+            ORDER BY created_at ASC
+          `,
+          [postId],
+        )
+      ).map(mapMySqlReply)
 
-  if (existingRows.length) {
-    const existingId = existingRows[0].id
-    await query(
-      `
-        UPDATE community_knowledge
-        SET
-          title = ?,
-          summary = ?,
-          content = ?,
-          category = ?,
-          keywords = ?,
-          confidence = 0.45,
-          status = 'pending',
-          source_type = 'community_summary',
-          updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-      `,
-      [title, summary, content, post.category, JSON.stringify(keywords), existingId],
-    )
+      const knowledgeId = `ck_${randomUUID().slice(0, 8)}`
+      const title = `学生社区经验总结：${post.title}`
+      const summary = buildCommunityKnowledgeSummary({ post, replies })
+      const content = buildCommunityKnowledgeContent({ post, replies })
+      const keywords = buildCommunityKnowledgeKeywords({ post, replies })
 
-    await query(
-      `
-        UPDATE community_posts
-        SET knowledge_status = 'pending', updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-      `,
-      [postId],
-    )
+      await transactionQuery(
+        `
+          INSERT INTO community_knowledge (
+            id,
+            post_id,
+            title,
+            summary,
+            content,
+            category,
+            keywords,
+            confidence,
+            status,
+            source_type
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, 0.45, 'pending', 'community_summary')
+        `,
+        [knowledgeId, postId, title, summary, content, post.category, JSON.stringify(keywords)],
+      )
 
-    await writeReviewLog({
-      targetType: 'knowledge',
-      targetId: existingId,
-      action: 'generate_knowledge',
-      reviewer,
-      note: '更新社区知识条目',
+      await transactionQuery(
+        `
+          UPDATE community_posts
+          SET knowledge_status = 'pending', updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `,
+        [postId],
+      )
+
+      await writeReviewLog(
+        {
+          targetType: 'knowledge',
+          targetId: knowledgeId,
+          action: 'generate_knowledge',
+          reviewer,
+          note: '生成社区知识条目',
+        },
+        transactionQuery,
+      )
+
+      return { knowledgeId, status: 'pending', summary }
     })
+  } catch (error) {
+    if (error?.code !== 'ER_DUP_ENTRY') throw error
 
+    const existingRows = await query(
+      `
+        SELECT id, status, summary
+        FROM community_knowledge
+        WHERE post_id = ?
+        LIMIT 1
+      `,
+      [postId],
+    )
+    if (!existingRows.length) throw error
     return {
-      knowledgeId: existingId,
-      status: 'pending',
-      summary,
+      knowledgeId: existingRows[0].id,
+      status: existingRows[0].status,
+      summary: existingRows[0].summary,
     }
   }
+}
 
-  await query(
-    `
-      INSERT INTO community_knowledge (
-        id,
-        post_id,
-        title,
-        summary,
-        content,
-        category,
-        keywords,
-        confidence,
-        status,
-        source_type
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, 0.45, 'pending', 'community_summary')
-    `,
-    [knowledgeId, postId, title, summary, content, post.category, JSON.stringify(keywords)],
-  )
+const RETRYABLE_KNOWLEDGE_GENERATION_CODES = new Set([
+  'ECONNREFUSED',
+  'ECONNRESET',
+  'ER_LOCK_DEADLOCK',
+  'ER_LOCK_WAIT_TIMEOUT',
+  'ETIMEDOUT',
+  'EPIPE',
+  'MYSQL_DRIVER_MISSING',
+  'PROTOCOL_CONNECTION_LOST',
+])
 
-  await query(
-    `
-      UPDATE community_posts
-      SET knowledge_status = 'pending', updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `,
-    [postId],
-  )
-
-  await writeReviewLog({
-    targetType: 'knowledge',
-    targetId: knowledgeId,
-    action: 'generate_knowledge',
-    reviewer,
-    note: '生成社区知识条目',
-  })
-
-  return {
-    knowledgeId,
-    status: 'pending',
-    summary,
+const knowledgeGenerationFailureResponse = (res, error) => {
+  const retryable =
+    error?.retryable === true || RETRYABLE_KNOWLEDGE_GENERATION_CODES.has(error?.code)
+  const statusCode = retryable ? 503 : 500
+  const payload = {
+    code: 'KNOWLEDGE_GENERATION_FAILED',
+    message: '帖子已通过，但知识生成失败',
+    retryable,
+    postStatus: error?.postStatus || 'approved',
   }
+  if (error?.knowledgeId) payload.knowledgeId = error.knowledgeId
+
+  return json(res, statusCode, { error: payload })
 }
 
 const generateKnowledge = async (req, res) => {
@@ -1265,66 +1372,78 @@ const generateKnowledge = async (req, res) => {
   const postId = String(body.postId || '').trim()
   if (!postId) return badRequest(res, 'postId 不能为空')
 
-  if (await shouldUseMySql()) {
-    try {
+  try {
+    if (await shouldUseMySql()) {
       const result = await generateKnowledgeInMySql(postId, reviewer)
       return ok(res, result, '生成成功')
-    } catch (error) {
-      if (error?.code === 'POST_NOT_FOUND') {
-        return notFound(res, '帖子不存在')
-      }
+    }
+
+    const post = mockPosts.find((item) => item.id === postId)
+    if (!post) return notFound(res, '帖子不存在')
+    if (post.status !== 'approved') return postNotApprovedErrorResponse(res, post.status)
+
+    if (nextMockKnowledgeGenerationFailure) {
+      const error = nextMockKnowledgeGenerationFailure
+      nextMockKnowledgeGenerationFailure = null
       throw error
     }
-  }
 
-  const post = mockPosts.find((item) => item.id === postId)
-  if (!post) return notFound(res, '帖子不存在')
+    const existing = mockKnowledge.find((item) => item.postId === postId)
+    if (existing) {
+      return ok(
+        res,
+        {
+          knowledgeId: existing.id,
+          status: existing.status,
+          summary: existing.summary,
+        },
+        '生成成功',
+      )
+    }
 
-  const replies = getApprovedRepliesByPostId(postId)
-  const summary = `根据学生社区讨论，${post.title.replace(/[？?]$/, '')}通常需要结合学院安排和最新教务通知办理，具体仍建议以学校官方通知为准。`
+    const replies = getApprovedRepliesByPostId(postId)
+    const now = new Date().toISOString()
+    const knowledge = {
+      id: `ck_${randomUUID().slice(0, 8)}`,
+      postId,
+      title: `学生社区经验总结：${post.title}`,
+      summary: `根据学生社区讨论，${post.title.replace(/[？?]$/, '')}通常需要结合学院安排和最新教务通知办理，具体仍建议以学校官方通知为准。`,
+      content: [post.content, ...replies.map((item) => item.content)].join('\n'),
+      category: post.category,
+      keywords: [...post.tags],
+      confidence: 0.45,
+      status: 'pending',
+      sourceType: 'community_summary',
+      createdAt: now,
+      updatedAt: now,
+    }
 
-  const existing = mockKnowledge.find((item) => item.postId === postId)
-  if (existing) {
-    existing.summary = summary
-    existing.content = [post.content, ...replies.map((item) => item.content)].join('\n')
-    existing.updatedAt = new Date().toISOString()
+    mockKnowledge.push(knowledge)
+    post.knowledgeStatus = 'pending'
+    post.updatedAt = now
+    mockReviewLogs.push({
+      targetType: 'knowledge',
+      targetId: knowledge.id,
+      action: 'generate_knowledge',
+      reviewer,
+      note: '生成社区知识条目',
+    })
+
     return ok(
       res,
       {
-        knowledgeId: existing.id,
-        status: existing.status,
-        summary: existing.summary,
+        knowledgeId: knowledge.id,
+        status: knowledge.status,
+        summary: knowledge.summary,
       },
-      '更新社区知识成功',
+      '生成成功',
     )
+  } catch (error) {
+    if (error?.code === 'POST_NOT_FOUND') return notFound(res, '帖子不存在')
+    if (error?.code === 'POST_NOT_APPROVED')
+      return postNotApprovedErrorResponse(res, error.postStatus)
+    return knowledgeGenerationFailureResponse(res, error)
   }
-
-  const now = new Date().toISOString()
-  const knowledge = {
-    id: `ck_${randomUUID().slice(0, 8)}`,
-    postId,
-    title: `学生社区经验总结：${post.title}`,
-    summary,
-    content: [post.content, ...replies.map((item) => item.content)].join('\n'),
-    category: post.category,
-    keywords: [...post.tags],
-    confidence: 0.45,
-    status: 'pending',
-    sourceType: 'community_summary',
-    createdAt: now,
-    updatedAt: now,
-  }
-
-  mockKnowledge.push(knowledge)
-  return ok(
-    res,
-    {
-      knowledgeId: knowledge.id,
-      status: knowledge.status,
-      summary: knowledge.summary,
-    },
-    '生成成功',
-  )
 }
 
 // 统一处理社区模块的路由。
@@ -1335,7 +1454,8 @@ export const handleCommunityRoute = async (req, res, requestUrl, tools) => {
 
   const path = requestUrl.pathname.replace(/^\/api/, '')
 
-  const isAdminPath = path.startsWith('/community/review/') || path.startsWith('/community/knowledge')
+  const isAdminPath =
+    path.startsWith('/community/review/') || path.startsWith('/community/knowledge')
   if (isAdminPath) {
     try {
       req.authSession = requireAdmin(req)
@@ -1441,10 +1561,13 @@ export const handleCommunityRoute = async (req, res, requestUrl, tools) => {
         if (error?.code === 'POST_NOT_FOUND') {
           return notFound(res, '帖子不存在')
         }
+        if (error?.code === 'REVIEW_STATE_CONFLICT') {
+          return reviewStateConflictResponse(res, error.currentStatus)
+        }
         throw error
       }
     }
-    return updatePostStatus(res, approvePostMatch[1], 'approved', '帖子审核通过')
+    return updatePostStatus(res, approvePostMatch[1], 'approved', '帖子审核通过', reviewer)
   }
 
   const rejectPostMatch = path.match(/^\/community\/review\/posts\/([^/]+)\/reject$/)
@@ -1463,10 +1586,13 @@ export const handleCommunityRoute = async (req, res, requestUrl, tools) => {
         if (error?.code === 'POST_NOT_FOUND') {
           return notFound(res, '帖子不存在')
         }
+        if (error?.code === 'REVIEW_STATE_CONFLICT') {
+          return reviewStateConflictResponse(res, error.currentStatus)
+        }
         throw error
       }
     }
-    return updatePostStatus(res, rejectPostMatch[1], 'rejected', '帖子已拒绝')
+    return updatePostStatus(res, rejectPostMatch[1], 'rejected', '帖子已拒绝', reviewer)
   }
 
   const approveReplyMatch = path.match(/^\/community\/review\/replies\/([^/]+)\/approve$/)
@@ -1485,10 +1611,13 @@ export const handleCommunityRoute = async (req, res, requestUrl, tools) => {
         if (error?.code === 'REPLY_NOT_FOUND') {
           return notFound(res, '回复不存在')
         }
+        if (error?.code === 'REVIEW_STATE_CONFLICT') {
+          return reviewStateConflictResponse(res, error.currentStatus)
+        }
         throw error
       }
     }
-    return updateReplyStatus(res, approveReplyMatch[1], 'approved', '回复审核通过')
+    return updateReplyStatus(res, approveReplyMatch[1], 'approved', '回复审核通过', reviewer)
   }
 
   const rejectReplyMatch = path.match(/^\/community\/review\/replies\/([^/]+)\/reject$/)
@@ -1507,10 +1636,13 @@ export const handleCommunityRoute = async (req, res, requestUrl, tools) => {
         if (error?.code === 'REPLY_NOT_FOUND') {
           return notFound(res, '回复不存在')
         }
+        if (error?.code === 'REVIEW_STATE_CONFLICT') {
+          return reviewStateConflictResponse(res, error.currentStatus)
+        }
         throw error
       }
     }
-    return updateReplyStatus(res, rejectReplyMatch[1], 'rejected', '回复已拒绝')
+    return updateReplyStatus(res, rejectReplyMatch[1], 'rejected', '回复已拒绝', reviewer)
   }
 
   if (req.method === 'POST' && path === '/community/knowledge/generate') {

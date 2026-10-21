@@ -58,11 +58,11 @@
 | S3 | 5 | 5 | 0 | 0 | 0 | 0 | — |
 | S4 | 6 | 6 | 0 | 0 | 0 | 0 | — |
 | S5 | 4 | 0 | 0 | 0 | 0 | 4 | 等 5.1 数据 |
-| S6 | 5 | 3 | 1 | 1 | 0 | 0 | **Codex 6.4** |
+| S6 | 5 | 3 | 2 | 0 | 0 | 0 | **AI-1 6.4 前端 + MySQL 实测** |
 | S7 | 5 | 2 | 2 | 0 | 0 | 1 | **7.3 / 6.x** |
-| **合计** | **39** | **28** | **4** | **1** | **0** | **6** | — |
+| **合计** | **39** | **28** | **5** | **0** | **0** | **6** | — |
 
-> 已完成：0.1、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、2.1、2.2、2.3、2.4、2.5、3.1、3.2、3.3、3.4、3.5、4.1、4.2、4.3、4.4、4.5、4.6、6.1、6.2、6.3、7.1、7.2。**S1/S2/S3/S4 已全部完成，6.1/6.2/6.3 已完成**；**6.4 已解除依赖，可交给 Codex**；6.5 待 6.4；5.x 等人工数据，7.3 等 5.4/6.5。实时状态以本表为准。
+> 已完成：0.1、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、2.1、2.2、2.3、2.4、2.5、3.1、3.2、3.3、3.4、3.5、4.1、4.2、4.3、4.4、4.5、4.6、6.1、6.2、6.3、7.1、7.2。**S1/S2/S3/S4 已全部完成，6.1/6.2/6.3 已完成**；**6.4 后端阶段已交付，前端与 MySQL 实测待收口**；6.5 待 6.4；5.x 等人工数据，7.3 等 5.4/6.5。实时状态以本表为准。
 
 ---
 
@@ -134,7 +134,7 @@
 | 6.1 | 社区列表/帖子适配 | AI-1 | ✅ | 2.1、3.4 | `a89af55`：列表按银白/深绿重做，`q/category/sort/page` 全部入 URL，越界页码回落，返回时恢复筛选与滚动；详情先清空上一帖再加载，无效 ID 显示空态，切帖按路由 ID 重新加载；问答原帖入口沿用既有守卫。证据：`community-query` 4 单测；`npm run community:journey` **7/7**（`server/evals/latest-community-journey.json`，截图 `community-list-1440.png`/`community-detail-1440.png`）；86 单测/type-check/lint/build 通过 |
 | 6.2 | 投稿/回复/草稿 | AI-1 | ✅ | 6.1、3.5 | `e7b8c1a`：`community-draft` 按 ownerScope 隔离（游客/用户、回复按帖子 ID）；投稿与回复取消/刷新保留，显式“清空草稿”或提交成功才删除；`submitting` + 3 秒同负载去重阻止重复提交；待审核提示与“已提交但刷新失败”独立提示；切帖清空旧回复草稿状态。证据：4 个草稿单测；`community:journey` **13/13**（含草稿恢复/清空、POST 请求数=1 的防重复校验，`server/evals/latest-community-journey.json`）；90 单测/type-check/lint/build 通过 |
 | 6.3 | 后台路由与界面 | AI-1 | ✅ | 1.4、2.1 | `d098593`：`/admin/review` 与 `/admin/retrieval` 页签双向同步，刷新保持；审核/检索面板复用现有队列与 LightRAG 状态接口；银白/深绿视觉与响应式统计、队列、状态卡；手机 390 可审核、0 溢出；未登录直达回首页且后台接口返回 401。证据：`npm run admin:journey` **7/7**（`server/evals/latest-admin-journey.json`；截图 `admin-review-1440.png`、`admin-retrieval-1440.png`、`admin-review-390.png`）；90 单测/type-check/lint/build 通过 |
-| 6.4 | 审核状态与部分失败 | AI-2 | 🔵 | 6.2、6.3 | Codex（AI-2）2026-10-21 已认领，先完成原子审核状态转换、幂等冲突语义、知识生成幂等与结构化失败契约；AI-1 前端改动待契约冻结后另行交接。 |
+| 6.4 | 审核状态与部分失败 | AI-2 | 🟡 | 6.2、6.3 | 后端提交 `COMMIT_HASH`；`npm run test:server` **56/56**；`node --test server/tests/community-review.test.mjs server/tests/community-auth.test.mjs` **12/12**（pending 通过/拒绝、同状态幂等、相反状态 409、并发仅一次、回复状态机、未审核生成拒绝、生成失败后只重试、三次并发生成仅一行、401/403、唯一键）；`node server/scripts/check-server-syntax.mjs` 70 模块、定向 ESLint、`git diff --check` 通过。无隔离 MySQL 服务，未对默认开发库写入或做真实事务联测；待 AI-1 拒绝确认/生成失败独立状态/行级 loading/admin journey，以及专用 MySQL 事务联测。契约见 `docs/api-contract-v2.md` §12。 |
 | 6.5 | 后台与社区闭环验证 | 共同 | 🟡 | 6.4、4.4 | 覆盖失败重试、来源返回、普通账号越权、LightRAG 未配置；正式数据不被 Mock 旅程写入 |
 
 ### Sprint 7：反馈与发布（3–4 天）
@@ -256,6 +256,7 @@
 
 | 日期 | 任务 ID | 执行者 | 证据（commit / 命令 / 文件） | 备注 |
 | --- | --- | --- | --- | --- |
+| 2026-10-21 | 6.4 后端阶段 | AI-2（Codex） | `COMMIT_HASH`；`npm run test:server` 56/56；定向 `community-review.test.mjs` + `community-auth.test.mjs` 12/12；语法检查 70 模块；定向 ESLint、`git diff --check` 通过 | SQL/内存审核状态机、审核日志单次写入、知识生成失败契约与 post_id 幂等已交付；真实 MySQL 事务联测和 AI-1 前端交互待收口 |
 | 2026-10-21 | 7.2 部分 | AI-2（Codex） | `8840b43`；`npm run test:server` 47/47；`node server/scripts/check-server-syntax.mjs` 66 模块；定向 ESLint/oxlint、`git diff --cached --check` 通过 | 服务端路由、receipt eligibility、主体校验、限频及 API 契约已交付；等待 AI-1 `MessageActions.vue` |
 | 2026-10-21 | 7.3 部分 | AI-2（Codex） | `2036b7f`；`npm run lint`、`npm run type-check`、`npm run test:unit` 74/74、`npm run test:server` 47/47、`npm run build` 均通过；`npm run release:check` READY WITH WARNINGS（前述门禁与 Top 20 golden 均通过）；`npx prettier --check .github/workflows/quality.yml docs/ci-quality-gates-v2.md`、`git diff --check` 通过 | CI 骨架与 release 单测步骤已验证；golden/journey 的正式 CI 收口等 4.6、5.4、6.5、7.2 完成后进行 |
 | 2026-10-21 | 0.3 部分 | AI-2（Codex） | `decdf75`；`npm run test:server` 47/47；`npm run service:journey` build/type-check 通过，旅程在社区审核后等待 RAG 来源超时 | 旅程脚本改为 `/chat/new`、textarea、现有登录控件和首页 CTA；完整 10 轮待 6.5 闭环后重跑 |
@@ -299,6 +300,7 @@
 
 | 日期 | 类型 | 内容 | 执行者 |
 | --- | --- | --- | --- |
+| 2026-10-21 | 阶段交付 | 6.4 后端：冻结审核冲突与知识生成失败 API 契约；pending-only SQL/内存状态转换、同目标幂等、审核日志单次写入、知识生成事务与 post_id 幂等；服务端测试 56/56、定向审核/鉴权 12/12。真实 MySQL 联测和 AI-1 前端剩余项继续保持 🟡 | AI-2（Codex） |
 | 2026-10-21 | 占用 | 领取 6.4 审核状态与部分失败；AI-2 先冻结错误码/响应契约，再实现 SQL/内存原子状态转换、review log 单次写入和 knowledge generate 幂等；AI-1 前端改动等契约冻结后交接 | AI-2（Codex） |
 | 2026-10-20 | 建立 | 计划表 v1.0，39 项任务按现状预填状态 | AI-1 |
 | 2026-10-20 | 占用 | 创建 `docs/v2-gap-analysis.md`、`docs/v2-execution-board.md` | AI-1 |

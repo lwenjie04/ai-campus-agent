@@ -57,3 +57,28 @@ test('normal users cannot call administrator knowledge routes', async () => {
   assert.equal(response.statusCode, 403)
   assert.equal(response.payload.code, 'ADMIN_REQUIRED')
 })
+
+test('review and generation writes reject anonymous and non-admin callers', async () => {
+  const issued = issueSessionToken({
+    id: 'user-2',
+    username: 'student2@example.com',
+    displayName: '另一位同学',
+    role: 'user',
+  })
+
+  for (const path of [
+    '/community/review/posts/post_demo_001/approve',
+    '/community/knowledge/generate',
+  ]) {
+    const anonymous = await callRoute({ method: 'POST', path })
+    const member = await callRoute({
+      method: 'POST',
+      path,
+      authorization: `Bearer ${issued.accessToken}`,
+    })
+
+    assert.equal(anonymous.response.statusCode, 401)
+    assert.equal(member.response.statusCode, 403)
+    assert.equal(member.response.payload.code, 'ADMIN_REQUIRED')
+  }
+})
