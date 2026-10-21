@@ -134,7 +134,7 @@
 | 6.1 | 社区列表/帖子适配 | AI-1 | ✅ | 2.1、3.4 | `a89af55`：列表按银白/深绿重做，`q/category/sort/page` 全部入 URL，越界页码回落，返回时恢复筛选与滚动；详情先清空上一帖再加载，无效 ID 显示空态，切帖按路由 ID 重新加载；问答原帖入口沿用既有守卫。证据：`community-query` 4 单测；`npm run community:journey` **7/7**（`server/evals/latest-community-journey.json`，截图 `community-list-1440.png`/`community-detail-1440.png`）；86 单测/type-check/lint/build 通过 |
 | 6.2 | 投稿/回复/草稿 | AI-1 | ✅ | 6.1、3.5 | `e7b8c1a`：`community-draft` 按 ownerScope 隔离（游客/用户、回复按帖子 ID）；投稿与回复取消/刷新保留，显式“清空草稿”或提交成功才删除；`submitting` + 3 秒同负载去重阻止重复提交；待审核提示与“已提交但刷新失败”独立提示；切帖清空旧回复草稿状态。证据：4 个草稿单测；`community:journey` **13/13**（含草稿恢复/清空、POST 请求数=1 的防重复校验，`server/evals/latest-community-journey.json`）；90 单测/type-check/lint/build 通过 |
 | 6.3 | 后台路由与界面 | AI-1 | ✅ | 1.4、2.1 | `d098593`：`/admin/review` 与 `/admin/retrieval` 页签双向同步，刷新保持；审核/检索面板复用现有队列与 LightRAG 状态接口；银白/深绿视觉与响应式统计、队列、状态卡；手机 390 可审核、0 溢出；未登录直达回首页且后台接口返回 401。证据：`npm run admin:journey` **7/7**（`server/evals/latest-admin-journey.json`；截图 `admin-review-1440.png`、`admin-retrieval-1440.png`、`admin-review-390.png`）；90 单测/type-check/lint/build 通过 |
-| 6.4 | 审核状态与部分失败 | AI-2 | 🟡 | 6.2、6.3 | 状态转换校验（`WHERE status='pending'`）；拒绝需确认；通过+生成分步成败、只重试剩余；重复点击不生成多草稿 |
+| 6.4 | 审核状态与部分失败 | AI-2 | 🟡 | 6.2、6.3 | 状态转换校验（`WHERE status='pending'`）；拒绝需确认；通过+生成分步成败、只重试剩余；重复点击不生成多草稿。**交接清单见 §5.2，AI-2 可认领** |
 | 6.5 | 后台与社区闭环验证 | 共同 | 🟡 | 6.4、4.4 | 覆盖失败重试、来源返回、普通账号越权、LightRAG 未配置；正式数据不被 Mock 旅程写入 |
 
 ### Sprint 7：反馈与发布（3–4 天）
@@ -197,6 +197,56 @@
 交接产物：4.1 的 commit hash + 计划表中该行证据。4.2 的验收仍以服务端为准：断开后取消上游、只结算一次、正常结束不误报中断。
 
 **状态：已于 2026-10-20 满足（`0c5a877`，49 个单测），AI-2 可开始 4.2。**
+
+### 5.2 6.4 审核状态与部分失败交接条件（AI-1 前端 → AI-2 后端）
+
+6.3（`d098593`）与 6.2（`e7b8c1a`）已完成，6.4 依赖解除，AI-2 可认领。交接时以本节为验收清单。
+
+**现状盘点（已存在的部分）**
+
+1. 审核/检索双路由、队列与状态接口复用、手机可审核、非管理员 401/403 边界已由 6.3 验证。
+2. 审核接口已存在：`POST /api/community/review/posts/:id/approve|reject`、`.../replies/:id/approve|reject`；知识生成 `POST /api/community/knowledge/generate`。
+3. 知识生成已按 `post_id` 查找并更新已有条目，但并发下仍可能插入多行。
+
+**当前缺口（交接重点）**
+
+1. `updatePostStatusInMySql` / `updateReplyStatusInMySql` 先按 id 查询、再无条件 `UPDATE`，没有 `WHERE status='pending'`，已审核项可被再次改写（`server/community.mjs:855-984`）。
+2. 内存兜底 `updatePostStatus` / `updateReplyStatus` 同样不校验当前状态（`server/community.mjs:895-919`）。
+3. 前端 `approveAndBuild` 串行调用“通过→生成”，生成失败时只弹一条泛化错误，没有“帖子已通过、只重试生成”的状态（`AdminReviewView.vue`）。
+4. 拒绝目前无二次确认。
+5. 重复点击“通过并生成”可能在并发下产生多个知识草稿。
+
+**AI-2 后端清单**
+
+1. 状态机：只允许 `pending → approved` / `pending → rejected`；SQL 改为原子 `UPDATE ... WHERE id = ? AND status = 'pending'`，`affectedRows = 0` 时按“当前状态”返回：
+   - 已处于目标状态 → `200` 幂等成功，不重复写 review log；
+   - 已处于相反状态 → `409 REVIEW_STATE_CONFLICT`（错误码需补进 `docs/api-contract-v2.md` §7）。
+2. 内存兜底实现同样的状态校验与错误码，保证测试与 MySQL 行为一致。
+3. 并发/重复点击：同一帖子只允许一次真实状态变更；review log 只在真实转换时写一次；approve+reject 竞态只能一个成功。
+4. 通过 + 生成分步语义：
+   - `approve` 与 `generate` 保持两个接口；
+   - `generate` 失败时返回结构化错误，至少带 `code`、`retryable`、`postStatus`（已通过）与 `knowledgeId?`，让前端能显示“帖子已通过，知识生成失败”并只重试生成；
+   - 重复 `generate` 必须返回同一 `knowledgeId`，不得新增第二行（`community_knowledge` 对 `post_id` 的唯一约束/事务）。
+5. 测试（`server/tests/` 新增或扩展，内存路径 + 可用时 MySQL）：
+   - 通过/拒绝 pending；已通过再通过幂等；已通过再拒绝 409；
+   - approve+reject 并发只一次生效、日志一条；
+   - generate 成功 / 失败重试 / 连续点击三次只一行；
+   - 未审核帖子 generate 被拒绝；
+   - 非管理员接口 401/403。
+6. 契约与交付：如需新错误码/字段，先改 `docs/api-contract-v2.md` 并由 AI-2 负责；提交信息 `v2(6.4): ...`；计划表 6.4 行写 `test:server` 数量、定向测试名与 commit。
+
+**AI-1 前端清单（AI-2 契约冻结后接续）**
+
+1. 拒绝加二次确认（`ElMessageBox.confirm`，取消不发请求）。
+2. 部分失败 UI：帖子已通过但知识生成失败时显示独立状态与“只重试生成”按钮，不重复调用 approve。
+3. 按钮按行级 loading，避免全局 `submitting` 导致误判与其他行不可操作。
+4. `admin:journey` 扩展：拒绝确认取消/确认、生成失败一次后只重试成功、重复点击只产生一次 POST。
+
+**6.5 联测入口（6.4 完成后）**
+
+覆盖失败重试、来源返回、普通账号越权、LightRAG 未配置、正式数据不被 Mock 旅程写入；由 AI-1 主导脚本，AI-2 配合服务端断言。
+
+**交接产物**：AI-2 的 6.4 commit + 计划表证据 + 契约 diff；AI-1 在收到契约定稿后再改 `AdminReviewView.vue`。
 
 ---
 
@@ -314,3 +364,4 @@
 | 2026-10-21 | 占用 | 领取 6.1：重做社区列表/帖子视觉，筛选与分页入 URL、滚动恢复、详情切帖隔离 | AI-1 |
 | 2026-10-21 | 占用 | 领取 6.2：按身份草稿、重复提交拦截、取消保留/显式丢弃、待审核提示与刷新失败独立提示 | AI-1 |
 | 2026-10-21 | 占用 | 领取 6.3：审核/检索双路由页签同步、银白视觉、手机可审核与 401/403 边界验证 | AI-1 |
+| 2026-10-21 | 交接 | 6.4 交接清单入库（§5.2）：状态机/幂等/并发 guard、通过+生成分步与只重试剩余、重复生成唯一性、测试矩阵与前端配合项；AI-2 可认领 | AI-1 |
