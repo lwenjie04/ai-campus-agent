@@ -35,6 +35,7 @@ export default defineConfigWithVueTs(
       'server/scripts/auth-intent-journey-browser.mjs',
       'server/scripts/home-flow-browser.mjs',
       'server/scripts/chat-layout-browser.mjs',
+      'server/scripts/chat-stream-browser.mjs',
     ],
     languageOptions: {
       globals: {

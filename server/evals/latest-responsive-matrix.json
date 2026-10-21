@@ -1,0 +1,279 @@
+{
+  "version": 1,
+  "completedAt": "2026-10-21T03:48:27.466Z",
+  "baseUrl": "http://127.0.0.1:4176",
+  "widths": [
+    360,
+    390,
+    768,
+    1024,
+    1440
+  ],
+  "ok": true,
+  "results": [
+    {
+      "target": "home",
+      "selector": ".hero__cta",
+      "version": 1,
+      "completedAt": "2026-10-21T03:48:21.363Z",
+      "targetUrl": "http://127.0.0.1:4176/",
+      "widths": [
+        360,
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "ok": true,
+      "results": [
+        {
+          "width": 360,
+          "clientWidth": 360,
+          "scrollWidth": 360,
+          "bodyScrollWidth": 360,
+          "overflowPixels": 0,
+          "elements": [],
+          "checks": [
+            {
+              "selector": ".hero__cta",
+              "found": true,
+              "visible": true,
+              "inViewport": true,
+              "rect": {
+                "top": 335,
+                "bottom": 381.4
+              }
+            }
+          ],
+          "loginDialogVisible": false,
+          "screenshot": "D:\\VUE3-GDES-Agent\\ai-campus-agent\\docs\\design\\verify\\responsive\\home-360.png",
+          "ok": true
+        },
+        {
+          "width": 390,
+          "clientWidth": 390,
+          "scrollWidth": 390,
+          "bodyScrollWidth": 390,
+          "overflowPixels": 0,
+          "elements": [],
+          "checks": [
+            {
+              "selector": ".hero__cta",
+              "found": true,
+              "visible": true,
+              "inViewport": true,
+              "rect": {
+                "top": 306.1,
+                "bottom": 352.5
+              }
+            }
+          ],
+          "loginDialogVisible": false,
+          "screenshot": "D:\\VUE3-GDES-Agent\\ai-campus-agent\\docs\\design\\verify\\responsive\\home-390.png",
+          "ok": true
+        },
+        {
+          "width": 768,
+          "clientWidth": 753,
+          "scrollWidth": 753,
+          "bodyScrollWidth": 753,
+          "overflowPixels": 0,
+          "elements": [],
+          "checks": [
+            {
+              "selector": ".hero__cta",
+              "found": true,
+              "visible": true,
+              "inViewport": true,
+              "rect": {
+                "top": 278.9,
+                "bottom": 325.3
+              }
+            }
+          ],
+          "loginDialogVisible": false,
+          "screenshot": "D:\\VUE3-GDES-Agent\\ai-campus-agent\\docs\\design\\verify\\responsive\\home-768.png",
+          "ok": true
+        },
+        {
+          "width": 1024,
+          "clientWidth": 1009,
+          "scrollWidth": 1009,
+          "bodyScrollWidth": 1009,
+          "overflowPixels": 0,
+          "elements": [],
+          "checks": [
+            {
+              "selector": ".hero__cta",
+              "found": true,
+              "visible": true,
+              "inViewport": true,
+              "rect": {
+                "top": 307.2,
+                "bottom": 353.6
+              }
+            }
+          ],
+          "loginDialogVisible": false,
+          "screenshot": "D:\\VUE3-GDES-Agent\\ai-campus-agent\\docs\\design\\verify\\responsive\\home-1024.png",
+          "ok": true
+        },
+        {
+          "width": 1440,
+          "clientWidth": 1425,
+          "scrollWidth": 1425,
+          "bodyScrollWidth": 1425,
+          "overflowPixels": 0,
+          "elements": [],
+          "checks": [
+            {
+              "selector": ".hero__cta",
+              "found": true,
+              "visible": true,
+              "inViewport": true,
+              "rect": {
+                "top": 346,
+                "bottom": 392.4
+              }
+            }
+          ],
+          "loginDialogVisible": false,
+          "screenshot": "D:\\VUE3-GDES-Agent\\ai-campus-agent\\docs\\design\\verify\\responsive\\home-1440.png",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "target": "chat",
+      "selector": ".composer .send-btn",
+      "version": 1,
+      "completedAt": "2026-10-21T03:48:27.137Z",
+      "targetUrl": "http://127.0.0.1:4176/chat/new",
+      "widths": [
+        360,
+        390,
+        768,
+        1024,
+        1440
+      ],
+      "ok": true,
+      "results": [
+        {
+          "width": 360,
+          "clientWidth": 360,
+          "scrollWidth": 360,
+          "bodyScrollWidth": 360,
+          "overflowPixels": 0,
+          "elements": [],
+          "checks": [
+            {
+              "selector": ".composer .send-btn",
+              "found": true,
+              "visible": true,
+              "inViewport": true,
+              "rect": {
+                "top": 797.6,
+                "bottom": 848
+              }
+            }
+          ],
+          "loginDialogVisible": false,
+          "screenshot": "D:\\VUE3-GDES-Agent\\ai-campus-agent\\docs\\design\\verify\\responsive\\chat-360.png",
+          "ok": true
+        },
+        {
+          "width": 390,
+          "clientWidth": 390,
+          "scrollWidth": 390,
+          "bodyScrollWidth": 390,
+          "overflowPixels": 0,
+          "elements": [],
+          "checks": [
+            {
+              "selector": ".composer .send-btn",
+              "found": true,
+              "visible": true,
+              "inViewport": true,
+              "rect": {
+                "top": 813.6,
+                "bottom": 864
+              }
+            }
+          ],
+          "loginDialogVisible": false,
+          "screenshot": "D:\\VUE3-GDES-Agent\\ai-campus-agent\\docs\\design\\verify\\responsive\\chat-390.png",
+          "ok": true
+        },
+        {
+          "width": 768,
+          "clientWidth": 768,
+          "scrollWidth": 768,
+          "bodyScrollWidth": 768,
+          "overflowPixels": 0,
+          "elements": [],
+          "checks": [
+            {
+              "selector": ".composer .send-btn",
+              "found": true,
+              "visible": true,
+              "inViewport": true,
+              "rect": {
+                "top": 781.8,
+                "bottom": 832.2
+              }
+            }
+          ],
+          "loginDialogVisible": false,
+          "screenshot": "D:\\VUE3-GDES-Agent\\ai-campus-agent\\docs\\design\\verify\\responsive\\chat-768.png",
+          "ok": true
+        },
+        {
+          "width": 1024,
+          "clientWidth": 1024,
+          "scrollWidth": 1024,
+          "bodyScrollWidth": 1024,
+          "overflowPixels": 0,
+          "elements": [],
+          "checks": [
+            {
+              "selector": ".composer .send-btn",
+              "found": true,
+              "visible": true,
+              "inViewport": true,
+              "rect": {
+                "top": 808.8,
+                "bottom": 859.2
+              }
+            }
+          ],
+          "loginDialogVisible": false,
+          "screenshot": "D:\\VUE3-GDES-Agent\\ai-campus-agent\\docs\\design\\verify\\responsive\\chat-1024.png",
+          "ok": true
+        },
+        {
+          "width": 1440,
+          "clientWidth": 1440,
+          "scrollWidth": 1440,
+          "bodyScrollWidth": 1440,
+          "overflowPixels": 0,
+          "elements": [],
+          "checks": [
+            {
+              "selector": ".composer .send-btn",
+              "found": true,
+              "visible": true,
+              "inViewport": true,
+              "rect": {
+                "top": 808.8,
+                "bottom": 859.2
+              }
+            }
+          ],
+          "loginDialogVisible": false,
+          "screenshot": "D:\\VUE3-GDES-Agent\\ai-campus-agent\\docs\\design\\verify\\responsive\\chat-1440.png",
+          "ok": true
+        }
+      ]
+    }
+  ]
+}

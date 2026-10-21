@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "completedAt": "2026-10-21T03:50:04.610Z",
+  "mode": "isolated_real_backend_mock",
+  "targetUrl": "http://127.0.0.1:4176",
+  "ok": true,
+  "steps": [
+    {
+      "name": "桌面真实流式回答",
+      "ok": true,
+      "detail": "status=200 chars=36"
+    },
+    {
+      "name": "手机 390 真实流式回答",
+      "ok": true,
+      "detail": "chars=55"
+    }
+  ]
+}

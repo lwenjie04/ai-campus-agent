@@ -33,6 +33,8 @@
     "auth-intent:journey": "node server/scripts/auth-intent-journey-browser.mjs",
     "home:journey": "node server/scripts/home-flow-browser.mjs",
     "chat:layout": "node server/scripts/chat-layout-browser.mjs",
+    "chat:stream": "node server/scripts/chat-stream-browser.mjs",
+    "responsive:matrix": "node server/scripts/responsive-matrix.mjs",
     "ui:inspect:mobile": "node server/scripts/inspect-responsive-layout.mjs",
     "dev:all": "run-p dev server",
     "build": "run-p type-check \"build-only {@}\" --",
