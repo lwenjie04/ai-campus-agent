@@ -288,7 +288,7 @@ try {
         `(() => {
           const asked = [...document.querySelectorAll('.message-row.is-user .content')]
             .some((item) => item.textContent?.includes(${JSON.stringify(communityQuestion)}))
-          const source = [...document.querySelectorAll('.source-link')]
+          const source = [...document.querySelectorAll('.rail-source__title')]
             .some((item) => item.textContent?.includes('学生社区经验总结：转专业后课程补退选怎么操作'))
           const warning = document.body.innerText.includes('仅供参考，请以学校最新官方通知为准')
           return asked && source && warning

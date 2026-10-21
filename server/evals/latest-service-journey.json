@@ -1,63 +1,63 @@
 {
   "version": 2,
-  "completedAt": "2026-08-12T16:39:16.684Z",
+  "completedAt": "2026-10-21T09:36:05.194Z",
   "mode": "isolated_mock",
-  "targetUrl": "http://127.0.0.1:4173",
+  "targetUrl": "http://127.0.0.1:4173/chat/new",
   "requestedRounds": 10,
   "passedRounds": 10,
   "communityClosureVerified": true,
   "pendingQuestionRecoveryVerified": true,
-  "totalDurationMs": 17416,
+  "totalDurationMs": 9628,
   "rounds": [
     {
       "round": 1,
       "passed": true,
-      "durationMs": 5588
+      "durationMs": 2152
     },
     {
       "round": 2,
       "passed": true,
-      "durationMs": 1220
+      "durationMs": 1016
     },
     {
       "round": 3,
       "passed": true,
-      "durationMs": 1146
+      "durationMs": 901
     },
     {
       "round": 4,
       "passed": true,
-      "durationMs": 1358
+      "durationMs": 772
     },
     {
       "round": 5,
       "passed": true,
-      "durationMs": 1465
+      "durationMs": 864
     },
     {
       "round": 6,
       "passed": true,
-      "durationMs": 1267
+      "durationMs": 793
     },
     {
       "round": 7,
       "passed": true,
-      "durationMs": 1491
+      "durationMs": 807
     },
     {
       "round": 8,
       "passed": true,
-      "durationMs": 1284
+      "durationMs": 713
     },
     {
       "round": 9,
       "passed": true,
-      "durationMs": 1322
+      "durationMs": 791
     },
     {
       "round": 10,
       "passed": true,
-      "durationMs": 1275
+      "durationMs": 819
     }
   ],
   "assertions": [
