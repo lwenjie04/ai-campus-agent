@@ -59,10 +59,10 @@
 | S4 | 6 | 6 | 0 | 0 | 0 | 0 | — |
 | S5 | 4 | 0 | 0 | 0 | 0 | 4 | 等 5.1 数据 |
 | S6 | 5 | 5 | 0 | 0 | 0 | 0 | — |
-| S7 | 5 | 2 | 1 | 1 | 0 | 1 | **Codex 7.3** |
-| **合计** | **39** | **31** | **2** | **1** | **0** | **5** | — |
+| S7 | 5 | 2 | 2 | 0 | 0 | 1 | 7.3 等真实 CI run；7.5 可先做文档准备 |
+| **合计** | **39** | **31** | **3** | **0** | **0** | **5** | — |
 
-> 已完成：0.1、0.3、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、2.1、2.2、2.3、2.4、2.5、3.1、3.2、3.3、3.4、3.5、4.1、4.2、4.3、4.4、4.5、4.6、6.1、6.2、6.3、6.4、6.5、7.1、7.2。**S1/S2/S3/S4/S6 已全部完成**；0.2 等 Figma 状态稿，5.x 等人工数据，7.3 正在补可复跑 CI（Top 50 仍等 5.4），7.4/7.5 待后续。实时状态以本表为准。
+> 已完成：0.1、0.3、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、2.1、2.2、2.3、2.4、2.5、3.1、3.2、3.3、3.4、3.5、4.1、4.2、4.3、4.4、4.5、4.6、6.1、6.2、6.3、6.4、6.5、7.1、7.2。**S1/S2/S3/S4/S6 已全部完成**；0.2 等 Figma 状态稿，5.x 等人工数据；7.3 的 CI 骨架与本地检查已交付，等待 push/PR 全绿及 5.4 Top 50 数据；7.5 可先准备交付文档，7.4 真实环境验证仍待人工环境。实时状态以本表为准。
 
 ---
 
@@ -143,7 +143,7 @@
 | --- | --- | --- | --- | --- | --- |
 | 7.1 | 请求凭据与反馈增量表 | AI-2 | ✅ | 4.3、0.4 | `4bd44ac`；`npm run test:server` 41/41；`npm run server:check` 58 模块；定向 ESLint、`git diff --check` 通过；MySQL 8.0.39 隔离测试库实测迁移、凭据读回、反馈 upsert/更新、主体隔离与唯一行数=1 |
 | 7.2 | 反馈接口与操作 | AI-2（接口）+ AI-1（组件） | ✅ | 7.1、3.4 | 服务端 `8840b43`（47/47）。前端 `9335cee`：消费 `meta.feedbackEligible` 并随消息持久化；`MessageActions.vue` 仅在 eligible 时显示，提交 `requestId + helpful/none`；409 不可反馈、401 需登录、429 带 `Retry-After` 秒数可重试、503 可重试；成功后写回 `feedback` 并持久化。证据：新增 8 单测（`feedback.test.ts` + `MessageActions.test.ts`），82 单测/type-check/lint/build 通过；`regression:journey` **9/9** 含真实反馈提交，`server/evals/latest-regression-journey.json`、`docs/design/verify/regression-feedback-1440.png` |
-| 7.3 | CI 与可重复门禁 | AI-2 | 🔵 | 1.5、4.6、5.4、6.5、7.2 | Codex（AI-2）2026-10-21 认领：按 §5.3 完成 browser journeys、service journey、Top 20 golden、MySQL 8 service 与失败 artifacts；保留 5.4 Top 50 限制，不设置 `RELEASE_LIVE_VALIDATION_CONFIRMED`。待 CI 真正 push/PR 全绿后再判断 7.3 是否可收口。 |
+| 7.3 | CI 与可重复门禁 | AI-2 | 🟡 | 1.5、4.6、5.4、6.5、7.2 | `574359c`：新增 browser-journeys（8 条串行旅程、随机隔离凭据、结果/artifact）、独立 10 轮 service journey、Top 20 offline golden、MySQL 8 隔离 service/审核事务测试；更新 `docs/ci-quality-gates-v2.md`。本地证据：`npm run test:server` 56/56、`npm run test:unit` 90/90、`npm run lint`、`npm run server:check` 75 模块、`npm run build`（1662 模块）、`npm run ci:service-journey:assert` 10/10、Prettier、`git diff --check` 均通过。**剩余**：本机无 Chrome，未实跑 browser job；本机未启动一次性 MySQL CI service；须 push/PR 后记录全绿 workflow run URL、job 耗时及 artifacts；5.4 完成前 Golden 仅 Top 20。CI 不设置 `RELEASE_LIVE_VALIDATION_CONFIRMED`。 |
 | 7.4 | 目标环境验证与性能 | 共同 | ⬜ | 7.3 | 真模型/MySQL/SMTP/TTS/HTTPS/反代实测并留证；50 条金标；首字/总耗时/取消耗时/资源体积；`RELEASE_LIVE_VALIDATION_CONFIRMED` 不得伪造 |
 | 7.5 | 交付、回滚与试用记录 | 人工 + AI-2 | 🟡 | 7.4 | `docs/releases/v2-handoff.md`：版本/迁移/构建清单、可验证回滚步骤、未完成项；`product-status.md` 更新（现为 8-12、13/13 口径过期）。**交接清单见 §5.4**：7.4 前可先写 handoff、更新 product-status/release-checklist、建试用记录模板；真实环境验证与 `RELEASE_LIVE_VALIDATION_CONFIRMED` 必须等 7.4 人工确认。 |
 
@@ -325,6 +325,7 @@
 
 | 日期 | 任务 ID | 执行者 | 证据（commit / 命令 / 文件） | 备注 |
 | --- | --- | --- | --- | --- |
+| 2026-10-21 | 7.3 CI 与可重复门禁（部分） | AI-2（Codex） | `574359c`；`npm run test:server` 56/56；`npm run test:unit` 90/90；`npm run lint`；`npm run server:check` PASS 75 modules；`npm run build` 1662 modules；`npm run ci:service-journey:assert` 10/10；Prettier 与 `git diff --check` 通过 | 新增 browser/service journey、Top 20 Golden、MySQL 8 集成 job 与结果断言。剩余：未在本机执行 Chrome/MySQL job；等待 push/PR 全绿 workflow URL；Top 50 等 5.4 |
 | 2026-10-21 | 0.3 运行与依赖基线 | AI-2（Codex） | `9898e7b`；`npm run test:server` 56/56；`npm run test:unit` 90/90；`npm run service:journey` 10/10；Node v23.11.0 / npm 10.9.2 | 更新依赖/script 清单与 Mock/真实服务边界；服务旅程覆盖社区知识 RAG 来源及待恢复问题确认 |
 | 2026-10-21 | 6.5 闭环验证 | AI-1 | `5ddd69c`；`npm run closed-loop:journey` 9/9；`server/evals/latest-closed-loop-journey.json`；截图 `closed-loop-source-1440.png` 等 4 张；90 单测/type-check/lint/build 通过 | 失败重试→知识审核→社区来源回链；普通账号 403；LightRAG 未配置降级；内存隔离不写正式数据；修复 App 来源回链事件绑定 |
 | 2026-10-21 | 6.4 MySQL 事务实测 | AI-1（代跑） | `server/evals/latest-mysql-review-validation.json`；本地 MySQL8 独立 schema `ai_campus_agent_test_64`，9/9 通过后已删除 | 状态机幂等/409、并发单次、回复状态机、未审核拒绝、生成幂等、三次并发生成一行、唯一键；可复跑测试留 7.3 |
@@ -374,6 +375,7 @@
 | 日期 | 类型 | 内容 | 执行者 |
 | --- | --- | --- | --- |
 | 2026-10-21 | 占用 | 领取 7.3 CI 与可重复门禁；实现 browser/service journey、Top 20 Golden、MySQL service 测试和失败 artifacts；Top 50 保留 5.4 边界 | AI-2（Codex） |
+| 2026-10-21 | 部分 | 7.3 CI 骨架提交 `574359c`：增加 8 条 browser journeys 串行 runner、独立 10 轮 service job、Top 20 golden 与 MySQL 8 service 事务 job；本地 lint/语法/格式/构建/单测/服务端测试/服务旅程断言通过。**剩余**：本机无 Chrome、未实跑 MySQL service；等待 push/PR 全绿与 run URL；Top 50 等 5.4 | AI-2（Codex） |
 | 2026-10-21 | 完成 | 0.3 基线复核：依赖清单更新；当前 `test:server` 56/56、`test:unit` 90/90；已提交的隔离 Mock `service:journey` 10/10 与社区知识 RAG 来源闭环写回基线；目标环境服务边界保留为 7.4 | AI-2（Codex） |
 | 2026-10-21 | 阶段交付 | 6.4 后端：冻结审核冲突与知识生成失败 API 契约；pending-only SQL/内存状态转换、同目标幂等、审核日志单次写入、知识生成事务与 post_id 幂等；服务端测试 56/56、定向审核/鉴权 12/12。真实 MySQL 联测和 AI-1 前端剩余项继续保持 🟡 | AI-2（Codex） |
 | 2026-10-21 | 占用 | 领取 6.4 审核状态与部分失败；AI-2 先冻结错误码/响应契约，再实现 SQL/内存原子状态转换、review log 单次写入和 knowledge generate 幂等；AI-1 前端改动等契约冻结后交接 | AI-2（Codex） |
