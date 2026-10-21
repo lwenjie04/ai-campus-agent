@@ -78,6 +78,9 @@ export const useCommunityStore = defineStore('community', {
     async loadPostDetail(postId: string) {
       this.loadingDetail = true
       this.lastError = ''
+      // 6.1：切换帖子时先清空上一帖内容，避免详情短暂串页。
+      this.currentPost = null
+      this.currentReplies = []
       try {
         const data = await getCommunityPostDetail(postId)
         this.currentPost = data.post

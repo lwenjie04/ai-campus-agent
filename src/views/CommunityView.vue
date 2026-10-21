@@ -1,15 +1,12 @@
 <template>
   <div class="community-page">
-    <header class="community-hero">
-      <div>
-        <div class="hero-kicker">校园社区</div>
-        <h1>校园互助交流区</h1>
-        <p>同学们可以在这里提问、分享经验，后续高质量内容会经过审核沉淀为社区知识来源。</p>
+    <header class="community-head">
+      <div class="community-head__copy">
+        <p class="community-kicker">校园互助 · 经验分享</p>
+        <h1>校园社区</h1>
+        <p class="community-lead">同学们在这里提问、分享经验；高质量内容经审核后沉淀为社区知识来源。</p>
       </div>
-
-      <div class="hero-actions">
-        <el-button type="primary" round @click="editorVisible = true">发布帖子</el-button>
-      </div>
+      <el-button type="primary" round class="publish-btn" @click="editorVisible = true">发布帖子</el-button>
     </header>
 
     <section class="toolbar-card">
@@ -32,11 +29,7 @@
           />
         </el-select>
 
-        <el-segmented
-          v-model="sortBy"
-          :options="sortOptions"
-          @change="applyFilters"
-        />
+        <el-segmented v-model="sortBy" :options="sortOptions" @change="applyFilters" />
       </div>
 
       <div class="tag-row">
@@ -54,50 +47,40 @@
       </div>
     </section>
 
-    <section class="list-card">
+    <section class="list-section">
       <div class="list-header">
-        <div>
-          <h2>帖子列表</h2>
-          <p>当前共 {{ store.total }} 条记录</p>
-        </div>
+        <h2>帖子列表</h2>
+        <p>共 {{ store.total }} 条</p>
       </div>
 
       <el-alert v-if="store.lastError" :title="store.lastError" type="warning" show-icon :closable="false" />
 
       <el-skeleton :loading="store.loadingList" animated :rows="5">
         <template #default>
-          <div v-if="store.posts.length" class="post-list">
+          <div v-if="store.posts.length" class="post-grid">
             <article
               v-for="post in store.posts"
               :key="post.id"
               class="post-card"
-              @click="$emit('open-post', post.id)"
+              data-testid="community-post-card"
+              @click="openPost(post.id)"
             >
               <div class="post-card-top">
-                <div>
-                  <h3>{{ post.title }}</h3>
-                  <p class="post-meta">
-                    {{ categoryLabelMap[post.category] || post.category }} · {{ formatDate(post.createdAt) }}
-                  </p>
-                </div>
-                <el-tag round type="success">{{ post.replyCount }} 条回复</el-tag>
+                <h3>{{ post.title }}</h3>
+                <span class="post-replies">{{ post.replyCount }} 条回复</span>
               </div>
+
+              <p class="post-meta">
+                {{ categoryLabelMap[post.category] || post.category }} · {{ formatDate(post.createdAt) }}
+              </p>
 
               <p class="post-preview">{{ post.contentPreview || post.content }}</p>
 
               <div class="post-footer">
                 <div class="post-tags">
-                  <el-tag
-                    v-for="tag in post.tags"
-                    :key="tag"
-                    round
-                    effect="plain"
-                    size="small"
-                  >
-                    {{ tag }}
-                  </el-tag>
+                  <span v-for="tag in post.tags" :key="tag" class="post-tag">{{ tag }}</span>
                 </div>
-                <span class="post-author">发布者：{{ post.authorName }}</span>
+                <span class="post-author">{{ post.authorName }}</span>
               </div>
             </article>
           </div>
@@ -105,6 +88,21 @@
           <el-empty v-else description="当前还没有匹配的帖子，欢迎发布第一条讨论" />
         </template>
       </el-skeleton>
+
+      <div v-if="totalPages > 1" class="pager">
+        <button type="button" class="pager-btn" :disabled="store.page <= 1" @click="goPage(store.page - 1)">
+          上一页
+        </button>
+        <span class="pager-status">第 {{ store.page }} / {{ totalPages }} 页</span>
+        <button
+          type="button"
+          class="pager-btn"
+          :disabled="store.page >= totalPages"
+          @click="goPage(store.page + 1)"
+        >
+          下一页
+        </button>
+      </div>
     </section>
 
     <el-dialog
@@ -145,10 +143,7 @@
         </el-form-item>
 
         <el-form-item label="标签（可选）">
-          <el-input
-            v-model="tagInput"
-            placeholder="多个标签用中文逗号分隔，例如：转专业，补退选，成绩认定"
-          />
+          <el-input v-model="tagInput" placeholder="多个标签用中文逗号分隔，例如：转专业，补退选，成绩认定" />
         </el-form-item>
       </el-form>
 
@@ -163,22 +158,34 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
+import { useRoute, useRouter } from 'vue-router'
 import { useCommunityStore } from '@/store/community'
 import { formatDate } from '@/utils/date'
+import {
+  buildCommunityQuery,
+  clampCommunityPage,
+  communityTotalPages,
+  parseCommunityQuery,
+} from '@/services/community-query'
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'open-post', postId: string): void
 }>()
 
+const route = useRoute()
+const router = useRouter()
 const store = useCommunityStore()
+
+const LIST_SCROLL_KEY = 'ai-campus-agent.community-list-scroll.v1'
 
 const editorVisible = ref(false)
 const keywordInput = ref('')
 const selectedCategory = ref('')
 const sortBy = ref<'latest' | 'hot'>('latest')
 const tagInput = ref('')
+let syncingQuery = false
 
 const form = ref({
   authorName: '张同学',
@@ -196,18 +203,99 @@ const categoryLabelMap = computed(() =>
   Object.fromEntries(store.meta.categories.map((item) => [item.value, item.label])),
 )
 
+const totalPages = computed(() => communityTotalPages(store.total, store.pageSize))
 
+// 6.1：筛选与分页都从 URL 读取，刷新/返回/分享链接都能还原列表状态。
+const readQueryState = () =>
+  parseCommunityQuery(
+    route.query as Record<string, unknown>,
+    store.meta.categories.map((item) => item.value),
+  )
 
-const applyFilters = async () => {
+const syncQuery = async (page: number) => {
+  const query = buildCommunityQuery({
+    keyword: keywordInput.value,
+    category: selectedCategory.value,
+    sort: sortBy.value,
+    page,
+  })
+
+  const current = route.query
+  const same =
+    (typeof current.q === 'string' ? current.q : '') === (query.q || '') &&
+    (typeof current.category === 'string' ? current.category : '') === (query.category || '') &&
+    (typeof current.sort === 'string' ? current.sort : 'latest') === (query.sort || 'latest') &&
+    (typeof current.page === 'string' ? current.page : '1') === (query.page || '1')
+  if (same) return
+
+  syncingQuery = true
+  try {
+    await router.replace({ query })
+  } finally {
+    syncingQuery = false
+  }
+}
+
+const loadFromState = async (page: number) => {
   store.setKeyword(keywordInput.value.trim())
   store.setCategory(selectedCategory.value)
   store.setSortBy(sortBy.value)
+  store.page = page
   await store.loadPosts()
+
+  // 手改 URL 到越界页码时，回落到最后一页再拉一次。
+  const clamped = clampCommunityPage(page, store.total, store.pageSize)
+  if (clamped !== page) {
+    await syncQuery(clamped)
+    store.page = clamped
+    await store.loadPosts()
+  }
+}
+
+const applyFilters = async () => {
+  await syncQuery(1)
+  await loadFromState(1)
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+const goPage = async (nextPage: number) => {
+  const page = Math.min(Math.max(1, nextPage), totalPages.value)
+  if (page === store.page) return
+  await syncQuery(page)
+  await loadFromState(page)
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 const useTag = async (tag: string) => {
   keywordInput.value = tag
   await applyFilters()
+}
+
+// 打开详情前记录列表滚动位置与筛选；返回时只恢复同一 URL 的状态。
+const openPost = (postId: string) => {
+  try {
+    sessionStorage.setItem(
+      LIST_SCROLL_KEY,
+      JSON.stringify({ fullPath: route.fullPath, scrollY: window.scrollY }),
+    )
+  } catch {
+    // 无痕模式忽略。
+  }
+  emit('open-post', postId)
+}
+
+const restoreScroll = async () => {
+  try {
+    const raw = sessionStorage.getItem(LIST_SCROLL_KEY)
+    if (!raw) return
+    const saved = JSON.parse(raw) as { fullPath?: string; scrollY?: number }
+    sessionStorage.removeItem(LIST_SCROLL_KEY)
+    if (saved.fullPath !== route.fullPath) return
+    await nextTick()
+    window.scrollTo(0, Number(saved.scrollY) || 0)
+  } catch {
+    // 忽略损坏数据。
+  }
 }
 
 const submitPost = async () => {
@@ -245,292 +333,280 @@ onMounted(async () => {
   if (!form.value.category && store.meta.categories[0]) {
     form.value.category = store.meta.categories[0].value
   }
-  selectedCategory.value = store.selectedCategory
-  keywordInput.value = store.keyword
-  sortBy.value = store.sortBy
-  await store.loadPosts()
-})
-</script>
 
+  const state = readQueryState()
+  keywordInput.value = state.keyword
+  selectedCategory.value = state.category
+  sortBy.value = state.sort
+  await loadFromState(state.page)
+  await restoreScroll()
+})
+
+// 浏览器前进/后退或外部改 query 时，重新按 URL 拉取；自身 replace 时跳过。
+watch(
+  () => route.query,
+  async () => {
+    if (syncingQuery) return
+    const state = readQueryState()
+    keywordInput.value = state.keyword
+    selectedCategory.value = state.category
+    sortBy.value = state.sort
+    await loadFromState(state.page)
+  },
+  { deep: true },
+)
+</script>
 
 <style scoped>
 .community-page {
-  width: min(100%, 92rem);
+  width: min(100%, 82rem);
   margin: 0 auto;
-  padding-bottom: 3rem;
+  padding: clamp(1.5rem, 3vw, 2.5rem) 1.5rem 4rem;
 }
 
-.community-hero {
-  position: relative;
-  overflow: hidden;
+.community-head {
   display: flex;
-  flex-direction: column;
-  gap: 1.2rem;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius-md);
-  padding: 1.5rem 1.2rem;
-  color: var(--white);
-  background: var(--ink);
-  box-shadow: var(--shadow-sm);
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+  margin-bottom: 1.75rem;
 }
 
-.community-hero::after {
-  position: absolute;
-  right: -3rem;
-  bottom: -5rem;
-  width: 14rem;
-  height: 14rem;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 50%;
-  content: "";
-  box-shadow: 0 0 0 2rem rgba(255, 255, 255, 0.04), 0 0 0 4rem rgba(255, 255, 255, 0.025);
-}
-
-.hero-kicker {
-  color: var(--sun);
+.community-kicker {
+  margin: 0;
+  color: var(--faint);
   font-family: var(--font-mono);
-  font-size: 0.67rem;
-  font-weight: 900;
-  letter-spacing: 0.15em;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
 }
 
-.community-hero h1 {
-  max-width: 10ch;
-  margin: 0.7rem 0 0;
-  font-family: var(--font-display);
-  font-size: clamp(2.5rem, 11vw, 6rem);
-  font-weight: 900;
-  line-height: 0.98;
-  letter-spacing: -0.07em;
+.community-head h1 {
+  margin: 0.35rem 0 0.5rem;
+  font-size: clamp(2rem, 3.6vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
 }
 
-.community-hero p {
-  max-width: 48ch;
-  margin: 1rem 0 0;
-  color: rgba(255, 253, 248, 0.67);
-  font-size: 0.88rem;
+.community-lead {
+  max-width: 40rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
   line-height: 1.7;
 }
 
-.hero-actions {
-  position: relative;
-  z-index: 1;
-}
-
-.hero-actions :deep(.el-button) {
-  width: 100%;
-  border-color: var(--white);
-  color: var(--ink);
-  background: var(--sun);
-}
-
-.toolbar-card,
-.list-card {
-  margin-top: 1rem;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius-md);
-  background: var(--paper-raised);
+.publish-btn {
+  min-height: 2.75rem;
+  padding-inline: 1.4rem;
 }
 
 .toolbar-card {
-  padding: 0.9rem;
-  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--soft);
+  border-radius: var(--radius-lg);
+  padding: 1.1rem;
+  background: var(--white);
 }
 
 .toolbar-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 0.65rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
 }
 
-.toolbar-search,
+.toolbar-search {
+  flex: 1;
+  min-width: 220px;
+}
+
 .toolbar-select {
-  width: 100%;
+  width: 9rem;
 }
 
 .tag-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 0.4rem;
-  margin-top: 0.75rem;
-  overflow-x: auto;
-  padding-top: 0.75rem;
-  border-top: 1px dashed var(--line);
-  scrollbar-width: none;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
 }
 
 .tag-row-label {
-  flex: 0 0 auto;
-  color: var(--ink-soft);
-  font-family: var(--font-mono);
-  font-size: 0.67rem;
-  font-weight: 850;
+  color: var(--faint);
+  font-size: 0.8rem;
 }
 
 .hot-tag {
-  flex: 0 0 auto;
   cursor: pointer;
 }
 
-.list-card {
-  overflow: hidden;
+.list-section {
+  margin-top: 2rem;
 }
 
 .list-header {
   display: flex;
-  align-items: flex-end;
+  align-items: baseline;
   justify-content: space-between;
-  padding: 1.1rem;
-  border-bottom: 1px solid var(--line-strong);
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
 
 .list-header h2 {
   margin: 0;
-  font-family: var(--font-display);
-  font-size: 1.55rem;
-  font-weight: 900;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 .list-header p {
-  margin: 0.25rem 0 0;
-  color: var(--ink-soft);
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
 }
 
-.post-list {
+.post-grid {
   display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+  gap: 1rem;
 }
 
 .post-card {
-  position: relative;
-  min-width: 0;
-  display: grid;
-  gap: 0.8rem;
-  border-bottom: 1px solid var(--line);
-  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border: 1px solid var(--soft);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
   background: var(--white);
   cursor: pointer;
-  transition: background 180ms ease, transform 180ms var(--ease-out);
-}
-
-.post-card::before {
-  color: var(--signal);
-  font-family: var(--font-mono);
-  font-size: 0.62rem;
-  font-weight: 900;
-  content: "COMMUNITY NOTE";
+  transition: border-color 160ms ease, background 160ms ease;
 }
 
 .post-card:hover {
-  z-index: 1;
-  background: var(--tint);
-  transform: translateY(-0.2rem);
+  border-color: var(--border);
+  background: var(--silver);
 }
 
 .post-card-top {
   display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
 }
 
-.post-card h3 {
+.post-card-top h3 {
   margin: 0;
-  font-family: var(--font-display);
-  font-size: 1.12rem;
-  font-weight: 900;
-  line-height: 1.35;
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.45;
 }
 
-.post-meta,
-.post-author {
-  color: var(--ink-soft);
-  font-family: var(--font-mono);
-  font-size: 0.66rem;
+.post-replies {
+  flex: 0 0 auto;
+  border-radius: var(--radius-pill);
+  padding: 0.15rem 0.55rem;
+  color: var(--brand);
+  background: var(--tint);
+  font-size: 0.72rem;
+}
+
+.post-meta {
+  margin: 0;
+  color: var(--faint);
+  font-size: 0.78rem;
 }
 
 .post-preview {
   display: -webkit-box;
-  margin: 0;
   overflow: hidden;
-  color: var(--ink-soft);
-  font-size: 0.84rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
   line-height: 1.65;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
 }
 
-.post-footer,
+.post-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.6rem;
+}
+
 .post-tags {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
   gap: 0.35rem;
 }
 
-.post-footer {
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding-top: 0.7rem;
-  border-top: 1px dashed var(--line);
+.post-tag {
+  border-radius: var(--radius-pill);
+  padding: 0.1rem 0.5rem;
+  color: var(--muted);
+  background: var(--silver);
+  font-size: 0.72rem;
 }
 
-.post-tags {
-  flex-wrap: wrap;
+.post-author {
+  color: var(--faint);
+  font-size: 0.75rem;
 }
 
-.dialog-actions {
+.pager {
   display: flex;
-  justify-content: flex-end;
-  gap: 0.55rem;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.pager-btn {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 0.45rem 1rem;
+  color: var(--text);
+  background: var(--white);
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.pager-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.pager-status {
+  color: var(--muted);
+  font-size: 0.82rem;
 }
 
 .full-width {
   width: 100%;
 }
 
-@media (min-width: 48rem) {
-  .community-hero {
-    min-height: 20rem;
-    flex-direction: row;
-    align-items: flex-end;
-    justify-content: space-between;
-    padding: 2rem;
-  }
-
-  .hero-actions :deep(.el-button) {
-    width: auto;
-  }
-
-  .toolbar-card {
-    padding: 1rem;
-  }
-
-  .toolbar-row {
-    grid-template-columns: minmax(15rem, 1fr) minmax(9rem, 0.35fr) auto;
-    align-items: center;
-  }
-
-  .post-card-top,
-  .post-footer {
-    flex-direction: row;
-    align-items: flex-start;
-  }
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
 }
 
-@media (min-width: 64rem) {
-  .post-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+@media (max-width: 47.99rem) {
+  .community-page {
+    padding-inline: 1rem;
   }
 
-  .post-card:nth-child(odd) {
-    border-right: 1px solid var(--line);
+  .toolbar-select {
+    width: 100%;
   }
 
-  .post-card {
-    min-height: 16rem;
-    align-content: space-between;
-    padding: 1.3rem;
+  .community-head {
+    align-items: flex-start;
   }
 }
 </style>

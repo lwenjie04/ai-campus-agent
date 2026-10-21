@@ -353,3 +353,160 @@ watch(
   }
 }
 </style>
+
+<style scoped>
+/* 6.1：帖子详情沿用银白/深绿视觉。 */
+.detail-page {
+  width: min(100%, 56rem);
+  margin: 0 auto;
+  padding: clamp(1.5rem, 3vw, 2.5rem) 1.5rem 4rem;
+}
+
+.detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.detail-kicker {
+  margin: 0 0 0.35rem;
+  color: var(--faint);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+}
+
+.detail-header h1 {
+  margin: 0;
+  color: var(--text);
+  font-size: clamp(1.6rem, 3vw, 2.25rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.3;
+}
+
+.detail-card,
+.reply-card {
+  border: 1px solid var(--soft);
+  border-radius: var(--radius-lg);
+  padding: clamp(1.25rem, 2.5vw, 1.75rem);
+  background: var(--white);
+}
+
+.reply-card {
+  margin-top: 1.25rem;
+}
+
+.detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.meta-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.detail-content {
+  margin: 1.25rem 0;
+  color: var(--text);
+  font-size: 1rem;
+  line-height: 1.85;
+  white-space: pre-wrap;
+}
+
+.detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.knowledge-actions {
+  margin-top: 1.25rem;
+}
+
+.reply-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.reply-header p {
+  margin: 0.3rem 0 1rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.reply-item {
+  border-top: 1px solid var(--soft);
+  padding: 0.9rem 0;
+}
+
+.reply-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.reply-item-head strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.reply-item-content {
+  margin-top: 0.4rem;
+  color: var(--text);
+  font-size: 0.92rem;
+  line-height: 1.75;
+  white-space: pre-wrap;
+}
+
+.reply-editor {
+  margin-top: 1.5rem;
+  border-top: 1px solid var(--soft);
+  padding-top: 1.25rem;
+}
+
+.reply-editor h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.reply-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+@media (max-width: 47.99rem) {
+  .detail-page {
+    padding-inline: 1rem;
+  }
+
+  .detail-header {
+    flex-direction: column;
+  }
+}
+</style>
+
+<style scoped>
+/* 详情抬头不使用彩色卡片，保持银白页面层次。 */
+.detail-header {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+</style>

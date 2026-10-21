@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "completedAt": "2026-10-21T07:42:20.941Z",
+  "mode": "isolated_real_backend_memory",
+  "targetUrl": "http://127.0.0.1:4176",
+  "ok": true,
+  "steps": [
+    {
+      "name": "管理员登录",
+      "ok": true,
+      "detail": "admin"
+    },
+    {
+      "name": "社区列表加载",
+      "ok": true,
+      "detail": "cards visible"
+    },
+    {
+      "name": "筛选写入 URL",
+      "ok": true,
+      "detail": "?q=%E8%BD%AC%E4%B8%93%E4%B8%9A"
+    },
+    {
+      "name": "打开帖子详情",
+      "ok": true,
+      "detail": "转专业后课程补退选怎么操作？"
+    },
+    {
+      "name": "返回恢复筛选与滚动",
+      "ok": true,
+      "detail": "q=转专业 scroll=194"
+    },
+    {
+      "name": "无效帖子不串旧内容",
+      "ok": true,
+      "detail": "empty state"
+    },
+    {
+      "name": "切帖按路由 ID 重新加载",
+      "ok": true,
+      "detail": "转专业后课程补退选怎么操作？"
+    }
+  ]
+}
