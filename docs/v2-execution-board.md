@@ -58,11 +58,11 @@
 | S3 | 5 | 5 | 0 | 0 | 0 | 0 | — |
 | S4 | 6 | 6 | 0 | 0 | 0 | 0 | — |
 | S5 | 4 | 0 | 0 | 0 | 0 | 4 | 等 5.1 数据 |
-| S6 | 5 | 1 | 4 | 0 | 0 | 0 | **6.2** |
+| S6 | 5 | 2 | 3 | 0 | 0 | 0 | **6.3** |
 | S7 | 5 | 2 | 2 | 0 | 0 | 1 | **7.3 / 6.x** |
-| **合计** | **39** | **26** | **7** | **0** | **0** | **6** | — |
+| **合计** | **39** | **27** | **6** | **0** | **0** | **6** | — |
 
-> 已完成：0.1、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、2.1、2.2、2.3、2.4、2.5、3.1、3.2、3.3、3.4、3.5、4.1、4.2、4.3、4.4、4.5、4.6、6.1、7.1、7.2。**S1/S2/S3/S4 已全部完成，6.1 已完成**；6.2/6.3 进行中，6.4 依赖 6.2/6.3；5.x 等人工数据，7.3 等 5.4/6.5。实时状态以本表为准。
+> 已完成：0.1、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、2.1、2.2、2.3、2.4、2.5、3.1、3.2、3.3、3.4、3.5、4.1、4.2、4.3、4.4、4.5、4.6、6.1、6.2、7.1、7.2。**S1/S2/S3/S4 已全部完成，6.1/6.2 已完成**；6.3 进行中，6.4 待 6.3；5.x 等人工数据，7.3 等 5.4/6.5。实时状态以本表为准。
 
 ---
 
@@ -132,7 +132,7 @@
 | ID | 任务 | 主责 | 状态 | 依赖 | 完成判定 / 证据 |
 | --- | --- | --- | --- | --- | --- |
 | 6.1 | 社区列表/帖子适配 | AI-1 | ✅ | 2.1、3.4 | `a89af55`：列表按银白/深绿重做，`q/category/sort/page` 全部入 URL，越界页码回落，返回时恢复筛选与滚动；详情先清空上一帖再加载，无效 ID 显示空态，切帖按路由 ID 重新加载；问答原帖入口沿用既有守卫。证据：`community-query` 4 单测；`npm run community:journey` **7/7**（`server/evals/latest-community-journey.json`，截图 `community-list-1440.png`/`community-detail-1440.png`）；86 单测/type-check/lint/build 通过 |
-| 6.2 | 投稿/回复/草稿 | AI-1 | 🔵 | 6.1、3.5 | 按身份存草稿；阻止重复提交；取消保留、明确丢弃才清空；待审核状态提示；写入成功但刷新失败有独立提示。AI-1 已认领：先落草稿服务与两个表单，再补浏览器回归 |
+| 6.2 | 投稿/回复/草稿 | AI-1 | ✅ | 6.1、3.5 | `e7b8c1a`：`community-draft` 按 ownerScope 隔离（游客/用户、回复按帖子 ID）；投稿与回复取消/刷新保留，显式“清空草稿”或提交成功才删除；`submitting` + 3 秒同负载去重阻止重复提交；待审核提示与“已提交但刷新失败”独立提示；切帖清空旧回复草稿状态。证据：4 个草稿单测；`community:journey` **13/13**（含草稿恢复/清空、POST 请求数=1 的防重复校验，`server/evals/latest-community-journey.json`）；90 单测/type-check/lint/build 通过 |
 | 6.3 | 后台路由与界面 | AI-1 | 🟡 | 1.4、2.1 | 拆 `/admin/review` 与 `/admin/retrieval`；队列/详情/状态接口复用；手机可只读/审核；无权限直接 URL 与接口都拒绝 |
 | 6.4 | 审核状态与部分失败 | AI-2 | 🟡 | 6.2、6.3 | 状态转换校验（`WHERE status='pending'`）；拒绝需确认；通过+生成分步成败、只重试剩余；重复点击不生成多草稿 |
 | 6.5 | 后台与社区闭环验证 | 共同 | 🟡 | 6.4、4.4 | 覆盖失败重试、来源返回、普通账号越权、LightRAG 未配置；正式数据不被 Mock 旅程写入 |
@@ -209,6 +209,7 @@
 | 2026-10-21 | 7.2 部分 | AI-2（Codex） | `8840b43`；`npm run test:server` 47/47；`node server/scripts/check-server-syntax.mjs` 66 模块；定向 ESLint/oxlint、`git diff --cached --check` 通过 | 服务端路由、receipt eligibility、主体校验、限频及 API 契约已交付；等待 AI-1 `MessageActions.vue` |
 | 2026-10-21 | 7.3 部分 | AI-2（Codex） | `2036b7f`；`npm run lint`、`npm run type-check`、`npm run test:unit` 74/74、`npm run test:server` 47/47、`npm run build` 均通过；`npm run release:check` READY WITH WARNINGS（前述门禁与 Top 20 golden 均通过）；`npx prettier --check .github/workflows/quality.yml docs/ci-quality-gates-v2.md`、`git diff --check` 通过 | CI 骨架与 release 单测步骤已验证；golden/journey 的正式 CI 收口等 4.6、5.4、6.5、7.2 完成后进行 |
 | 2026-10-21 | 0.3 部分 | AI-2（Codex） | `decdf75`；`npm run test:server` 47/47；`npm run service:journey` build/type-check 通过，旅程在社区审核后等待 RAG 来源超时 | 旅程脚本改为 `/chat/new`、textarea、现有登录控件和首页 CTA；完整 10 轮待 6.5 闭环后重跑 |
+| 2026-10-21 | 6.2 投稿/回复/草稿 | AI-1 | `e7b8c1a`；4 个草稿单测；`community:journey` 13/13；90 单测/type-check/lint/build 通过 | 按身份草稿、取消保留/显式清空、待审核提示、刷新失败独立提示、POST 防重复=1 |
 | 2026-10-21 | 6.1 社区列表/帖子 | AI-1 | `a89af55`；`npm run community:journey` 7/7；`server/evals/latest-community-journey.json`；截图 `docs/design/verify/community-list-1440.png`、`community-detail-1440.png`；86 单测/type-check/lint/build 通过 | 筛选/页码入 URL、返回恢复筛选+滚动、无效帖子空态、切帖按 ID 重载 |
 | 2026-10-21 | 7.2 反馈接口与操作 | AI-1（组件） | `9335cee`；8 个新单测；82 单测/type-check/lint/build 通过；`regression:journey` 9/9（含真实反馈提交）；截图 `docs/design/verify/regression-feedback-1440.png` | eligible 才显示；成功写回并持久化；429/503 可重试，409/401 终态提示 |
 | 2026-10-21 | 4.6 生成/来源/媒体联测 | AI-1 | `regression:journey` 8/8；`server/evals/latest-regression-journey.json`；截图 `docs/design/verify/regression-interrupted-1440.png`；74 单测/type-check/lint 通过 | 刷新中断+重试、跨会话晚到、来源绑定、TTS 失败、自动播放拦截、过期登录隔离 |
@@ -298,6 +299,7 @@
 | 2026-10-21 | 部分 | 0.3 记录 `npm run test:server` 47/47；构建/类型检查通过；旅程通过访客答复、登录恢复与审核操作后，在社区知识 RAG 来源闭环断言超时。已写回基线文档。**剩余**：等待 6.5 闭环并跑完默认 10 轮。 | AI-2（Codex） |
 | 2026-10-21 | 部分 | 7.3 第一阶段完成（`2036b7f`）：增加 `.github/workflows/quality.yml`，将 `test:unit` 加入 `release:check`，并写明可重复旅程约定；当前门禁通过，release 预检保留配置与本地 hash 向量索引警告。**剩余**：等待 4.6、5.4、6.5、7.2 完成，再接入 golden 与浏览器旅程并按全范围验收。 | AI-2（Codex） |
 | 2026-10-21 | 完成 | 6.1 社区：列表/详情银白深绿重做；筛选、排序、页码入 URL 并可恢复；返回恢复滚动；无效帖子空态、切帖不串旧回复；community:journey 7/7 | AI-1 |
+| 2026-10-21 | 完成 | 6.2 投稿/回复：按身份草稿（游客/用户、回复按帖子）取消保留、显式清空；重复提交拦截（POST=1）；待审核提示与刷新失败独立提示；community:journey 13/13 | AI-1 |
 
 ---
 
