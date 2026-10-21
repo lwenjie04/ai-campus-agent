@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "completedAt": "2026-10-21T09:13:57.394Z",
+  "mode": "isolated_memory_backend",
+  "targetUrl": "http://127.0.0.1:4176",
+  "ok": true,
+  "steps": [
+    {
+      "name": "管理员登录",
+      "ok": true,
+      "detail": "admin"
+    },
+    {
+      "name": "创建待审核帖子",
+      "ok": true,
+      "detail": "post_3c0f332e"
+    },
+    {
+      "name": "通过成功但生成失败有独立状态",
+      "ok": true,
+      "detail": "partial panel"
+    },
+    {
+      "name": "只重试生成且不重复 approve",
+      "ok": true,
+      "detail": "approve=1 generate=2"
+    },
+    {
+      "name": "知识审核通过并进入检索",
+      "ok": true,
+      "detail": "ck_31cd2a13"
+    },
+    {
+      "name": "问答返回社区来源",
+      "ok": true,
+      "detail": "社区经验 · 学生社区经验总结：宿舍网络报修闭环联测"
+    },
+    {
+      "name": "来源回链到帖子详情",
+      "ok": true,
+      "detail": "/community/posts/post_3c0f332e"
+    },
+    {
+      "name": "LightRAG 未配置可降级",
+      "ok": true,
+      "detail": "status=未连接"
+    },
+    {
+      "name": "普通账号越权被拒",
+      "ok": true,
+      "detail": "route=/403 api=403"
+    }
+  ]
+}

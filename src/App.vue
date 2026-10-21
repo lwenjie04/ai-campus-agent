@@ -197,7 +197,8 @@ const routeListeners = computed<Record<string, RouteListener>>(() => {
     case 'chat':
     case 'chat-new':
     case 'chat-detail':
-      listeners['open-community-post'] = openPostFromSource
+      // AgentChat 的 openCommunityPost 是 camelCase emit；v-on 对象的 key 需与 emit 名一致。
+      listeners.openCommunityPost = openPostFromSource
       listeners['require-login'] = openLogin
       break
     case 'community':

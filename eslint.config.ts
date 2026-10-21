@@ -39,6 +39,7 @@ export default defineConfigWithVueTs(
       'server/scripts/regression-journey-browser.mjs',
       'server/scripts/community-journey-browser.mjs',
       'server/scripts/admin-journey-browser.mjs',
+      'server/scripts/closed-loop-journey-browser.mjs',
     ],
     languageOptions: {
       globals: {

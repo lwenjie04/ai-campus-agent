@@ -38,6 +38,7 @@
     "regression:journey": "node server/scripts/regression-journey-browser.mjs",
     "community:journey": "node server/scripts/community-journey-browser.mjs",
     "admin:journey": "node server/scripts/admin-journey-browser.mjs",
+    "closed-loop:journey": "node server/scripts/closed-loop-journey-browser.mjs",
     "ui:inspect:mobile": "node server/scripts/inspect-responsive-layout.mjs",
     "dev:all": "run-p dev server",
     "build": "run-p type-check \"build-only {@}\" --",
