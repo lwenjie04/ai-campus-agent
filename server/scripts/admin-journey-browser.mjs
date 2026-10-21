@@ -99,6 +99,55 @@ try {
 
   let commandId = 0
   const command = (method, params) => sendCommand(socket, ++commandId, method, params)
+  const requestCounts = { approve: 0, reject: 0, generate: 0 }
+  const pageErrors = []
+  let failGenerateOnce = true
+  socket.addEventListener('message', (event) => {
+    try {
+      const message = JSON.parse(String(event.data))
+      if (message.method === 'Runtime.exceptionThrown') {
+        const details = message.params?.exceptionDetails
+        pageErrors.push(details?.exception?.description || details?.text || 'page exception')
+        return
+      }
+      if (message.method === 'Network.requestWillBeSent') {
+        const request = message.params?.request
+        if (request?.method === 'POST' && typeof request.url === 'string') {
+          if (request.url.includes('/knowledge/generate')) requestCounts.generate += 1
+          else if (request.url.endsWith('/approve')) requestCounts.approve += 1
+          else if (request.url.endsWith('/reject')) requestCounts.reject += 1
+        }
+        return
+      }
+      if (message.method === 'Fetch.requestPaused') {
+        const requestId = message.params.requestId
+        const url = String(message.params.request?.url || '')
+        if (url.includes('/knowledge/generate') && failGenerateOnce) {
+          failGenerateOnce = false
+          const body = Buffer.from(
+            JSON.stringify({
+              error: {
+                code: 'KNOWLEDGE_GENERATION_FAILED',
+                message: '模拟知识生成失败',
+                retryable: true,
+                postStatus: 'approved',
+              },
+            }),
+          ).toString('base64')
+          void command('Fetch.fulfillRequest', {
+            requestId,
+            responseCode: 503,
+            responseHeaders: [{ name: 'Content-Type', value: 'application/json' }],
+            body,
+          })
+        } else {
+          void command('Fetch.continueRequest', { requestId })
+        }
+      }
+    } catch {
+      // ignore non-JSON frames
+    }
+  })
   const evaluate = async (expression) => {
     const result = await command('Runtime.evaluate', {
       expression,
@@ -126,6 +175,8 @@ try {
 
   await command('Page.enable')
   await command('Runtime.enable')
+  await command('Network.enable')
+  await command('Fetch.enable', { patterns: [{ urlPattern: '*knowledge/generate*', requestStage: 'Request' }] })
   await command('Emulation.setDeviceMetricsOverride', {
     width: 1440,
     height: 900,
@@ -251,7 +302,144 @@ try {
   record('手机端可审核', `overflow=0 approveVisible`)
   await screenshot('admin-review-390.png')
 
-  // 4. 无权限：清 Cookie 与本地登录态后直达 URL → 回首页；后台接口 → 401/403。
+  // 4. 6.4：拒绝二次确认 + 生成失败独立状态 + 只重试生成。
+  await command('Emulation.setDeviceMetricsOverride', {
+    width: 1440,
+    height: 900,
+    deviceScaleFactor: 1,
+    mobile: false,
+  })
+  await command('Page.navigate', { url: `${targetUrl}/admin/review` })
+  await waitFor(async () => (await evaluate('document.readyState')) === 'complete', 'review for 6.4')
+  await waitFor(
+    async () => evaluate(`document.body.textContent.includes('后台联测待审核帖子')`),
+    'pending post for reject',
+  )
+
+  const clickRowAction = (title, actionText) =>
+    evaluate(`(() => {
+      const card = [...document.querySelectorAll('.item-card')].find((item) => item.textContent?.includes(${JSON.stringify(title)}))
+      if (!card) throw new Error('card not found: ' + ${JSON.stringify(title)})
+      const button = [...card.querySelectorAll('button')].find((item) => item.textContent?.trim() === ${JSON.stringify(actionText)})
+      if (!button) throw new Error('button not found: ' + ${JSON.stringify(actionText)})
+      button.click()
+      return true
+    })()`)
+
+  await clickRowAction('后台联测待审核帖子', '拒绝')
+  await waitFor(async () => evaluate(`Boolean(document.querySelector('.el-message-box'))`), 'reject confirm dialog')
+  await evaluate(`(() => {
+    const box = document.querySelector('.el-message-box')
+    const cancel = [...box.querySelectorAll('button')].find((item) => item.textContent?.trim() === '取消')
+    cancel?.click()
+    return true
+  })()`)
+  await sleep(350)
+  if (!(await evaluate(`document.body.textContent.includes('后台联测待审核帖子')`))) {
+    throw new Error('reject cancel removed the post')
+  }
+  record('拒绝二次确认可取消', 'no request')
+
+  await clickRowAction('后台联测待审核帖子', '拒绝')
+  await waitFor(async () => evaluate(`Boolean(document.querySelector('.el-message-box'))`), 'reject confirm dialog again')
+  await evaluate(`(() => {
+    const box = document.querySelector('.el-message-box')
+    const confirm = [...box.querySelectorAll('button')].find((item) => item.textContent?.trim() === '确认拒绝')
+    confirm?.click()
+    return true
+  })()`)
+  await waitFor(
+    async () => !(await evaluate(`document.body.textContent.includes('后台联测待审核帖子')`)),
+    'rejected post removed',
+  )
+  if (requestCounts.reject !== 1) throw new Error(`unexpected reject requests: ${requestCounts.reject}`)
+  record('确认拒绝只发一次请求', `POST reject=${requestCounts.reject}`)
+
+  // 新建第二条待审核帖子，制造“通过成功 + 生成失败”。
+  const createSecond = await evaluate(`(async () => {
+    const raw = localStorage.getItem('ai-campus-agent.auth.v4')
+    const token = raw ? JSON.parse(raw)?.accessToken : ''
+    const response = await fetch('/api/community/posts', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) },
+      body: JSON.stringify({
+        authorName: '联测同学',
+        title: '知识生成失败联测',
+        content: '用于验证知识生成失败与只重试生成的临时帖子。',
+        category: 'life',
+        tags: ['联测'],
+      }),
+    })
+    return response.status
+  })()`)
+  if (![200, 201].includes(createSecond)) throw new Error(`create second post failed: ${createSecond}`)
+
+  await command('Page.navigate', { url: `${targetUrl}/admin/review` })
+  await waitFor(async () => (await evaluate('document.readyState')) === 'complete', 'review reload for generate')
+  await waitFor(
+    async () => evaluate(`document.body.textContent.includes('知识生成失败联测')`),
+    'second pending post visible',
+  )
+
+  const beforeCounts = { ...requestCounts }
+  await evaluate(`(() => {
+    const card = [...document.querySelectorAll('.item-card')].find((item) => item.textContent?.includes('知识生成失败联测'))
+    const button = [...card.querySelectorAll('button')].find((item) => item.textContent?.trim() === '通过并生成知识')
+    button.click()
+    button.click()
+    return true
+  })()`)
+  const failurePanel = await waitFor(
+    async () => {
+      const text = await evaluate(`document.querySelector('.knowledge-failure-panel')?.textContent?.trim() || ''`)
+      return text.includes('知识生成失败联测') ? text : undefined
+    },
+    'knowledge failure panel',
+  )
+  record('生成失败显示独立状态', failurePanel.slice(0, 48))
+  await screenshot('admin-knowledge-failure-1440.png')
+  if (requestCounts.approve - beforeCounts.approve !== 1) {
+    throw new Error(`duplicate approve requests: ${requestCounts.approve - beforeCounts.approve}`)
+  }
+  if (requestCounts.generate - beforeCounts.generate !== 1) {
+    throw new Error(`unexpected generate requests: ${requestCounts.generate - beforeCounts.generate}`)
+  }
+
+  await evaluate(`(() => {
+    const button = [...document.querySelectorAll('button')].find((item) => item.textContent?.trim() === '重试生成')
+    if (!button) throw new Error('retry generate button missing')
+    button.click()
+    button.click()
+    return true
+  })()`)
+  await waitFor(
+    async () => !(await evaluate(`Boolean(document.querySelector('.knowledge-failure-panel'))`)),
+    'failure panel cleared after retry',
+  ).catch(async (error) => {
+    const panelText = await evaluate(
+      `document.querySelector('.knowledge-failure-panel')?.textContent?.trim() || ''`,
+    )
+    throw new Error(
+      `${error.message}: ${JSON.stringify({
+        panelText,
+        counts: requestCounts,
+        approveDelta: requestCounts.approve - beforeCounts.approve,
+        generateDelta: requestCounts.generate - beforeCounts.generate,
+        pageErrors: pageErrors.slice(-3),
+      })}`,
+    )
+  })
+  await sleep(400)
+  if (requestCounts.generate - beforeCounts.generate !== 2) {
+    throw new Error(`retry generate requests: ${requestCounts.generate - beforeCounts.generate}`)
+  }
+  if (requestCounts.approve - beforeCounts.approve !== 1) {
+    throw new Error('retry re-approved the post')
+  }
+  record('只重试生成，不重复 approve', 'approve=1 generate=2')
+
+  // 5. 无权限：清 Cookie 与本地登录态后直达 URL → 回首页；后台接口 → 401/403。
   await command('Network.clearBrowserCookies')
   await evaluate(`localStorage.removeItem('ai-campus-agent.auth.v4')`)
   await command('Page.navigate', { url: `${targetUrl}/admin/review` })

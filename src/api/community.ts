@@ -17,6 +17,48 @@ type ApiEnvelope<T> = {
   data: T
 }
 
+type ApiErrorPayload = {
+  error?: {
+    code?: string
+    message?: string
+    retryable?: boolean
+    postStatus?: string
+    knowledgeId?: string
+    currentStatus?: string
+  }
+}
+
+// 6.4：保留后端结构化错误字段，供审核/知识生成的部分失败 UI 使用。
+export class CommunityApiError extends Error {
+  status: number
+  code: string
+  retryable: boolean
+  postStatus?: string
+  knowledgeId?: string
+  currentStatus?: string
+
+  constructor(
+    message: string,
+    options: {
+      status: number
+      code: string
+      retryable?: boolean
+      postStatus?: string
+      knowledgeId?: string
+      currentStatus?: string
+    },
+  ) {
+    super(message)
+    this.name = 'CommunityApiError'
+    this.status = options.status
+    this.code = options.code
+    this.retryable = options.retryable === true
+    this.postStatus = options.postStatus
+    this.knowledgeId = options.knowledgeId
+    this.currentStatus = options.currentStatus
+  }
+}
+
 const request = async <T>(path: string, init?: RequestInit): Promise<T> => {
   const response = await fetch(apiUrl(path), {
     ...init,
@@ -28,12 +70,21 @@ const request = async <T>(path: string, init?: RequestInit): Promise<T> => {
     },
   })
 
-  const payload = (await response.json().catch(() => null)) as ApiEnvelope<T> | null
+  const payload = (await response.json().catch(() => null)) as (ApiEnvelope<T> & ApiErrorPayload) | null
 
   if (!response.ok || !payload || payload.code !== 0) {
-    const error = new Error(payload?.message || `请求失败：${response.status}`)
-    ;(error as Error & { code?: string }).code = String(payload?.code || 'COMMUNITY_REQUEST_FAILED')
-    throw error
+    const apiError = payload?.error
+    throw new CommunityApiError(
+      apiError?.message || payload?.message || `请求失败：${response.status}`,
+      {
+        status: response.status,
+        code: apiError?.code || String(payload?.code || 'COMMUNITY_REQUEST_FAILED'),
+        retryable: apiError?.retryable,
+        postStatus: apiError?.postStatus,
+        knowledgeId: apiError?.knowledgeId,
+        currentStatus: apiError?.currentStatus,
+      },
+    )
   }
 
   return payload.data

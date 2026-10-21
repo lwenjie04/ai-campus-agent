@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "completedAt": "2026-10-21T08:10:19.687Z",
+  "completedAt": "2026-10-21T08:39:44.378Z",
   "mode": "isolated_real_backend_memory",
   "targetUrl": "http://127.0.0.1:4176",
   "ok": true,
@@ -34,6 +34,26 @@
       "name": "手机端可审核",
       "ok": true,
       "detail": "overflow=0 approveVisible"
+    },
+    {
+      "name": "拒绝二次确认可取消",
+      "ok": true,
+      "detail": "no request"
+    },
+    {
+      "name": "确认拒绝只发一次请求",
+      "ok": true,
+      "detail": "POST reject=1"
+    },
+    {
+      "name": "生成失败显示独立状态",
+      "ok": true,
+      "detail": "审核已通过，知识生成失败1 条知识生成失败联测模拟知识生成失败 查看详情  重试生成"
+    },
+    {
+      "name": "只重试生成，不重复 approve",
+      "ok": true,
+      "detail": "approve=1 generate=2"
     },
     {
       "name": "无权限 URL 与接口拒绝",

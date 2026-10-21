@@ -68,6 +68,34 @@
       </article>
     </section>
 
+    <section v-if="knowledgeFailureList.length" class="knowledge-failure-panel" aria-live="polite">
+      <div class="knowledge-failure-panel__head">
+        <h2>审核已通过，知识生成失败</h2>
+        <span>{{ knowledgeFailureList.length }} 条</span>
+      </div>
+      <article v-for="failure in knowledgeFailureList" :key="failure.postId" class="knowledge-failure-row">
+        <div class="knowledge-failure-row__copy">
+          <strong>{{ failure.title }}</strong>
+          <p>{{ failure.message }}</p>
+          <small v-if="failure.knowledgeId">已存在知识条目：{{ failure.knowledgeId }}</small>
+        </div>
+        <div class="knowledge-failure-row__actions">
+          <el-button size="small" plain @click="openPostDetail(failure.postId, '部分失败帖子详情')">
+            查看详情
+          </el-button>
+          <el-button
+            size="small"
+            type="primary"
+            :disabled="!failure.retryable"
+            :loading="rowActionOf('post', failure.postId) === 'generate'"
+            @click="retryKnowledge(failure)"
+          >
+            重试生成
+          </el-button>
+        </div>
+      </article>
+    </section>
+
     <el-alert
       v-if="store.lastError"
       :title="store.lastError"
@@ -131,13 +159,30 @@
                     </el-tag>
                   </div>
 
+                  <p v-if="failureOf(post.id)" class="row-failure" role="status">
+                    审核已通过，知识生成失败：{{ failureOf(post.id)?.message }}
+                    <button
+                      v-if="failureOf(post.id)?.retryable"
+                      type="button"
+                      @click="retryFailure(post.id)"
+                    >
+                      重试生成
+                    </button>
+                  </p>
+
                   <div class="item-card__foot">
                     <span>浏览 {{ post.viewCount }} · 回复 {{ post.replyCount }} · 点赞 {{ post.likeCount }}</span>
                     <div class="item-card__actions">
                       <el-button size="small" plain @click="openPostDetail(post.id, '候选帖子详情')">
                         查看详情
                       </el-button>
-                      <el-button size="small" type="primary" :loading="store.submitting" @click="buildKnowledge(post.id)">
+                      <el-button
+                        size="small"
+                        type="primary"
+                        :loading="rowActionOf('post', post.id) === 'generate'"
+                        :disabled="isRowBusy('post', post.id)"
+                        @click="buildKnowledge(post)"
+                      >
                         生成知识草稿
                       </el-button>
                     </div>
@@ -181,10 +226,23 @@
                       <el-button size="small" plain @click="openPostDetail(item.postId, '社区知识来源帖子')">
                         查看来源帖子
                       </el-button>
-                      <el-button size="small" type="success" :loading="store.submitting" @click="approveKnowledge(item.id)">
+                      <el-button
+                        size="small"
+                        type="success"
+                        :loading="rowActionOf('knowledge', item.id) === 'approveKnowledge'"
+                        :disabled="isRowBusy('knowledge', item.id)"
+                        @click="approveKnowledge(item)"
+                      >
                         审核并发布
                       </el-button>
-                      <el-button size="small" type="danger" plain :loading="store.submitting" @click="rejectKnowledge(item.id)">
+                      <el-button
+                        size="small"
+                        type="danger"
+                        plain
+                        :loading="rowActionOf('knowledge', item.id) === 'rejectKnowledge'"
+                        :disabled="isRowBusy('knowledge', item.id)"
+                        @click="rejectKnowledge(item)"
+                      >
                         拒绝
                       </el-button>
                     </div>
@@ -244,13 +302,33 @@
                       <el-button size="small" plain @click="openPostDetail(post.id, '待审核帖子详情')">
                         查看详情
                       </el-button>
-                      <el-button size="small" type="primary" plain :loading="store.submitting" @click="approveAndBuild(post.id)">
+                      <el-button
+                        size="small"
+                        type="primary"
+                        plain
+                        :loading="rowActionOf('post', post.id) === 'approveAndBuild'"
+                        :disabled="isRowBusy('post', post.id)"
+                        @click="approveAndBuild(post)"
+                      >
                         通过并生成知识
                       </el-button>
-                      <el-button size="small" type="success" :loading="store.submitting" @click="approvePost(post.id)">
+                      <el-button
+                        size="small"
+                        type="success"
+                        :loading="rowActionOf('post', post.id) === 'approve'"
+                        :disabled="isRowBusy('post', post.id)"
+                        @click="approvePost(post)"
+                      >
                         通过
                       </el-button>
-                      <el-button size="small" type="danger" plain :loading="store.submitting" @click="rejectPost(post.id)">
+                      <el-button
+                        size="small"
+                        type="danger"
+                        plain
+                        :loading="rowActionOf('post', post.id) === 'reject'"
+                        :disabled="isRowBusy('post', post.id)"
+                        @click="rejectPost(post)"
+                      >
                         拒绝
                       </el-button>
                     </div>
@@ -291,10 +369,23 @@
                       <el-button size="small" plain @click="openPostDetail(reply.postId, '回复所属帖子详情')">
                         查看所属帖子
                       </el-button>
-                      <el-button size="small" type="success" :loading="store.submitting" @click="approveReply(reply.id)">
+                      <el-button
+                        size="small"
+                        type="success"
+                        :loading="rowActionOf('reply', reply.id) === 'approve'"
+                        :disabled="isRowBusy('reply', reply.id)"
+                        @click="approveReply(reply)"
+                      >
                         通过
                       </el-button>
-                      <el-button size="small" type="danger" plain :loading="store.submitting" @click="rejectReply(reply.id)">
+                      <el-button
+                        size="small"
+                        type="danger"
+                        plain
+                        :loading="rowActionOf('reply', reply.id) === 'reject'"
+                        :disabled="isRowBusy('reply', reply.id)"
+                        @click="rejectReply(reply)"
+                      >
                         拒绝
                       </el-button>
                     </div>
@@ -442,9 +533,11 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import axios from 'axios'
 import { useRoute, useRouter } from 'vue-router'
 import { useCommunityStore } from '@/store/community'
+import { CommunityApiError } from '@/api/community'
 import { formatDateTime } from '@/utils/date'
 import { apiUrl, appConfig } from '@/config/app'
 import { getAuthRequestHeaders } from '@/api/auth'
@@ -573,6 +666,125 @@ const knowledgeStatusTagType = (value?: string) => {
   return 'info'
 }
 
+// 6.4：行级加载、拒绝确认与“帖子已通过、知识生成失败”的部分失败状态。
+type RowAction = 'approve' | 'reject' | 'generate' | 'approveAndBuild' | 'approveKnowledge' | 'rejectKnowledge'
+type KnowledgeFailure = {
+  postId: string
+  title: string
+  message: string
+  retryable: boolean
+  knowledgeId?: string
+  createdAt: number
+}
+type ReviewItem = { id: string; title?: string; content?: string }
+
+const rowActions = ref<Record<string, RowAction>>({})
+const knowledgeFailures = ref<Record<string, KnowledgeFailure>>({})
+const knowledgeFailureList = computed(() =>
+  Object.values(knowledgeFailures.value).sort((a, b) => a.createdAt - b.createdAt),
+)
+
+const actionKey = (kind: string, id: string) => `${kind}:${id}`
+const rowActionOf = (kind: string, id: string) => rowActions.value[actionKey(kind, id)] || ''
+const isRowBusy = (kind: string, id: string) => Boolean(rowActionOf(kind, id))
+const setRowAction = (kind: string, id: string, action: RowAction) => {
+  rowActions.value = { ...rowActions.value, [actionKey(kind, id)]: action }
+}
+const clearRowAction = (kind: string, id: string) => {
+  const next = { ...rowActions.value }
+  delete next[actionKey(kind, id)]
+  rowActions.value = next
+}
+
+const setKnowledgeFailure = (post: ReviewItem, error: ReturnType<typeof parseActionError>) => {
+  knowledgeFailures.value = {
+    ...knowledgeFailures.value,
+    [post.id]: {
+      postId: post.id,
+      title: post.title || '审核通过的帖子',
+      message: error.message,
+      retryable: error.retryable,
+      knowledgeId: error.knowledgeId,
+      createdAt: Date.now(),
+    },
+  }
+}
+const clearKnowledgeFailure = (postId: string) => {
+  if (!knowledgeFailures.value[postId]) return
+  const next = { ...knowledgeFailures.value }
+  delete next[postId]
+  knowledgeFailures.value = next
+}
+
+const failureOf = (postId: string): KnowledgeFailure | undefined => knowledgeFailures.value[postId]
+
+const retryFailure = (postId: string) => {
+  const failure = failureOf(postId)
+  if (failure) void retryKnowledge(failure)
+}
+
+const parseActionError = (error: unknown, fallback: string) => {
+  if (error instanceof CommunityApiError) {
+    const conflict =
+      error.code === 'REVIEW_STATE_CONFLICT' && error.currentStatus
+        ? `（当前状态：${statusLabel(error.currentStatus)}）`
+        : ''
+    return {
+      code: error.code,
+      message: `${error.message}${conflict}`,
+      retryable: error.retryable,
+      postStatus: error.postStatus || '',
+      knowledgeId: error.knowledgeId,
+    }
+  }
+  if (axios.isAxiosError(error)) {
+    const payload = error.response?.data as
+      | {
+          error?: {
+            code?: string
+            message?: string
+            retryable?: boolean
+            postStatus?: string
+            knowledgeId?: string
+            currentStatus?: string
+          }
+        }
+      | undefined
+    const info = payload?.error
+    const conflict =
+      info?.code === 'REVIEW_STATE_CONFLICT' && info.currentStatus
+        ? `（当前状态：${statusLabel(info.currentStatus)}）`
+        : ''
+    return {
+      code: info?.code || '',
+      message: `${info?.message || fallback}${conflict}`,
+      retryable: info?.retryable === true,
+      postStatus: info?.postStatus || '',
+      knowledgeId: info?.knowledgeId,
+    }
+  }
+  return {
+    code: '',
+    message: error instanceof Error ? error.message : fallback,
+    retryable: false,
+    postStatus: '',
+    knowledgeId: undefined,
+  }
+}
+
+const confirmReject = async (label: string) => {
+  try {
+    await ElMessageBox.confirm(`拒绝后「${label}」不会公开展示，确认拒绝？`, '确认拒绝', {
+      type: 'warning',
+      confirmButtonText: '确认拒绝',
+      cancelButtonText: '取消',
+    })
+    return true
+  } catch {
+    return false
+  }
+}
+
 const openPostDetail = async (postId: string, sourceLabel = '帖子详情') => {
   detailDialogTitle.value = sourceLabel
   detailDialogVisible.value = true
@@ -596,76 +808,134 @@ const reloadKnowledge = async () => {
   await store.loadKnowledgeItems()
 }
 
-const approvePost = async (postId: string) => {
+const approvePost = async (post: ReviewItem) => {
+  if (isRowBusy('post', post.id)) return
+  setRowAction('post', post.id, 'approve')
   try {
-    await store.approvePost(postId)
+    await store.approvePost(post.id)
     ElMessage.success('帖子已审核通过')
-  } catch {
-    ElMessage.error(store.lastError || '帖子审核失败')
+  } catch (error) {
+    ElMessage.error(parseActionError(error, '帖子审核失败').message)
+  } finally {
+    clearRowAction('post', post.id)
   }
 }
 
-const approveAndBuild = async (postId: string) => {
+const approveAndBuild = async (post: ReviewItem) => {
+  if (isRowBusy('post', post.id)) return
+  setRowAction('post', post.id, 'approveAndBuild')
   try {
-    await store.approvePost(postId)
-    const result = await store.buildKnowledge(postId)
-    ElMessage.success(`帖子已通过审核并生成社区知识：${result.knowledgeId}`)
-  } catch {
-    ElMessage.error(store.lastError || '通过并生成社区知识失败')
+    try {
+      await store.approvePost(post.id)
+    } catch (error) {
+      ElMessage.error(parseActionError(error, '帖子审核失败').message)
+      return
+    }
+
+    // 审核已成功；后续生成失败只进入“部分失败”，不回滚、不重复 approve。
+    try {
+      const result = await store.buildKnowledge(post.id)
+      clearKnowledgeFailure(post.id)
+      ElMessage.success(`帖子已通过审核并生成社区知识：${result.knowledgeId}`)
+    } catch (error) {
+      const info = parseActionError(error, '知识生成失败')
+      setKnowledgeFailure(post, info)
+      ElMessage.warning('帖子已通过审核，但知识生成失败，可只重试生成')
+    }
+  } finally {
+    clearRowAction('post', post.id)
   }
 }
 
-const buildKnowledge = async (postId: string) => {
+const runKnowledgeGenerate = async (post: ReviewItem) => {
+  if (isRowBusy('post', post.id)) return
+  setRowAction('post', post.id, 'generate')
   try {
-    const result = await store.buildKnowledge(postId)
+    const result = await store.buildKnowledge(post.id)
+    clearKnowledgeFailure(post.id)
     ElMessage.success(`社区知识已生成：${result.knowledgeId}`)
-  } catch {
-    ElMessage.error(store.lastError || '生成社区知识失败')
+  } catch (error) {
+    const info = parseActionError(error, '生成社区知识失败')
+    setKnowledgeFailure(post, info)
+    ElMessage.error(info.retryable ? '知识生成失败，可重试生成' : info.message)
+  } finally {
+    clearRowAction('post', post.id)
   }
 }
 
-const approveKnowledge = async (knowledgeId: string) => {
+const buildKnowledge = (post: ReviewItem) => runKnowledgeGenerate(post)
+
+// 部分失败重试：只调用 generate，不重复 approve。
+const retryKnowledge = async (failure: KnowledgeFailure) => {
+  const target = store.knowledgeCandidates.find((item) => item.id === failure.postId)
+  await runKnowledgeGenerate({ id: failure.postId, title: failure.title || target?.title })
+}
+
+const approveKnowledge = async (item: { id: string; title?: string }) => {
+  if (isRowBusy('knowledge', item.id)) return
+  setRowAction('knowledge', item.id, 'approveKnowledge')
   try {
-    await store.approveKnowledge(knowledgeId)
+    await store.approveKnowledge(item.id)
     ElMessage.success('社区知识已审核通过')
-  } catch {
-    ElMessage.error(store.lastError || '社区知识审核失败')
+  } catch (error) {
+    ElMessage.error(parseActionError(error, '社区知识审核失败').message)
+  } finally {
+    clearRowAction('knowledge', item.id)
   }
 }
 
-const rejectKnowledge = async (knowledgeId: string) => {
+const rejectKnowledge = async (item: { id: string; title?: string }) => {
+  if (isRowBusy('knowledge', item.id)) return
+  if (!(await confirmReject(item.title || '该社区知识'))) return
+  setRowAction('knowledge', item.id, 'rejectKnowledge')
   try {
-    await store.rejectKnowledge(knowledgeId)
+    await store.rejectKnowledge(item.id)
     ElMessage.success('社区知识已拒绝')
-  } catch {
-    ElMessage.error(store.lastError || '社区知识拒绝失败')
+  } catch (error) {
+    ElMessage.error(parseActionError(error, '社区知识拒绝失败').message)
+  } finally {
+    clearRowAction('knowledge', item.id)
   }
 }
 
-const rejectPost = async (postId: string) => {
+const rejectPost = async (post: ReviewItem) => {
+  if (isRowBusy('post', post.id)) return
+  if (!(await confirmReject(post.title || '该帖子'))) return
+  setRowAction('post', post.id, 'reject')
   try {
-    await store.rejectPost(postId)
+    await store.rejectPost(post.id)
     ElMessage.success('帖子已拒绝')
-  } catch {
-    ElMessage.error(store.lastError || '帖子拒绝失败')
+  } catch (error) {
+    ElMessage.error(parseActionError(error, '帖子拒绝失败').message)
+  } finally {
+    clearRowAction('post', post.id)
   }
 }
 
-const approveReply = async (replyId: string) => {
+const approveReply = async (reply: ReviewItem) => {
+  if (isRowBusy('reply', reply.id)) return
+  setRowAction('reply', reply.id, 'approve')
   try {
-    await store.approveReply(replyId)
+    await store.approveReply(reply.id)
     ElMessage.success('回复已审核通过')
-  } catch {
-    ElMessage.error(store.lastError || '回复审核失败')
+  } catch (error) {
+    ElMessage.error(parseActionError(error, '回复审核失败').message)
+  } finally {
+    clearRowAction('reply', reply.id)
   }
 }
 
-const rejectReply = async (replyId: string) => {
+const rejectReply = async (reply: ReviewItem) => {
+  if (isRowBusy('reply', reply.id)) return
+  if (!(await confirmReject(`回复 ${reply.id}`))) return
+  setRowAction('reply', reply.id, 'reject')
   try {
-    await store.rejectReply(replyId)
+    await store.rejectReply(reply.id)
     ElMessage.success('回复已拒绝')
-  } catch {
-    ElMessage.error(store.lastError || '回复拒绝失败')
+  } catch (error) {
+    ElMessage.error(parseActionError(error, '回复拒绝失败').message)
+  } finally {
+    clearRowAction('reply', reply.id)
   }
 }
 
@@ -1392,5 +1662,94 @@ onMounted(async () => {
   .board-section__actions {
     flex-wrap: wrap;
   }
+}
+</style>
+
+<style scoped>
+/* 6.4：部分失败面板与行内错误。 */
+.knowledge-failure-panel {
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.1rem 1.25rem;
+  background: var(--white);
+}
+
+.knowledge-failure-panel__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.knowledge-failure-panel__head h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.knowledge-failure-panel__head span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.knowledge-failure-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-top: 1px solid var(--soft);
+  padding: 0.75rem 0;
+}
+
+.knowledge-failure-row:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.knowledge-failure-row__copy strong {
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.knowledge-failure-row__copy p {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.knowledge-failure-row__copy small {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--faint);
+  font-size: 0.75rem;
+}
+
+.knowledge-failure-row__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.row-failure {
+  margin: 0.5rem 0 0;
+  border-radius: var(--radius-sm);
+  padding: 0.45rem 0.7rem;
+  color: var(--text);
+  background: var(--silver);
+  font-size: 0.8rem;
+}
+
+.row-failure button {
+  border: 0;
+  padding: 0;
+  color: var(--link);
+  background: transparent;
+  font-size: 0.8rem;
+  text-decoration: underline;
+  cursor: pointer;
 }
 </style>
