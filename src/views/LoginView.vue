@@ -1,124 +1,128 @@
-﻿<template>
-  <div class="login-card login-card--dialog">
-      <div class="login-card__head">
-        <div class="login-kicker">数智校答 · 账号入口</div>
-        <h1>登录校园智能服务台</h1>
-        <p>
-          校园用户使用邮箱登录服务台；知识运营员使用管理员账号进入运营后台。
+<template>
+  <div class="login-panel">
+    <header class="login-panel__head">
+      <div>
+        <p class="login-panel__title">账号</p>
+        <p class="login-panel__note">登录后继续刚才的操作。</p>
+      </div>
+      <button type="button" class="login-panel__close" @click="emit('close')">关闭</button>
+    </header>
+
+    <el-tabs v-model="activeTab" class="login-tabs" stretch>
+      <el-tab-pane label="登录" name="login">
+        <p class="login-explain">登录后可继续提问、查看社区和管理账号。</p>
+
+        <el-form label-position="top" class="login-form" @submit.prevent>
+          <el-form-item label="邮箱">
+            <el-input
+              v-model="loginForm.account"
+              placeholder="name@school.edu"
+              @input="loginError = ''"
+            />
+          </el-form-item>
+
+          <el-form-item label="密码">
+            <el-input
+              v-model="loginForm.password"
+              type="password"
+              show-password
+              placeholder="请输入密码"
+              @input="loginError = ''"
+              @keyup.enter="submitLogin"
+            />
+          </el-form-item>
+        </el-form>
+
+        <p v-if="loginError" class="login-error" role="alert">{{ loginError }}</p>
+
+        <el-button
+          type="primary"
+          round
+          class="login-submit"
+          :loading="submittingLogin"
+          @click="submitLogin"
+        >
+          登录
+        </el-button>
+
+        <p class="login-switch">
+          没有账号？
+          <button type="button" @click="activeTab = 'register'">注册</button>
         </p>
-      </div>
+        <p class="login-footnote">关闭后保留当前页面和输入内容。</p>
+      </el-tab-pane>
 
-      <div class="login-highlights">
-        <div class="login-highlight">
-          <strong>可信事项导办</strong>
-          <span>查询校园规则、办理步骤和可核对来源。</span>
-        </div>
-        <div class="login-highlight">
-          <strong>校园经验</strong>
-          <span>校园用户可发帖与回复，审核后可沉淀为辅助知识。</span>
-        </div>
-        <div class="login-highlight">
-          <strong>知识运营</strong>
-          <span>运营人员审核内容、发布知识并维护检索运行。</span>
-        </div>
-      </div>
+      <el-tab-pane label="注册" name="register">
+        <p class="login-explain">注册仅支持校园用户；验证码会发送到填写的邮箱。</p>
 
-      <el-tabs v-model="activeTab" class="login-tabs" stretch>
-        <el-tab-pane label="登录" name="login">
-          <el-alert
-            title="知识运营员输入账号；校园用户输入注册邮箱。"
-            type="success"
-            :closable="false"
-            show-icon
-          />
+        <el-form label-position="top" class="login-form" @submit.prevent>
+          <el-form-item label="姓名 / 昵称">
+            <el-input v-model="registerForm.displayName" placeholder="请输入姓名或昵称" />
+          </el-form-item>
 
-          <el-form label-position="top" class="login-form">
-            <el-form-item label="账号 / 邮箱">
-              <el-input v-model="loginForm.account" placeholder="管理员输入账号，普通用户输入邮箱" />
-            </el-form-item>
+          <el-form-item label="注册邮箱">
+            <el-input v-model="registerForm.email" placeholder="name@school.edu" @input="registerError = ''" />
+          </el-form-item>
 
-            <el-form-item label="密码">
+          <el-form-item label="验证码">
+            <div class="verify-row">
               <el-input
-                v-model="loginForm.password"
-                type="password"
-                show-password
-                placeholder="请输入密码"
-                @keyup.enter="submitLogin"
-              />
-            </el-form-item>
-          </el-form>
-
-          <div class="login-actions login-actions--single">
-            <el-button type="primary" round :loading="submittingLogin" @click="submitLogin">
-              登录并继续
-            </el-button>
-          </div>
-        </el-tab-pane>
-
-        <el-tab-pane label="注册" name="register">
-          <el-alert
-            title="注册仅支持普通用户；验证码会发送到填写的邮箱，注册成功后系统会通知管理员邮箱。"
-            type="info"
-            :closable="false"
-            show-icon
-          />
-
-          <el-form label-position="top" class="login-form">
-            <el-form-item label="姓名 / 昵称">
-              <el-input v-model="registerForm.displayName" placeholder="请输入姓名或昵称" />
-            </el-form-item>
-
-            <el-form-item label="邮箱（唯一标识）">
-              <el-input v-model="registerForm.email" placeholder="请输入常用邮箱，用于接收验证码和后续登录" />
-            </el-form-item>
-
-            <el-form-item label="邮箱验证码">
-              <div class="verify-row">
-                <el-input
-                  v-model="registerForm.verifyCode"
-                  placeholder="请输入邮箱验证码"
-                  @keyup.enter="submitRegister"
-                />
-                <el-button
-                  class="verify-row__button"
-                  round
-                  :loading="sendingCode"
-                  :disabled="countdown > 0"
-                  @click="sendCode"
-                >
-                  {{ countdown > 0 ? `${countdown}s 后重发` : '发送验证码' }}
-                </el-button>
-              </div>
-            </el-form-item>
-
-            <el-form-item label="密码">
-              <el-input
-                v-model="registerForm.password"
-                type="password"
-                show-password
-                placeholder="请设置至少 6 位密码"
-              />
-            </el-form-item>
-
-            <el-form-item label="确认密码">
-              <el-input
-                v-model="registerForm.confirmPassword"
-                type="password"
-                show-password
-                placeholder="请再次输入密码"
+                v-model="registerForm.verifyCode"
+                placeholder="输入邮箱验证码"
+                @input="registerError = ''"
                 @keyup.enter="submitRegister"
               />
-            </el-form-item>
-          </el-form>
+              <el-button
+                class="verify-row__button"
+                round
+                :loading="sendingCode"
+                :disabled="countdown > 0"
+                @click="sendCode"
+              >
+                {{ countdown > 0 ? `${countdown}s 后重发` : '发送验证码' }}
+              </el-button>
+            </div>
+          </el-form-item>
 
-          <div class="login-actions">
-            <el-button round @click="backToLogin">返回登录</el-button>
-            <el-button type="primary" round :loading="submittingRegister" @click="submitRegister">
-              注册普通用户
-            </el-button>
-          </div>
-        </el-tab-pane>
-      </el-tabs>
+          <el-form-item label="设置密码">
+            <el-input
+              v-model="registerForm.password"
+              type="password"
+              show-password
+              placeholder="至少 8 位"
+            />
+          </el-form-item>
+
+          <el-form-item label="确认密码">
+            <el-input
+              v-model="registerForm.confirmPassword"
+              type="password"
+              show-password
+              placeholder="请再次输入密码"
+              @keyup.enter="submitRegister"
+            />
+          </el-form-item>
+        </el-form>
+
+        <p v-if="registerError" class="login-error" role="alert">{{ registerError }}</p>
+
+        <el-button
+          type="primary"
+          round
+          class="login-submit"
+          :loading="submittingRegister"
+          @click="submitRegister"
+        >
+          创建账号
+        </el-button>
+
+        <p class="login-switch">
+          已有账号？
+          <button type="button" @click="backToLogin">返回登录</button>
+        </p>
+        <p class="login-footnote">注册成功后返回登录，并保留刚才的操作。</p>
+      </el-tab-pane>
+    </el-tabs>
   </div>
 </template>
 
@@ -133,6 +137,7 @@ type LoginRole = 'user' | 'admin'
 
 const emit = defineEmits<{
   (e: 'login-success', role: LoginRole): void
+  (e: 'close'): void
 }>()
 
 const authStore = useAuthStore()
@@ -141,6 +146,8 @@ const submittingLogin = ref(false)
 const submittingRegister = ref(false)
 const sendingCode = ref(false)
 const countdown = ref(0)
+const loginError = ref('')
+const registerError = ref('')
 let countdownTimer: number | null = null
 
 const loginForm = ref({
@@ -203,6 +210,7 @@ const sendCode = async () => {
 
 const submitLogin = async () => {
   submittingLogin.value = true
+  loginError.value = ''
   try {
     const role = await authStore.login({
       account: loginForm.value.account,
@@ -212,7 +220,7 @@ const submitLogin = async () => {
     ElMessage.success(role === 'admin' ? '知识运营员登录成功' : '登录成功')
     emit('login-success', role)
   } catch (error) {
-    ElMessage.error(extractErrorMessage(error, '登录失败'))
+    loginError.value = extractErrorMessage(error, '登录失败')
   } finally {
     submittingLogin.value = false
   }
@@ -220,6 +228,7 @@ const submitLogin = async () => {
 
 const submitRegister = async () => {
   submittingRegister.value = true
+  registerError.value = ''
   try {
     await authStore.register({
       displayName: registerForm.value.displayName,
@@ -248,7 +257,7 @@ const submitRegister = async () => {
     activeTab.value = 'login'
     ElMessage.success('注册成功，请使用邮箱和密码登录')
   } catch (error) {
-    ElMessage.error(extractErrorMessage(error, '注册失败'))
+    registerError.value = extractErrorMessage(error, '注册失败')
   } finally {
     submittingRegister.value = false
   }
@@ -431,6 +440,155 @@ onBeforeUnmount(() => {
     grid-row: 1 / 3;
     align-self: center;
     padding: 2.5rem 2.6rem;
+  }
+}
+</style>
+
+<style scoped>
+/* 22:35 账号：银白卡片、绿色主按钮、错误文案用中性色。 */
+.login-panel {
+  padding: 2rem 2.2rem 2.2rem;
+  background: var(--white);
+}
+
+.login-panel__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.login-panel__title {
+  margin: 0;
+  color: var(--text);
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.login-panel__note {
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.login-panel__close {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 0.35rem 0.8rem;
+  color: var(--muted);
+  background: var(--white);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.login-panel__close:hover {
+  color: var(--text);
+  border-color: var(--faint);
+}
+
+.login-tabs {
+  margin-top: 1rem;
+}
+
+:deep(.el-tabs__header) {
+  margin-bottom: 1.25rem;
+}
+
+:deep(.el-tabs__item) {
+  font-size: 0.95rem;
+}
+
+.login-explain {
+  margin: 0 0 1rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.65;
+}
+
+.login-form :deep(.el-form-item) {
+  margin-bottom: 1rem;
+}
+
+.login-form :deep(.el-form-item__label) {
+  padding-bottom: 0.35rem;
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.login-form :deep(.el-input__wrapper) {
+  border-radius: var(--radius-sm);
+}
+
+.login-error {
+  margin: 0.15rem 0 0.85rem;
+  color: var(--text);
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
+.login-submit {
+  width: 100%;
+  min-height: 2.75rem;
+  margin-top: 0.2rem;
+}
+
+.login-switch {
+  margin: 1rem 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.login-switch button {
+  border: 0;
+  padding: 0;
+  color: var(--link);
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.login-footnote {
+  margin: 1.6rem 0 0;
+  color: var(--faint);
+  font-size: 0.78rem;
+}
+
+.verify-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.5rem;
+}
+
+.verify-row__button {
+  min-height: 2.75rem;
+  border-color: transparent;
+  color: var(--brand);
+  background: var(--tint);
+}
+
+.verify-row__button:hover {
+  border-color: var(--brand);
+  background: var(--tint);
+}
+
+@media (max-width: 34rem) {
+  .login-panel {
+    padding: 1.4rem 1.2rem 1.6rem;
+  }
+
+  .login-panel__title {
+    font-size: 1.6rem;
+  }
+
+  .verify-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .verify-row__button {
+    width: 100%;
   }
 }
 </style>

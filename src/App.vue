@@ -100,7 +100,7 @@
     class="login-dialog"
     @closed="handleDialogClosed"
   >
-    <LoginView @login-success="handleLoginSuccess" />
+    <LoginView @login-success="handleLoginSuccess" @close="loginDialogVisible = false" />
   </el-dialog>
 
   <HelpPanel v-model="helpVisible" />
