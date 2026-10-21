@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "completedAt": "2026-10-21T08:50:41.551Z",
+  "mode": "isolated_mysql",
+  "database": "ai_campus_agent_test_64",
+  "ok": true,
+  "steps": [
+    {
+      "name": "MySQL 连接",
+      "ok": true,
+      "detail": "ai_campus_agent_test_64"
+    },
+    {
+      "name": "状态机：通过幂等/相反终态",
+      "ok": true,
+      "detail": "status=approved logs=1"
+    },
+    {
+      "name": "状态机：拒绝后不可通过",
+      "ok": true,
+      "detail": "status=rejected logs=1"
+    },
+    {
+      "name": "并发审核竞态",
+      "ok": true,
+      "detail": "status=approved logs=1"
+    },
+    {
+      "name": "回复状态机",
+      "ok": true,
+      "detail": "reply=reply_007e2e90 logs=1"
+    },
+    {
+      "name": "未审核生成拒绝",
+      "ok": true,
+      "detail": "POST_NOT_APPROVED"
+    },
+    {
+      "name": "生成幂等",
+      "ok": true,
+      "detail": "knowledgeId=ck_51924d95 rows=1"
+    },
+    {
+      "name": "并发生成幂等",
+      "ok": true,
+      "detail": "knowledgeId=ck_6f293ddd rows=1"
+    },
+    {
+      "name": "唯一键兜底",
+      "ok": true,
+      "detail": "ER_DUP_ENTRY"
+    }
+  ]
+}
