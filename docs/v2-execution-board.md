@@ -56,13 +56,13 @@
 | S1 | 5 | 5 | 0 | 0 | 0 | 0 | — |
 | S2 | 5 | 0 | 5 | 0 | 0 | 0 | 等 2.1 设计稿 |
 | S3 | 5 | 5 | 0 | 0 | 0 | 0 | — |
-| S4 | 6 | 3 | 2 | 0 | 0 | 1 | — |
+| S4 | 6 | 3 | 2 | 0 | 0 | 1 | 等 AI-1 完成 2.3/4.4 展示 |
 | S5 | 4 | 0 | 0 | 0 | 0 | 4 | 等 5.1 数据 |
 | S6 | 5 | 0 | 5 | 0 | 0 | 0 | 2.1 之后 |
 | S7 | 5 | 0 | 2 | 0 | 0 | 3 | 等 7.1 MySQL 验证 |
 | **合计** | **39** | **15** | **16** | **0** | **0** | **8** | — |
 
-> 已完成：0.1、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、3.1、3.2、3.3、3.4、3.5、4.1、4.2、4.3。S1/S3 已全部完成；7.1 数据层代码已提交，待专用 MySQL 测试库验证；2.x 等设计稿。实时状态以本表为准。
+> 已完成：0.1、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、3.1、3.2、3.3、3.4、3.5、4.1、4.2、4.3。S1/S3 已全部完成；4.4 服务端已提交，待 AI-1 类型/展示部分；7.1 数据层代码已提交，待专用 MySQL 测试库验证；2.x 等设计稿。实时状态以本表为准。
 
 ---
 
@@ -114,7 +114,7 @@
 | 4.1 | 前端请求身份与取消 | AI-1 | ✅ | 3.5 | `streamChat(..., signal)`（fetch + Mock 均响应取消）；`activeRun` 绑定 `ownerScope/conversationId/assistantMessageId/runId`，迟到回调校验失败即丢弃；停止/切会话/刷新保留文本并标 `interrupted`；重试复用原问题与回答位置。证据：`0c5a877`；`npm run test:unit` 49/49（新增 7）；type-check/lint/build 通过 |
 | 4.2 | 取消传递到检索与模型 | AI-2 | ✅ | 4.1（按人工决定可先行） | `ab5455b`；`npm run test:server` 36/36；`npm run server:check` 53 模块通过；定向 ESLint 通过。req/res/socket 断开与超时信号合并；LightRAG、向量检索和模型流接收取消信号；首段前回滚、断开且首段后结算；正常 finish 不报中断；四个边界测试通过 |
 | 4.3 | 阶段事件与额度结算 | AI-2 | ✅ | 4.2、0.4 | `4623976`；`npm run test:server` 37/37；`npm run server:check` 55 模块通过；定向 ESLint、`git diff --check` 通过。`start` 在检索前；发出真实 retrieval/generation phase；正常完成与断开竞态只结算一次 |
-| 4.4 | 来源元数据统一适配 | AI-2（主）+ AI-1（类型/展示） | 🟡 | 1.2、2.3 | 统一适配器产出 `sourceId/type/title/url/attachments/publishedAt/updatedAt/applicablePeriod/validity`；三支来源兼容；缺失日期显示“未提供”；去掉“可信度 %” |
+| 4.4 | 来源元数据统一适配 | AI-2（主）+ AI-1（类型/展示） | 🟡 | 1.2；展示依赖 2.3 | 服务端部分完成：`6112c0b`；`npm run test:server` 45/45；`npm run server:check` 60 模块通过；定向 ESLint 与 `git diff --check` 通过。统一适配 RAG/LightRAG/规则来源；响应含稳定 `sourceId` 与时效字段，下载路径统一到 `/api/kb/download`，不输出可信度分数。**剩余**：AI-1 在 2.3 后完成前端类型/展示、缺失日期文案和可信度百分比清理 |
 | 4.5 | 按需语音控制 | AI-1（主）+ AI-2（去密钥） | 🟡 | 3.4、4.1 | 默认不自动 TTS；`useNarration` 单队列、分段、晚到 Blob 丢弃、ObjectURL 释放；**删除 `TTS_AUTH_TOKEN` 前端旁路**；游客登录后恢复播放 |
 | 4.6 | 生成/来源/媒体联测 | 共同（AI-1 主导） | ⬜ | 4.3、4.4、4.5 | 覆盖跨会话晚到、过期登录、刷新中断、重试、来源选中、TTS 失败、移动端播放限制 |
 
@@ -208,6 +208,8 @@
 | --- | --- | --- | --- | --- |
 | 2026-10-20 | 4.3 阶段事件与额度结算 | AI-2（Codex） | `4623976`；`npm run test:server` 37/37；`npm run server:check` 55 模块；定向 ESLint 与 `git diff --check` 通过 | start 前移至检索前；新增 retrieval/generation phase 与单次结算竞态覆盖 |
 | 2026-10-20 | 部分 | 7.1 数据层代码提交 `4bd44ac`；服务端测试 41/41，语法检查 58 模块通过 | AI-2（Codex） |
+| 2026-10-21 | 占用 | 领取 4.4 服务端部分：统一规则来源、知识库命中与 LightRAG 来源元数据 | AI-2（Codex） |
+| 2026-10-21 | 部分 | 4.4 服务端来源适配提交 `6112c0b`；`npm run test:server` 45/45，语法检查 60 个模块，定向 ESLint 通过 | AI-2（Codex） |
 | 2026-10-20 | 3.4 登录意图 | AI-1 | `f3920b8`；`npm run auth-intent:journey` 5/5；`server/evals/latest-auth-intent-journey.json`；`npm run test:unit` 65/65；lint/type-check/build 通过 | 浏览器回归发现并修复 `chat-detail` 未绑定 `require-login` |
 | 2026-10-20 | 3.3 会话路由与历史 | AI-1 | `3c12a46` + `153e61c`；`npm run conversation:journey` 8/8；`server/evals/latest-conversation-journey.json`；`npm run test:unit` 55/55 | 真实 Chrome 回归：路由、刷新、历史、草稿、无效 ID、后退 |
 | 2026-10-20 | 1.4 权限与返回 | AI-1 | `63ae7d2`；`npm run test:unit` 55/55；`npm run lint` 0 error；`npm run type-check` 通过 | 403 与登录意图分离；外部直达无历史回落首页 |
