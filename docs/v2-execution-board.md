@@ -54,15 +54,15 @@
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | S0 | 4 | 2 | 2 | 0 | 0 | 0 | 0.3 收尾 |
 | S1 | 5 | 5 | 0 | 0 | 0 | 0 | — |
-| S2 | 5 | 2 | 3 | 0 | 0 | 0 | **2.3** |
+| S2 | 5 | 3 | 2 | 0 | 0 | 0 | **2.4** |
 | S3 | 5 | 5 | 0 | 0 | 0 | 0 | — |
-| S4 | 6 | 3 | 2 | 0 | 0 | 1 | 等 AI-1 完成 2.3/4.4 展示 |
+| S4 | 6 | 4 | 1 | 0 | 0 | 1 | 4.5 / 4.6 |
 | S5 | 4 | 0 | 0 | 0 | 0 | 4 | 等 5.1 数据 |
 | S6 | 5 | 0 | 5 | 0 | 0 | 0 | 2.1 之后 |
 | S7 | 5 | 1 | 1 | 0 | 0 | 3 | **7.2 可启动** |
-| **合计** | **39** | **18** | **13** | **0** | **0** | **8** | — |
+| **合计** | **39** | **20** | **11** | **0** | **0** | **8** | — |
 
-> 已完成：0.1、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、2.1、2.2、3.1、3.2、3.3、3.4、3.5、4.1、4.2、4.3、7.1。S1/S3 已全部完成；首页与公共导航已按 Figma 重做，2.3 问答布局进行中；4.4 前端展示待 2.3；7.2 可启动。实时状态以本表为准。
+> 已完成：0.1、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、2.1、2.2、2.3、3.1、3.2、3.3、3.4、3.5、4.1、4.2、4.3、4.4、7.1。S1/S3 已全部完成；首页与问答页已按 Figma 重做，2.4/2.5 继续；4.5 剩余按需队列与取消；7.2 可启动。实时状态以本表为准。
 
 ---
 
@@ -93,7 +93,7 @@
 | --- | --- | --- | --- | --- | --- |
 | 2.1 | 落地颜色/字体/间距/图标 | AI-1 | ✅ | 0.2、1.3、**视觉决策** | 设计包已入库：`71dcb6b`（`docs/design/`，Figma 导出非截图）。`f511dde`：银白/深绿 token（`#F5F5F7`/`#1D1D1F`/`#005B46`/`#00664F`/`#E7F1EC`/`#D2D2D7`）、Noto Sans SC、去除页面网格/径向光晕/纸张底/黄色渐变/粗重偏移阴影、绿色胶囊按钮与输入框焦点环；SVG 已入 `public/icons` 并去掉导出背景。证据：65 单测/type-check/lint/build 通过；1440 截图 `docs/design/verify/home-1440.png`。**注**：页面布局仍是旧结构，由 2.2/2.3 替换 |
 | 2.2 | 首页与公共导航 | AI-1 | ✅ | 2.1 | `HomeView.vue` 独立：Figma hero、静态产品预览、四张常办事项卡、页脚；公共导航含问答/社区/办事指南/关于校答 + 登录；`HelpPanel` 说明面板可开；`/services` 先提供真实空态，不伪造未建数据；开始提问只进 `/chat/new` 并聚焦输入框，不发送、不建空历史。证据：`e5ba122`；`npm run home:journey` **6/6**（`server/evals/latest-home-flow.json`）；1440/390 截图 `docs/design/verify/home-new-*.png`；65 单测/type-check/lint/build 通过 |
-| 2.3 | 响应式问答布局 | AI-1 | 🟡 | 2.1 | 阅读区 + 桌面来源栏 + 手机来源抽屉；来源绑定选中回答 ID；长回答/多来源不挤掉输入区 |
+| 2.3 | 响应式问答布局 | AI-1 | ✅ | 2.1 | `53a6144`：阅读列 720px + 桌面来源栏 276px；页头历史/来源/新建对话；用户右侧气泡、校答阅读式回答、复制/朗读；`SourceCard` 统一来源卡；手机“查看 N 份官方来源”面板；来源绑定最近回答 ID；长回答/多来源不挤掉固定输入区。证据：`npm run chat:layout` **5/5**（`server/evals/latest-chat-layout.json`）；截图 `docs/design/verify/chat-answer-1440.png`、`chat-sources-390.png`；70 单测/type-check/lint/build 通过 |
 | 2.4 | 输入与推荐问题 | AI-1 | 🟡 | 2.3 | 中文 IME 组合期 Enter 不发送（A04）；Shift+Enter 换行；草稿持久化；推荐问题只预填并聚焦；空值/重复提交统一处理 |
 | 2.5 | 连接问答并验证手机布局 | AI-1（主）+ AI-2（脚本矩阵） | 🟡 | 2.3、2.4 | 360/390/768/1024/1440 五宽度 0 溢出、发送控件可见；`inspect-responsive-layout` 支持宽度矩阵与截图落盘；真实流式回答正常 |
 
@@ -114,8 +114,8 @@
 | 4.1 | 前端请求身份与取消 | AI-1 | ✅ | 3.5 | `streamChat(..., signal)`（fetch + Mock 均响应取消）；`activeRun` 绑定 `ownerScope/conversationId/assistantMessageId/runId`，迟到回调校验失败即丢弃；停止/切会话/刷新保留文本并标 `interrupted`；重试复用原问题与回答位置。证据：`0c5a877`；`npm run test:unit` 49/49（新增 7）；type-check/lint/build 通过 |
 | 4.2 | 取消传递到检索与模型 | AI-2 | ✅ | 4.1（按人工决定可先行） | `ab5455b`；`npm run test:server` 36/36；`npm run server:check` 53 模块通过；定向 ESLint 通过。req/res/socket 断开与超时信号合并；LightRAG、向量检索和模型流接收取消信号；首段前回滚、断开且首段后结算；正常 finish 不报中断；四个边界测试通过 |
 | 4.3 | 阶段事件与额度结算 | AI-2 | ✅ | 4.2、0.4 | `4623976`；`npm run test:server` 37/37；`npm run server:check` 55 模块通过；定向 ESLint、`git diff --check` 通过。`start` 在检索前；发出真实 retrieval/generation phase；正常完成与断开竞态只结算一次 |
-| 4.4 | 来源元数据统一适配 | AI-2（主）+ AI-1（类型/展示） | 🟡 | 1.2；展示依赖 2.3 | 服务端部分完成：`6112c0b`；`npm run test:server` 45/45；`npm run server:check` 60 模块通过；定向 ESLint 与 `git diff --check` 通过。统一适配 RAG/LightRAG/规则来源；响应含稳定 `sourceId` 与时效字段，下载路径统一到 `/api/kb/download`，不输出可信度分数。**剩余**：AI-1 在 2.3 后完成前端类型/展示、缺失日期文案和可信度百分比清理 |
-| 4.5 | 按需语音控制 | AI-1（主）+ AI-2（服务端去密钥） | 🟡 | 3.4、4.1 | 服务端 `f620cde`：旧共享密钥不能通过鉴权（45/45）。前端 `7a06d04`：删除 `VITE_TTS_AUTH_TOKEN` 与 Authorization 覆盖，仅带登录会话 + `credentials: include`；TTS 与分段兜底都失败时播放器只发一次 `narration-error`，问答页显示“语音播报暂不可用，文字回答和来源不受影响”。**剩余**：按需播放队列、统一取消/ObjectURL 释放、游客登录后恢复播放 |
+| 4.4 | 来源元数据统一适配 | AI-2（主）+ AI-1（类型/展示） | ✅ | 1.2；展示依赖 2.3 | 服务端 `6112c0b`（45/45、60 模块）。前端 `53a6144`：`MessageSource` 对齐 `sourceId/type/attachments.mimeType/publishedAt/updatedAt/applicablePeriod/validity` 并删除 `confidence`；`source-display.ts` 统一类型/日期/时效文案，缺失日期显示“日期未提供”；`SourceCard` 展示类型、时效、日期、摘要、附件与原文链接；Mock 来源同步新结构。5 个 source-display 单测；70 单测/type-check/lint/build 通过 |
+| 4.5 | 按需语音控制 | AI-1（主）+ AI-2（服务端去密钥） | 🟡 | 3.4、4.1 | 服务端 `f620cde`：旧共享密钥不能通过鉴权（45/45）。前端 `7a06d04`：删除 `VITE_TTS_AUTH_TOKEN` 与 Authorization 覆盖，仅登录会话 + `credentials: include`；失败提示。`53a6144`：默认不再自动 TTS，回答完成后由来源栏“语音讲解”显式开启/停止，播报状态跟随 store。**剩余**：语音队列单队列/晚到 Blob 丢弃/ObjectURL 释放、游客登录后恢复播放、移动端播放限制 |
 | 4.6 | 生成/来源/媒体联测 | 共同（AI-1 主导） | ⬜ | 4.3、4.4、4.5 | 覆盖跨会话晚到、过期登录、刷新中断、重试、来源选中、TTS 失败、移动端播放限制 |
 
 ### Sprint 5：办事指南（2–3 天）
@@ -208,6 +208,8 @@
 | --- | --- | --- | --- | --- |
 | 2026-10-21 | 2.2 首页与公共导航 | AI-1 | `e5ba122`；`npm run home:journey` 6/6；`server/evals/latest-home-flow.json`；1440/390 截图；65 单测/type-check/lint/build 通过 | HomeView、四导航、帮助面板、办事指南空态、CTA 聚焦且不建历史 |
 | 2026-10-21 | 2.1 设计 token | AI-1 | `71dcb6b` + `f511dde`；`npm run test:unit` 65/65；type-check/lint/build 通过；证据截图 `docs/design/verify/home-1440.png` | token/字体/图标/去纸张网格已完成；布局由 2.2/2.3 替换 |
+| 2026-10-21 | 2.3 响应式问答布局 | AI-1 | `53a6144`；`npm run chat:layout` 5/5；`server/evals/latest-chat-layout.json`；截图 `docs/design/verify/chat-answer-1440.png`、`chat-sources-390.png`；70 单测/type-check/lint/build 通过 | 阅读列 + 桌面来源栏 + 手机来源面板；来源绑定回答；固定输入区 |
+| 2026-10-21 | 4.4 来源类型与展示 | AI-1 | `53a6144`；`source-display` 5 单测；70 单测/type-check/lint/build 通过 | 前端对齐后端契约；日期缺失“日期未提供”；删除可信度百分比 |
 | 2026-10-21 | 7.1 请求凭据与反馈增量表 | AI-2（Codex） | `4bd44ac`；`npm run test:server` 41/41；`npm run server:check` 58 模块；MySQL 8.0.39 隔离库实测迁移及 receipt/feedback 持久化、唯一约束 | 测试实例已关闭，数据目录已清理 |
 | 2026-10-20 | 4.3 阶段事件与额度结算 | AI-2（Codex） | `4623976`；`npm run test:server` 37/37；`npm run server:check` 55 模块；定向 ESLint 与 `git diff --check` 通过 | start 前移至检索前；新增 retrieval/generation phase 与单次结算竞态覆盖 |
 | 2026-10-20 | 部分 | 7.1 数据层代码提交 `4bd44ac`；服务端测试 41/41，语法检查 58 模块通过 | AI-2（Codex） |
@@ -272,6 +274,8 @@
 | 2026-10-21 | 部分 | 4.5 前端去共享密钥：删除 `VITE_TTS_AUTH_TOKEN`/Authorization 覆盖，仅登录会话；TTS 失败提示；65 单测/type-check/lint/build 通过，dev server 已重启 | AI-1 |
 | 2026-10-21 | 完成 | 2.1 设计 token：入库 Figma 导出与 token 文档；银白/深绿 token、Noto Sans SC、去网格/纸张/粗阴影、绿色胶囊控件、SVG 图标；2.2/2.3 接续布局 | AI-1 |
 | 2026-10-21 | 完成 | 2.2 首页与公共导航：HomeView（hero/预览/四卡）、四导航 + 关于校答面板、办事指南空态、CTA 只进 /chat/new 并聚焦不建历史；home:journey 6/6 | AI-1 |
+| 2026-10-21 | 完成 | 2.3 问答布局：720 阅读列 + 276 来源栏、消息操作、来源卡、手机来源面板、固定输入区；chat:layout 5/5 | AI-1 |
+| 2026-10-21 | 完成 | 4.4 前端：来源类型/日期/时效展示统一，缺失日期“日期未提供”，移除可信度百分比；默认不自动 TTS 改由语音卡触发 | AI-1 |
 
 ---
 
