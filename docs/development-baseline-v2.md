@@ -100,6 +100,6 @@ git show --stat 61756be
 | 风险 | 处理 |
 | --- | --- |
 | 沙箱内无法 build / 跑完整测试 | 在普通终端或 CI 执行后补记到本文件 §3 |
-| `product-status.md` 仍写 13/13、20/20 | 7.5 更新，勿引用旧数字 |
+| Top 50 金标和目标环境状态 | `product-status.md` 已按当前本地证据更新；Top 50 仍待 5.4 人工核对，真实模型/部署 MySQL/SMTP/TTS/HTTPS 仍待 7.4 验收 |
 | `src/project-text/exports/` 261 个 JSON 无引用 | 待人工决定移出或忽略（计划表 D-5） |
 | `mobile-uniapp` 迁移已提交，但不在 V2 范围 | 不改动；只在合并前确认无 Web 引用 |
