@@ -135,7 +135,7 @@
 | 6.2 | 投稿/回复/草稿 | AI-1 | ✅ | 6.1、3.5 | `e7b8c1a`：`community-draft` 按 ownerScope 隔离（游客/用户、回复按帖子 ID）；投稿与回复取消/刷新保留，显式“清空草稿”或提交成功才删除；`submitting` + 3 秒同负载去重阻止重复提交；待审核提示与“已提交但刷新失败”独立提示；切帖清空旧回复草稿状态。证据：4 个草稿单测；`community:journey` **13/13**（含草稿恢复/清空、POST 请求数=1 的防重复校验，`server/evals/latest-community-journey.json`）；90 单测/type-check/lint/build 通过 |
 | 6.3 | 后台路由与界面 | AI-1 | ✅ | 1.4、2.1 | `d098593`：`/admin/review` 与 `/admin/retrieval` 页签双向同步，刷新保持；审核/检索面板复用现有队列与 LightRAG 状态接口；银白/深绿视觉与响应式统计、队列、状态卡；手机 390 可审核、0 溢出；未登录直达回首页且后台接口返回 401。证据：`npm run admin:journey` **7/7**（`server/evals/latest-admin-journey.json`；截图 `admin-review-1440.png`、`admin-retrieval-1440.png`、`admin-review-390.png`）；90 单测/type-check/lint/build 通过 |
 | 6.4 | 审核状态与部分失败 | AI-2 + AI-1 | ✅ | 6.2、6.3 | 后端 `f065ba2`：`test:server` 56/56、定向 12/12；契约 §12。前端 `271e3e1`：结构化社区 API 错误、拒绝二次确认、行级 loading、通过+生成部分失败独立面板与“只重试生成”；`admin:journey` 11/11（approve=1/generate=2）。**隔离 MySQL 实测**：本地 MySQL8 新建 `ai_campus_agent_test_64`，应用建表后执行 9 项真实事务校验（通过/拒绝幂等与相反终态 409、并发 approve/reject 单次、回复状态机、未审核生成拒绝、生成幂等、三次并发生成同一 knowledgeId 且仅一行、`post_id` 唯一键 ER_DUP_ENTRY），全部通过后删除 schema，未写默认库；证据 `server/evals/latest-mysql-review-validation.json`。剩余（不阻塞 6.4）：可复跑 MySQL 测试待 7.3 纳入 CI。90 单测/type-check/lint/build 通过 |
-| 6.5 | 后台与社区闭环验证 | 共同 | 🟡 | 6.4、4.4 | 覆盖失败重试、来源返回、普通账号越权、LightRAG 未配置；正式数据不被 Mock 旅程写入 |
+| 6.5 | 后台与社区闭环验证 | 共同 | 🔵 | 6.4、4.4 | 覆盖失败重试、来源返回、普通账号越权、LightRAG 未配置；正式数据不被 Mock 旅程写入。AI-1 已认领：失败注入→部分失败→只重试生成→审核知识→问答来源回链，再补普通账号 403、LightRAG 未配置与内存隔离证据 |
 
 ### Sprint 7：反馈与发布（3–4 天）
 
