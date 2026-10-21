@@ -21,7 +21,6 @@ export const appConfig = {
   apiBaseUrl: resolveApiBaseUrl(),
   useMockChat: (import.meta.env.VITE_USE_MOCK_CHAT ?? 'false') === 'true',
   digitalHumanVideoBasePath: '/videos/digital-human',
-  ttsAuthToken: import.meta.env.VITE_TTS_AUTH_TOKEN || '',
   videoDebug: (import.meta.env.VITE_VIDEO_DEBUG ?? 'false') === 'true',
   lightragConsoleUrl: String(import.meta.env.VITE_LIGHTRAG_CONSOLE_URL || '').trim().replace(/\/$/, ''),
 } as const

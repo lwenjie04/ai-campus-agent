@@ -66,6 +66,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'request-idle'): void
   (e: 'narration-ended'): void
+  (e: 'narration-error'): void
 }>()
 
 // 视频和语音分开管理：mp4 负责画面，TTS 负责朗读文本。
@@ -77,6 +78,8 @@ const narrationToken = ref(0)
 const activeAudioUrl = ref('')
 const narrationQueue = ref<string[]>([])
 const narrationProcessing = ref(false)
+// 一次播报只提示一次失败，避免逐段失败刷屏。
+let narrationErrorNotified = false
 const lastVideoSrc = ref('')
 const videoSwitching = ref(false)
 
@@ -171,6 +174,7 @@ const checkRequiredVideos = async () => {
 // 同时停止后端 TTS 音频和浏览器语音合成兜底播放。
 const stopNarration = () => {
   narrationToken.value += 1
+  narrationErrorNotified = false
   narrationQueue.value = []
   narrationProcessing.value = false
   const audioEl = narrationAudioRef.value
@@ -298,7 +302,12 @@ const drainNarrationQueue = async (token: number) => {
         if (token !== narrationToken.value) return
         await playAudioBlob(blob, token)
       } catch {
-        await playNarrationBySegments(content, token).catch(() => false)
+        const played = await playNarrationBySegments(content, token).catch(() => false)
+        // 分段兜底也失败时给出一次可见提示；文字回答不受影响。
+        if (!played && token === narrationToken.value && !narrationErrorNotified) {
+          narrationErrorNotified = true
+          emit('narration-error')
+        }
       }
     }
   } finally {

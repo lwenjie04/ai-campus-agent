@@ -42,6 +42,7 @@
             :stop-signal="stopPlaySignal"
             @request-idle="onGreetingEnded"
             @narration-ended="onNarrationEnded"
+            @narration-error="onNarrationError"
           />
           <div class="stage-status" aria-hidden="true">
             <span class="stage-status__dot" />
@@ -750,6 +751,11 @@ const onGreetingEnded = () => {
 // 讲解语音播报结束后的回调。
 const onNarrationEnded = () => {
   store.onNarrationEnded()
+}
+
+// TTS 不可用时只提示一次；文字回答与来源仍然可用。
+const onNarrationError = () => {
+  conversationNotice.value = '语音播报暂不可用，文字回答和来源不受影响。'
 }
 
 // 跨标签页只刷新历史列表；正在生成的会话保持不动，避免旧标签页覆盖新回答。
