@@ -6,6 +6,7 @@ import { extname, resolve } from 'node:path'
 import { handleAuthRoute } from './auth.mjs'
 import { handleCommunityRoute } from './community.mjs'
 import { buildRuleBasedSources } from './sources-rules.mjs'
+import { adaptMessageSources } from './source-adapter.mjs'
 import {
   buildRagContext,
   filterConfidentRagHits,
@@ -746,11 +747,12 @@ const handleChatStream = async (req, res) => {
 
     // sources 优先使用真实 RAG 命中；如果没命中，再退回规则型来源。
     const classified = lowConfidenceResult || classifyIntentAndVideoCue(content)
-    const sources = lowConfidenceResult
+    const sourceCandidates = lowConfidenceResult
       ? []
       : ragSources.length > 0
         ? ragSources
         : buildRuleBasedSources(userText, classified.intent, 'real')
+    const sources = adaptMessageSources(sourceCandidates)
 
     writeEvent({
       type: 'meta',
@@ -927,6 +929,7 @@ const handleChat = async (req, res) => {
       videoCue = classified.videoCue
       sources = ragSources.length > 0 ? ragSources : buildRuleBasedSources(userText, intent, 'real')
     }
+    sources = adaptMessageSources(sources)
 
     const durationMs = Date.now() - startedAt
     console.log(

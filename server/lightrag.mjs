@@ -160,6 +160,7 @@ export const lightragContextToSources = (response, references) => {
       }
 
       sources.push({
+        id: ref.reference_id || ref.file_path || `reference-${index + 1}`,
         attachments: [],
         type: 'lightrag',
         confidence: 0.75,

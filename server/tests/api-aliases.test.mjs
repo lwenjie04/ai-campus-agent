@@ -92,6 +92,7 @@ test('V2 /api aliases preserve health, chat stream, login, and download authoriz
       (event) => event.type === 'phase' && event.phase === 'generation',
     )
     const firstDelta = events.findIndex((event) => event.type === 'delta')
+    const meta = events.find((event) => event.type === 'meta')
     assert.ok(generationPhase > 1, 'generation phase should follow retrieval')
     assert.ok(firstDelta > generationPhase, 'model output should follow generation phase')
     assert.ok(events.some((event) => event.type === 'delta'))
@@ -99,6 +100,13 @@ test('V2 /api aliases preserve health, chat stream, login, and download authoriz
     assert.ok(events[0]?.requestId)
     assert.ok(events[1]?.requestId)
     assert.ok(events.at(-1)?.requestId)
+    assert.ok(meta?.sources?.length)
+    for (const source of meta.sources) {
+      assert.ok(source.sourceId)
+      assert.ok(['official', 'knowledge_base', 'community', 'rule', 'lightrag'].includes(source.type))
+      assert.equal('confidence' in source, false)
+      assert.ok('publishedAt' in source && 'updatedAt' in source && 'validity' in source)
+    }
 
     const anonymousDownload = await fetch(`${baseUrl}/api/kb/download?id=not-a-real-file`)
     assert.equal(anonymousDownload.status, 401)

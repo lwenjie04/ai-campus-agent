@@ -629,11 +629,15 @@ export const ragHitsToSources = (hits) => {
     )
 
     return {
+      id: hit.id || hit.docId || hit.postId,
       attachments: Array.isArray(hit.attachments)
         ? hit.attachments
             .map((attachment) => ({
               name: typeof attachment?.name === 'string' ? attachment.name : '',
               url: typeof attachment?.url === 'string' ? attachment.url : '',
+              ...(typeof attachment?.mimeType === 'string' && attachment.mimeType.trim()
+                ? { mimeType: attachment.mimeType.trim() }
+                : {}),
             }))
             .filter((attachment) => attachment.name || attachment.url)
         : [],
@@ -644,6 +648,10 @@ export const ragHitsToSources = (hits) => {
       title: hit.title || '知识库来源',
       postId: isCommunity && hit.postId ? hit.postId : undefined,
       url: isCommunity ? undefined : hit.url || (hit.id ? `/kb/download?id=${encodeURIComponent(hit.id)}` : undefined),
+      publishedAt: hit.publishedAt || null,
+      updatedAt: hit.updatedAt || null,
+      applicablePeriod: hit.applicablePeriod || null,
+      validity: hit.validity || 'unknown',
       loginRequiredHint: false,
       snippet: hit.snippet || undefined,
       note: isCommunity ? COMMUNITY_SOURCE_NOTE : undefined,
