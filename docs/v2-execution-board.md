@@ -116,7 +116,7 @@
 | 4.3 | 阶段事件与额度结算 | AI-2 | ✅ | 4.2、0.4 | `4623976`；`npm run test:server` 37/37；`npm run server:check` 55 模块通过；定向 ESLint、`git diff --check` 通过。`start` 在检索前；发出真实 retrieval/generation phase；正常完成与断开竞态只结算一次 |
 | 4.4 | 来源元数据统一适配 | AI-2（主）+ AI-1（类型/展示） | ✅ | 1.2；展示依赖 2.3 | 服务端 `6112c0b`（45/45、60 模块）。前端 `53a6144`：`MessageSource` 对齐 `sourceId/type/attachments.mimeType/publishedAt/updatedAt/applicablePeriod/validity` 并删除 `confidence`；`source-display.ts` 统一类型/日期/时效文案，缺失日期显示“日期未提供”；`SourceCard` 展示类型、时效、日期、摘要、附件与原文链接；Mock 来源同步新结构。5 个 source-display 单测；70 单测/type-check/lint/build 通过 |
 | 4.5 | 按需语音控制 | AI-1（主）+ AI-2（服务端去密钥） | ✅ | 3.4、4.1 | 服务端 `f620cde`：旧共享密钥不能通过鉴权（45/45）。前端 `7a06d04` 去 `VITE_TTS_AUTH_TOKEN`；`53a6144` 默认不自动 TTS、语音卡显式开关；`5c17697`：单队列 + token 校验丢弃晚到分段/过期请求、ObjectURL 在结束/停止时释放、移动端 `NotAllowedError` 只提示一次并引导再点、游客点语音先登录并在登录后恢复朗读；文本清洗/分段抽到 `narration-text`（4 单测）。证据：`chat:layout` **11/11**（含游客语音先登录）、74 单测/type-check/lint/build 通过。真实 TTS 合成需目标环境凭据，留 7.4 验证 |
-| 4.6 | 生成/来源/媒体联测 | 共同（AI-1 主导） | ⬜ | 4.3、4.4、4.5 | 覆盖跨会话晚到、过期登录、刷新中断、重试、来源选中、TTS 失败、移动端播放限制 |
+| 4.6 | 生成/来源/媒体联测 | 共同（AI-1 主导） | 🔵 | 4.3、4.4、4.5 | 覆盖跨会话晚到、过期登录、刷新中断、重试、来源选中、TTS 失败、移动端播放限制。AI-1 已认领：先补浏览器联测脚本，再逐项修复；后端边界由 AI-2 配合 |
 
 ### Sprint 5：办事指南（2–3 天）
 
@@ -287,6 +287,7 @@
 | 2026-10-21 | 完成 | 2.5 响应式与流式：`inspect-responsive-layout` 宽度矩阵 + 逐宽度截图；首页/问答 360-1440 共 10 组 0 溢出；真实 `/api/chat/stream` 桌面 1440 与手机 390 均通过 | AI-1 |
 | 2026-10-21 | 完成 | 4.5 按需语音收尾：默认不自动 TTS、单队列与晚到丢弃、ObjectURL 结束即释放、移动端拦截提示、游客登录后恢复朗读；narration-text 4 单测，chat:layout 11/11 | AI-1 |
 | 2026-10-21 | 占用 | 领取 7.2 服务端反馈接口与契约补充；`docs/api-contract-v2.md` 由 AI-2 独占编辑，AI-1 组件仍按冻结契约并行实现 | AI-2（Codex） |
+| 2026-10-21 | 占用 | 领取 4.6：按协作规则先认领再联测；覆盖跨会话晚到、刷新中断、重试、来源选中、TTS 失败与移动端限制 | AI-1 |
 | 2026-10-21 | 部分 | 7.2 服务端 `/api/feedback` 与 receipt 接线完成，`feedbackEligible` 已进入流式/非流式回答；测试 47/47。**剩余**：AI-1 完成反馈操作组件并回归。 | AI-2（Codex） |
 | 2026-10-21 | 占用 | 领取 0.3：补跑运行基线服务端测试和浏览器旅程，并写回 `development-baseline-v2.md` | AI-2（Codex） |
 | 2026-10-21 | 部分 | 0.3 记录 `npm run test:server` 47/47；构建/类型检查通过；旅程通过访客答复、登录恢复与审核操作后，在社区知识 RAG 来源闭环断言超时。已写回基线文档。**剩余**：等待 6.5 闭环并跑完默认 10 轮。 | AI-2（Codex） |
