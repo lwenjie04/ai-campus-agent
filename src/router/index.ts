@@ -16,8 +16,7 @@ export const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'home',
-    component: () => import('@/views/AgentChat.vue'),
-    meta: { layout: 'agent' },
+    component: () => import('@/views/HomeView.vue'),
   },
   {
     path: '/chat',
@@ -38,6 +37,11 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('@/views/AgentChat.vue'),
     props: true,
     meta: { layout: 'agent' },
+  },
+  {
+    path: '/services',
+    name: 'services',
+    component: () => import('@/views/ServiceDirectoryView.vue'),
   },
   {
     path: '/community',

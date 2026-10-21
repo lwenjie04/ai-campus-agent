@@ -176,7 +176,12 @@
               也就是说：
               页面本身不处理发消息细节，真正的发送逻辑统一放在 store 中。
             -->
-            <InputBox v-model="draftText" :loading="store.loading" @send="handleSend" />
+            <InputBox
+        ref="inputBoxRef"
+        v-model="draftText"
+        :loading="store.loading"
+        @send="handleSend"
+      />
           </footer>
         </div>
       </section>
@@ -266,7 +271,7 @@
 // ref 用于定义基础响应式变量
 // computed 用于定义依赖其他状态自动更新的计算属性
 // onMounted 用于在页面挂载后执行初始化逻辑
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 // 引入右侧聊天列表组件
 import ChatWindow from '@/components/ChatWindow.vue'
@@ -377,6 +382,7 @@ const historyOpen = ref(false)
 const activeConversationId = ref('')
 const conversationNotice = ref('')
 const draftText = ref('')
+const inputBoxRef = ref<InstanceType<typeof InputBox> | null>(null)
 
 const storageMessage = computed(() => {
   if (!conversations.storageError) return ''
@@ -828,6 +834,8 @@ onMounted(() => {
     void restoreConversation(routeConversationId)
   } else if (route.name === 'chat-new') {
     activeConversationId.value = conversations.createDraft().conversationId
+    // 从首页“开始提问”进入时聚焦输入框；只聚焦，不自动发送，也不进历史。
+    void nextTick(() => inputBoxRef.value?.focus())
   }
 })
 </script>

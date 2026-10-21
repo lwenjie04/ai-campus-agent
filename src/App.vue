@@ -38,6 +38,18 @@
             <span>校园社区</span>
           </button>
           <button
+            type="button"
+            class="top-nav__tab"
+            :class="{ 'top-nav__tab--active': isServicesActive }"
+            data-testid="nav-services"
+            @click="goServices"
+          >
+            <span>办事指南</span>
+          </button>
+          <button type="button" class="top-nav__tab" data-testid="nav-about" @click="openHelp">
+            <span>关于校答</span>
+          </button>
+          <button
             v-if="authStore.isAdmin"
             type="button"
             class="top-nav__tab"
@@ -90,6 +102,8 @@
   >
     <LoginView @login-success="handleLoginSuccess" />
   </el-dialog>
+
+  <HelpPanel v-model="helpVisible" />
 </template>
 
 <script setup lang="ts">
@@ -101,8 +115,9 @@ import { useAuthIntentStore, type AuthIntent } from './store/auth-intent'
 import { intentDestination } from './store/auth-intent-destination'
 import { safeInternalPath } from './router/return-to'
 
-// 登录页按需加载，首屏只加载当前路由的页面组件。
+// 登录页与帮助面板按需加载，首屏只加载当前路由页面。
 const LoginView = defineAsyncComponent(() => import('./views/LoginView.vue'))
+const HelpPanel = defineAsyncComponent(() => import('./components/HelpPanel.vue'))
 
 const authStore = useAuthStore()
 const authIntentStore = useAuthIntentStore()
@@ -121,16 +136,22 @@ const intentLabel = computed(() => {
 })
 
 const loginDialogVisible = ref(false)
+const helpVisible = ref(false)
 
 const isAgentLayout = computed(() => route.meta.layout === 'agent')
 const isHomeActive = computed(
   () => route.name === 'home' || route.name === 'chat' || route.name === 'chat-new',
 )
 const isCommunityActive = computed(() => route.path.startsWith('/community'))
+const isServicesActive = computed(() => route.path.startsWith('/services'))
 const isAdminActive = computed(() => route.path.startsWith('/admin'))
 
 const openLogin = () => {
   loginDialogVisible.value = true
+}
+
+const openHelp = () => {
+  helpVisible.value = true
 }
 
 const goHome = () => {
@@ -140,6 +161,10 @@ const goHome = () => {
 const goCommunity = () => {
   // 未登录时由路由守卫跳回首页并给出登录意图，登录成功后自动回到 /community。
   router.push('/community')
+}
+
+const goServices = () => {
+  router.push('/services')
 }
 
 const goAdmin = () => {
@@ -163,6 +188,8 @@ const routeListeners = computed<Record<string, RouteListener>>(() => {
 
   switch (String(route.name || '')) {
     case 'home':
+      listeners['open-help'] = openHelp
+      break
     case 'chat':
     case 'chat-new':
     case 'chat-detail':
@@ -483,12 +510,31 @@ watch(
 
 @media (max-width: 47.99rem) {
   .top-nav__inner {
-    padding: 0 1rem;
-    gap: 0.5rem;
+    flex-wrap: wrap;
+    min-height: 0;
+    padding: 0.6rem 1rem;
+    gap: 0.4rem 0.75rem;
+  }
+
+  .top-nav__brand {
+    flex: 1;
+  }
+
+  .top-nav__auth {
+    margin-left: 0;
   }
 
   .top-nav__tabs {
-    justify-content: flex-start;
+    order: 3;
+    flex-basis: 100%;
+    justify-content: space-between;
+    border-top: 1px solid var(--soft);
+    padding-top: 0.4rem;
+  }
+
+  .top-nav__tab {
+    padding-inline: 0.5rem;
+    font-size: 0.82rem;
   }
 
   .top-nav__auth-text {

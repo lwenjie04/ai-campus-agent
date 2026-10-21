@@ -33,6 +33,7 @@ export default defineConfigWithVueTs(
       'server/scripts/service-journey-browser.mjs',
       'server/scripts/conversation-journey-browser.mjs',
       'server/scripts/auth-intent-journey-browser.mjs',
+      'server/scripts/home-flow-browser.mjs',
     ],
     languageOptions: {
       globals: {

@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "completedAt": "2026-10-21T02:41:48.100Z",
+  "mode": "isolated_browser",
+  "targetUrl": "http://127.0.0.1:4176",
+  "ok": true,
+  "steps": [
+    {
+      "name": "首页 hero 渲染",
+      "ok": true,
+      "detail": "校园智能问答"
+    },
+    {
+      "name": "公共导航完整",
+      "ok": true,
+      "detail": "智能问答 / 校园社区 / 办事指南 / 关于校答 / 登录"
+    },
+    {
+      "name": "关于校答面板可打开",
+      "ok": true,
+      "detail": "关于校答"
+    },
+    {
+      "name": "办事指南入口",
+      "ok": true,
+      "detail": "/services"
+    },
+    {
+      "name": "开始提问只进入 /chat/new 并聚焦输入框",
+      "ok": true,
+      "detail": "/chat/new"
+    },
+    {
+      "name": "未发送前不创建历史会话",
+      "ok": true,
+      "detail": "history=0"
+    }
+  ]
+}

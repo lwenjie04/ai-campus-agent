@@ -2,6 +2,7 @@
   <!-- 输入区只负责收集文本并向父组件发出 send 事件，不直接处理请求。 -->
   <div class="input-box">
     <el-input
+      ref="inputRef"
       v-model="text"
       :disabled="loading"
       placeholder="描述你要查询或办理的校园事项"
@@ -38,6 +39,12 @@ const emit = defineEmits<{
 
 // 用本地 ref 保存输入框内容，发送成功后立即清空；同时与父组件的草稿双向同步。
 const text = ref(props.modelValue ?? '')
+const inputRef = ref<{ focus: () => void } | null>(null)
+
+// 首页“开始提问”进入 /chat/new 时由父组件调用，只聚焦不发送。
+defineExpose({
+  focus: () => inputRef.value?.focus(),
+})
 
 watch(
   () => props.modelValue,
