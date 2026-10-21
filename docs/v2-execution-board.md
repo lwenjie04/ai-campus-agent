@@ -59,10 +59,10 @@
 | S4 | 6 | 6 | 0 | 0 | 0 | 0 | — |
 | S5 | 4 | 0 | 0 | 0 | 0 | 4 | 等 5.1 数据 |
 | S6 | 5 | 5 | 0 | 0 | 0 | 0 | — |
-| S7 | 5 | 2 | 2 | 0 | 0 | 1 | 7.3 等真实 CI run；7.5 可先做文档准备 |
-| **合计** | **39** | **31** | **3** | **0** | **0** | **5** | — |
+| S7 | 5 | 2 | 1 | 1 | 0 | 1 | **Codex 7.5 文档准备** |
+| **合计** | **39** | **31** | **2** | **1** | **0** | **5** | — |
 
-> 已完成：0.1、0.3、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、2.1、2.2、2.3、2.4、2.5、3.1、3.2、3.3、3.4、3.5、4.1、4.2、4.3、4.4、4.5、4.6、6.1、6.2、6.3、6.4、6.5、7.1、7.2。**S1/S2/S3/S4/S6 已全部完成**；0.2 等 Figma 状态稿，5.x 等人工数据；7.3 的 CI 骨架与本地检查已交付，等待 push/PR 全绿及 5.4 Top 50 数据；7.5 可先准备交付文档，7.4 真实环境验证仍待人工环境。实时状态以本表为准。
+> 已完成：0.1、0.3、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、2.1、2.2、2.3、2.4、2.5、3.1、3.2、3.3、3.4、3.5、4.1、4.2、4.3、4.4、4.5、4.6、6.1、6.2、6.3、6.4、6.5、7.1、7.2。**S1/S2/S3/S4/S6 已全部完成**；0.2 等 Figma 状态稿，5.x 等人工数据；7.3 的 CI 骨架与本地检查已交付，等待 push/PR 全绿及 5.4 Top 50 数据；Codex 正在准备 7.5 交付文档，7.4 真实环境验证仍待人工环境。实时状态以本表为准。
 
 ---
 
@@ -145,7 +145,7 @@
 | 7.2 | 反馈接口与操作 | AI-2（接口）+ AI-1（组件） | ✅ | 7.1、3.4 | 服务端 `8840b43`（47/47）。前端 `9335cee`：消费 `meta.feedbackEligible` 并随消息持久化；`MessageActions.vue` 仅在 eligible 时显示，提交 `requestId + helpful/none`；409 不可反馈、401 需登录、429 带 `Retry-After` 秒数可重试、503 可重试；成功后写回 `feedback` 并持久化。证据：新增 8 单测（`feedback.test.ts` + `MessageActions.test.ts`），82 单测/type-check/lint/build 通过；`regression:journey` **9/9** 含真实反馈提交，`server/evals/latest-regression-journey.json`、`docs/design/verify/regression-feedback-1440.png` |
 | 7.3 | CI 与可重复门禁 | AI-2 | 🟡 | 1.5、4.6、5.4、6.5、7.2 | `574359c`：新增 browser-journeys（8 条串行旅程、随机隔离凭据、结果/artifact）、独立 10 轮 service journey、Top 20 offline golden、MySQL 8 隔离 service/审核事务测试；更新 `docs/ci-quality-gates-v2.md`。本地证据：`npm run test:server` 56/56、`npm run test:unit` 90/90、`npm run lint`、`npm run server:check` 75 模块、`npm run build`（1662 模块）、`npm run ci:service-journey:assert` 10/10、Prettier、`git diff --check` 均通过。**剩余**：本机无 Chrome，未实跑 browser job；本机未启动一次性 MySQL CI service；须 push/PR 后记录全绿 workflow run URL、job 耗时及 artifacts；5.4 完成前 Golden 仅 Top 20。CI 不设置 `RELEASE_LIVE_VALIDATION_CONFIRMED`。 |
 | 7.4 | 目标环境验证与性能 | 共同 | ⬜ | 7.3 | 真模型/MySQL/SMTP/TTS/HTTPS/反代实测并留证；50 条金标；首字/总耗时/取消耗时/资源体积；`RELEASE_LIVE_VALIDATION_CONFIRMED` 不得伪造 |
-| 7.5 | 交付、回滚与试用记录 | 人工 + AI-2 | 🟡 | 7.4 | `docs/releases/v2-handoff.md`：版本/迁移/构建清单、可验证回滚步骤、未完成项；`product-status.md` 更新（现为 8-12、13/13 口径过期）。**交接清单见 §5.4**：7.4 前可先写 handoff、更新 product-status/release-checklist、建试用记录模板；真实环境验证与 `RELEASE_LIVE_VALIDATION_CONFIRMED` 必须等 7.4 人工确认。 |
+| 7.5 | 交付、回滚与试用记录 | 人工 + AI-2 | 🔵 | 7.4 | Codex 2026-10-21 认领 7.4 前置准备：新建 `docs/releases/v2-handoff.md` 与 `docs/releases/v2-trial-record.md` 模板，更新 `docs/product-status.md`、`docs/release-checklist.md`。不填造发布 tag、目标环境验证或试用结果；7.4 后再收口。 |
 
 ---
 
@@ -375,6 +375,7 @@
 | 日期 | 类型 | 内容 | 执行者 |
 | --- | --- | --- | --- |
 | 2026-10-21 | 占用 | 领取 7.3 CI 与可重复门禁；实现 browser/service journey、Top 20 Golden、MySQL service 测试和失败 artifacts；Top 50 保留 5.4 边界 | AI-2（Codex） |
+| 2026-10-21 | 占用 | 领取 7.5 的 7.4 前置文档准备：更新产品状态和发布清单，新增交付/回滚 handoff 与空白试用记录模板；目标环境与试用事实留待人工验证后填写 | AI-2（Codex） |
 | 2026-10-21 | 部分 | 7.3 CI 骨架提交 `574359c`：增加 8 条 browser journeys 串行 runner、独立 10 轮 service job、Top 20 golden 与 MySQL 8 service 事务 job；本地 lint/语法/格式/构建/单测/服务端测试/服务旅程断言通过。**剩余**：本机无 Chrome、未实跑 MySQL service；等待 push/PR 全绿与 run URL；Top 50 等 5.4 | AI-2（Codex） |
 | 2026-10-21 | 完成 | 0.3 基线复核：依赖清单更新；当前 `test:server` 56/56、`test:unit` 90/90；已提交的隔离 Mock `service:journey` 10/10 与社区知识 RAG 来源闭环写回基线；目标环境服务边界保留为 7.4 | AI-2（Codex） |
 | 2026-10-21 | 阶段交付 | 6.4 后端：冻结审核冲突与知识生成失败 API 契约；pending-only SQL/内存状态转换、同目标幂等、审核日志单次写入、知识生成事务与 post_id 幂等；服务端测试 56/56、定向审核/鉴权 12/12。真实 MySQL 联测和 AI-1 前端剩余项继续保持 🟡 | AI-2（Codex） |
