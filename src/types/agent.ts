@@ -1,30 +1,42 @@
 // 消息角色定义了这条消息在会话中的身份。
 export type MessageRole = 'user' | 'assistant' | 'system'
 
+// 消息来源类型与后端 4.4 适配器的稳定枚举保持一致。
+export type MessageSourceType = 'official' | 'knowledge_base' | 'community' | 'rule' | 'lightrag'
+export type MessageSourceValidity = 'current' | 'expired' | 'unknown'
+
 // MessageSource 描述一条回答背后的来源依据。
-// 它通常由后端 RAG 检索结果转换而来，前端据此展示正文链接、附件和可信度。
+// 字段来自后端统一适配器，前端据此展示标题、时效、链接和附件。
 export interface MessageSource {
-  // 附件列表：例如 pdf、doc、xlsx 等可下载文件。
-  attachments?: Array<{
-    name?: string
-    url?: string
-  }>
-  // 来源类型：如 official_notice / attachment_index / rule_match。
-  type?: string
-  // 可信度范围通常是 0~1，前端会转成百分比显示。
-  confidence?: number
+  // 稳定来源 id，用于来源面板去重与选中定位。
+  sourceId?: string
+  // 来源类型：官方/知识库/社区/规则/LightRAG。
+  type?: MessageSourceType
   // 来源标题，通常就是通知名或材料名。
   title?: string
   // 正文链接或下载链接。
   url?: string
+  // 附件列表：例如 pdf、doc、xlsx 等可下载文件。
+  attachments?: Array<{
+    name?: string
+    url?: string
+    mimeType?: string
+  }>
+  // 发布日期/更新时间：缺失时为 null，界面显示“未提供”。
+  publishedAt?: string | null
+  updatedAt?: string | null
+  // 适用年份/学期等时效描述。
+  applicablePeriod?: string | null
+  // 时效状态：现行/已失效/未知。
+  validity?: MessageSourceValidity
   // 当来源来自学生社区时，记录原始帖子 id，方便从问答结果跳回社区详情页。
   postId?: string
-  // 预留字段：后续如果有登录态要求，可以用它提示用户。
-  loginRequiredHint?: boolean
   // 来源摘要，帮助用户快速判断这条来源是否相关。
   snippet?: string
   // 额外说明文案，适合展示“学生经验，仅供参考”这类风险提示。
   note?: string
+  // 预留字段：后续如果有登录态要求，可以用它提示用户。
+  loginRequiredHint?: boolean
 }
 
 // Message 是前端聊天窗口里最核心的数据结构。

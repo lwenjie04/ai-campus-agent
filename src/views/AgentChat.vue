@@ -1,156 +1,64 @@
 <template>
-  <!--
-    page-bg：
-    整个页面最外层背景容器。
-    负责铺满视口，并提供绿色渐变的大背景。
-  -->
-  <div class="page-bg">
-    <!--
-      app-shell：
-      页面主体区域，采用左右两栏布局。
-      左边放学校品牌和数字人，右边放聊天相关区域。
-    -->
-    <main class="app-shell">
-      <!-- 左侧区域：学校品牌 + 数字人舞台 -->
-      <section class="left-stage">
-        <!-- 顶部品牌栏：校徽、学校名称、装饰图标 -->
-        <header class="brand-bar">
-          <div class="brand-left">
-            <div>
-              <div class="brand-kicker">CAMPUS SERVICE DESK</div>
-              <div class="brand-title">答案有据，<br />办事有路。</div>
-              <p class="brand-subtitle">查规则、理材料、找入口，每个答案都有依据。</p>
-            </div>
+  <div class="page-bg chat-page">
+    <main class="chat-shell">
+      <section class="chat-main">
+        <header class="chat-page-head">
+          <h1 class="chat-page-title">智能问答</h1>
+          <div class="chat-page-actions">
+            <button
+              type="button"
+              class="chat-action"
+              data-testid="open-history"
+              @click="historyOpen = true"
+            >
+              历史对话
+            </button>
+            <button type="button" class="chat-action" @click="openSourcePanel()">来源</button>
+            <el-button type="primary" round class="new-chat-btn" @click="startNewConversation">
+              新建对话
+            </el-button>
           </div>
-          <span class="brand-edition">GDEI<br />2026</span>
         </header>
 
-        <!-- 数字人舞台区域 -->
-        <div class="stage-wrap">
-          <!--
-            DigitalHumanPlayer 是左侧舞台的核心组件。
-            它根据 store 提供的 cue / narration / signal 来决定：
-            1. 当前播放欢迎视频、待机视频还是讲解视频
-            2. 是否触发语音播报
-            3. 是否响应“停止播放”
-          -->
-          <DigitalHumanPlayer
-            :cue-key="store.videoCueKey"
-            :play-signal="store.videoPlayTick"
-            :narration-text="store.narrationText"
-            :narration-signal="store.narrationTick"
-            :stop-signal="stopPlaySignal"
-            @request-idle="onGreetingEnded"
-            @narration-ended="onNarrationEnded"
-            @narration-error="onNarrationError"
-          />
-          <div class="stage-status" aria-hidden="true">
-            <span class="stage-status__dot" />
-            <span>DIGITAL GUIDE / ONLINE</span>
-          </div>
-        </div>
-      </section>
-
-      <!-- 右侧区域：用户信息、聊天记录、输入区 -->
-      <section class="right-chat">
-        <div class="chat-card">
-          <!-- 聊天头部 -->
-          <header class="chat-header">
-            <div class="header-main">
-              <!-- 标题区 -->
-              <div class="header-title-wrap">
-                <div>
-                  <span class="header-eyebrow">数智校答</span>
-                  <h2>今天，想解决<br />哪件校园事？</h2>
-                </div>
-                <span class="mode-tag">AI 导办 · 回答附来源</span>
-              </div>
-
-              <!-- 右上角操作区：用户摘要 + 设置按钮 -->
-              <div class="header-actions">
-                <!--
-                  profile-summary：
-                  把当前选中的身份、年级、专业直接展示出来。
-                  这样用户不用展开设置区，也能知道当前上下文是什么。
-                -->
-                <div class="profile-summary" :title="summaryTitle">
-                  <span>{{ roleLabel }}</span>
-                  <span>{{ selectedGrade || '未填年级' }}</span>
-                  <span>{{ selectedMajor || '未填专业' }}</span>
-                </div>
-
-                <!-- 点击后打开用户设置弹窗 -->
-                <el-button class="settings-btn" size="small" data-testid="open-history" @click="historyOpen = true">
-                  历史
-                </el-button>
-                <el-button class="settings-btn" size="small" @click="settingsDialogVisible = true">
-                  服务偏好
-                </el-button>
-              </div>
+        <div class="chat-notices">
+          <div v-if="pendingDraftVisible && pendingDraft" class="resume-draft" role="status">
+            <div class="resume-draft__copy">
+              <strong>发现一个未完成的问题</strong>
+              <span>{{ pendingDraft }}</span>
             </div>
-
-            <div class="service-shortcuts" aria-label="常办事项快捷入口">
-              <span class="service-shortcuts__label">常办事项</span>
-              <button
-                v-for="shortcut in serviceShortcuts"
-                :key="shortcut.label"
-                type="button"
-                class="service-shortcuts__item"
-                :disabled="store.loading"
-                @click="handleShortcut(shortcut.query)"
-              >
-                {{ shortcut.label }}
+            <div class="resume-draft__actions">
+              <button type="button" class="resume-draft__secondary" @click="discardPendingDraft">放弃</button>
+              <button type="button" class="resume-draft__primary" @click="resumePendingQuestion">
+                {{ authStore.loggedIn ? '继续提问' : '登录后继续' }}
               </button>
             </div>
-
-            <div v-if="pendingDraftVisible && pendingDraft" class="resume-draft" role="status">
-              <div class="resume-draft__copy">
-                <strong>发现一个未完成的问题</strong>
-                <span>{{ pendingDraft }}</span>
-              </div>
-              <div class="resume-draft__actions">
-                <button type="button" class="resume-draft__secondary" @click="discardPendingDraft">放弃</button>
-                <button type="button" class="resume-draft__primary" @click="resumePendingQuestion">
-                  {{ authStore.loggedIn ? '继续提问' : '登录后继续' }}
-                </button>
-              </div>
-            </div>
-          </header>
-
+          </div>
           <p v-if="conversationNotice" class="conversation-notice" role="status">{{ conversationNotice }}</p>
           <p v-if="storageMessage" class="conversation-notice conversation-notice--warn" role="status">
             {{ storageMessage }}
           </p>
+        </div>
 
-          <!--
-            聊天主体区：
-            这里不自己渲染每一条消息，而是把消息数组传给 ChatWindow。
-          -->
-          <div class="chat-body">
-            <ChatWindow
-              :messages="visibleMessages"
-              :loading="store.loading"
-              @open-community-post="emit('openCommunityPost', $event)"
-              @retry="handleRetry"
-            />
-          </div>
+        <div class="chat-body">
+          <ChatWindow
+            :messages="visibleMessages"
+            :loading="store.loading"
+            @narrate="speakText"
+            @open-sources="openSourcePanel"
+            @retry="handleRetry"
+          />
+        </div>
 
-          <!--
-            停止播放按钮：
-            用来中断当前讲解视频和语音播报。
-          -->
-          <div class="chat-actions-bar">
-            <el-button
-              v-if="store.loading"
-              class="stop-btn"
-              size="small"
-              data-testid="stop-generation"
-              @click="handleCancelGeneration"
-            >
-              停止生成
-            </el-button>
-            <el-button class="stop-btn" size="small" @click="onStopPlayback">停止讲解</el-button>
-          </div>
+        <footer class="composer">
+          <button
+            v-if="store.loading"
+            type="button"
+            class="composer-stop"
+            data-testid="stop-generation"
+            @click="handleCancelGeneration"
+          >
+            停止生成
+          </button>
 
           <div
             v-if="!authStore.loggedIn"
@@ -169,25 +77,89 @@
             </button>
           </div>
 
-          <!-- 输入区 -->
-          <footer class="input-area">
-            <!--
-              InputBox 发出 send 事件后，直接调用 store.sendMessage。
-              也就是说：
-              页面本身不处理发消息细节，真正的发送逻辑统一放在 store 中。
-            -->
-            <InputBox
-        ref="inputBoxRef"
-        v-model="draftText"
-        :loading="store.loading"
-        @send="handleSend"
-      />
-          </footer>
-        </div>
+          <InputBox
+            ref="inputBoxRef"
+            v-model="draftText"
+            :loading="store.loading"
+            @send="handleSend"
+          />
+
+          <p class="composer-note">AI 回答仅供参考。涉及办理条件与时间，请以学校最新通知为准。</p>
+        </footer>
       </section>
+
+      <aside class="source-rail" aria-label="参考来源">
+        <p class="rail-kicker">参考来源</p>
+        <template v-if="activeSources.length > 0">
+          <h2 class="rail-title">相关通知</h2>
+          <SourceCard
+            v-for="(source, index) in activeSources"
+            :key="source.sourceId || index"
+            :source="source"
+            @open-post="emit('openCommunityPost', $event)"
+          />
+          <div class="rail-note">
+            <p class="rail-note__title">留意通知适用年份</p>
+            <p class="rail-note__text">{{ sourceValidityNote(activeSources) }}</p>
+          </div>
+        </template>
+        <p v-else class="rail-empty">当前回答还没有可展示的来源。</p>
+
+        <div class="voice-card">
+          <img class="voice-card__icon" src="/icons/audio-lines.svg" alt="" aria-hidden="true" />
+          <h3>语音讲解</h3>
+          <p>朗读当前回答，可随时停止。</p>
+          <button type="button" class="voice-card__action" @click="toggleNarration">
+            {{ narrating ? '停止讲解' : '开启语音讲解' }}
+            <img src="/icons/chevron-right.svg" alt="" aria-hidden="true" />
+          </button>
+        </div>
+      </aside>
     </main>
 
-    <!-- 用户设置改为弹窗形式，避免直接挤占右侧聊天区的高度 -->
+    <!-- 来源面板：手机端从底部展开；桌面点“来源”也会打开同一面板。 -->
+    <div
+      v-if="sourceDrawerOpen"
+      class="source-sheet"
+      role="dialog"
+      aria-modal="true"
+      aria-label="参考来源"
+      @click.self="sourceDrawerOpen = false"
+    >
+      <div class="source-sheet__panel">
+        <div class="source-sheet__head">
+          <p class="rail-kicker">参考来源</p>
+          <button type="button" class="source-sheet__close" @click="sourceDrawerOpen = false">关闭</button>
+        </div>
+        <h2 class="rail-title">相关通知</h2>
+        <SourceCard
+          v-for="(source, index) in drawerSources"
+          :key="source.sourceId || index"
+          :source="source"
+          @open-post="emit('openCommunityPost', $event)"
+        />
+        <p v-if="drawerSources.length === 0" class="rail-empty">当前回答还没有可展示的来源。</p>
+        <div v-else class="rail-note">
+          <p class="rail-note__title">留意通知适用年份</p>
+          <p class="rail-note__text">{{ sourceValidityNote(drawerSources) }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2.3 先隐藏数字人舞台；2.4 会把播报与语音入口放进来源栏/语音卡。 -->
+    <DigitalHumanPlayer
+      class="player-hidden"
+      :cue-key="store.videoCueKey"
+      :play-signal="store.videoPlayTick"
+      :narration-text="store.narrationText"
+      :narration-signal="store.narrationTick"
+      :stop-signal="stopPlaySignal"
+      @request-idle="onGreetingEnded"
+      @narration-ended="onNarrationEnded"
+      @narration-error="onNarrationError"
+    />
+
+    <!-- 用户设置改为弹窗形式，避免直接挤占阅读区高度。 -->
     <el-dialog
       v-model="settingsDialogVisible"
       title="服务偏好"
@@ -241,7 +213,6 @@
               @clear="clearMajor"
             />
           </div>
-
         </div>
       </div>
 
@@ -289,8 +260,11 @@ import { useConversationsStore, resolveOwnerScope } from '@/store/conversations'
 import { useAuthIntentStore } from '@/store/auth-intent'
 import { applyMessagesToConversation, conversationToMessages } from '@/services/conversation-session'
 import { clearPendingQuestion, readPendingQuestion, writePendingQuestion } from '@/services/pending-question'
+import { sourceValidityNote } from '@/services/source-display'
+import type { MessageSource } from '@/types/agent'
 import { useRoute, useRouter } from 'vue-router'
 import HistoryDrawer from '@/components/HistoryDrawer.vue'
+import SourceCard from '@/components/SourceCard.vue'
 
 const emit = defineEmits<{
   (e: 'openCommunityPost', postId: string): void
@@ -477,13 +451,6 @@ const removeConversation = (conversationId: string) => {
   if (conversationId === activeConversationId.value) startNewConversation()
 }
 
-const serviceShortcuts = [
-  { label: '奖助学金', query: '国家助学金怎么申请？' },
-  { label: '教务办理', query: '申请转专业需要什么条件？' },
-  { label: '考试安排', query: '英语四六级什么时候报名？' },
-  { label: '生活服务', query: '宿舍报修怎么申请？' },
-] as const
-
 // 发送前确保有一条（尚未写入历史的）草稿会话，让运行从一开始就绑定会话身份。
 const ensureDraftForRun = () => {
   ensureConversationScope()
@@ -576,11 +543,6 @@ const discardPendingDraft = () => {
   clearPendingDraft()
 }
 
-const handleShortcut = (query: string) => {
-  if (store.loading) return
-  void handleSend(query)
-}
-
 watch(
   () => authStore.loggedIn,
   (loggedIn) => {
@@ -633,6 +595,64 @@ const stopPlaySignal = ref(0)
 // 所以这里过滤掉 role === 'system' 的消息，只展示 user 和 assistant。
 const visibleMessages = computed(() => store.messages.filter((msg) => msg.role !== 'system'))
 
+// 2.3 来源栏：默认绑定最近一条带来源的回答；手机抽屉可按消息 id 打开指定回答。
+const selectedSourceMessageId = ref('')
+const sourceDrawerOpen = ref(false)
+
+const activeSourceMessage = computed(() =>
+  [...visibleMessages.value]
+    .reverse()
+    .find((msg) => msg.role === 'assistant' && Array.isArray(msg.sources) && msg.sources.length > 0),
+)
+
+const activeSources = computed<MessageSource[]>(() => activeSourceMessage.value?.sources ?? [])
+
+const drawerMessage = computed(
+  () =>
+    visibleMessages.value.find((msg) => msg.id === selectedSourceMessageId.value) ??
+    activeSourceMessage.value,
+)
+
+const drawerSources = computed<MessageSource[]>(() => drawerMessage.value?.sources ?? [])
+
+// 语音卡默认朗读当前回答；没有来源栏回答时退回最后一条 assistant 文本。
+const activeAnswerText = computed(() => {
+  const fromSources = activeSourceMessage.value?.content?.trim()
+  if (fromSources) return fromSources
+  return [...visibleMessages.value].reverse().find((msg) => msg.role === 'assistant' && msg.content.trim())
+    ?.content.trim() ?? ''
+})
+
+const narrating = ref(false)
+
+watch(
+  () => store.narrationTick,
+  () => {
+    narrating.value = Boolean(store.narrationText)
+  },
+)
+
+const openSourcePanel = (messageId?: string) => {
+  selectedSourceMessageId.value = messageId || activeSourceMessage.value?.id || ''
+  sourceDrawerOpen.value = true
+}
+
+const speakText = (text: string) => {
+  const content = String(text || '').trim()
+  if (!content) return
+  store.triggerNarration(content)
+  narrating.value = true
+}
+
+const toggleNarration = () => {
+  if (narrating.value) {
+    onStopPlayback()
+    narrating.value = false
+    return
+  }
+  speakText(activeAnswerText.value)
+}
+
 // 当前页面上选中的角色。
 const selectedRole = ref<UserRole>('student')
 
@@ -664,23 +684,6 @@ const gradeOptions: Array<{ label: string; value: GradeValue }> = [
   { label: '研二', value: '研二' },
   { label: '研三', value: '研三' },
 ]
-
-// 角色值到中文标签的映射。
-// 页面显示中文，store 中保存稳定的英文值，两者分离更利于维护。
-const roleLabelMap: Record<UserRole, string> = {
-  student: '学生',
-  teacher: '教师',
-  guest: '访客',
-}
-
-// 头部摘要显示的角色名。
-const roleLabel = computed(() => roleLabelMap[selectedRole.value] || '用户')
-
-// 鼠标移到右上角摘要区域时显示的完整提示。
-// 之所以做成 computed，是因为它依赖角色、年级、专业三个响应式状态。
-const summaryTitle = computed(
-  () => `身份：${roleLabel.value} / 年级：${selectedGrade.value || '未填写'} / 专业：${selectedMajor.value || '未填写'}`,
-)
 
 // 把 store 中的持久化用户信息同步回页面表单。
 // 使用场景：
@@ -744,6 +747,7 @@ const resetChat = () => {
 // 1. 让 store 停止当前讲解逻辑
 // 2. 通过 stopPlaySignal 通知数字人组件立即停止媒体播放
 const onStopPlayback = () => {
+  narrating.value = false
   store.stopNarrationPlayback()
   stopPlaySignal.value += 1
 }
@@ -756,11 +760,13 @@ const onGreetingEnded = () => {
 
 // 讲解语音播报结束后的回调。
 const onNarrationEnded = () => {
+  narrating.value = false
   store.onNarrationEnded()
 }
 
 // TTS 不可用时只提示一次；文字回答与来源仍然可用。
 const onNarrationError = () => {
+  narrating.value = false
   conversationNotice.value = '语音播报暂不可用，文字回答和来源不受影响。'
 }
 
@@ -1429,6 +1435,507 @@ onMounted(() => {
 @media (min-width: 90rem) {
   .app-shell {
     grid-template-columns: minmax(23rem, 0.88fr) minmax(38rem, 1.12fr);
+  }
+}
+</style>
+
+<style scoped>
+/* 2.3 问答页：阅读列 + 桌面来源栏；手机来源收进抽屉。 */
+.page-bg.chat-page {
+  min-height: 100%;
+  display: flex;
+  background: var(--white);
+}
+
+.chat-shell {
+  width: min(100%, 1240px);
+  margin: 0 auto;
+  padding: 1.25rem 1.5rem 0;
+  display: grid;
+  grid-template-columns: minmax(0, 720px) 276px;
+  gap: 3rem;
+  justify-content: center;
+}
+
+.chat-main {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.4rem 0 0.9rem;
+  border-bottom: 1px solid var(--soft);
+}
+
+.chat-page-title {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.chat-page-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.chat-action {
+  border: 0;
+  border-radius: var(--radius-pill);
+  padding: 0.45rem 0.7rem;
+  color: var(--muted);
+  background: transparent;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.chat-action:hover {
+  color: var(--text);
+  background: var(--silver);
+}
+
+.new-chat-btn {
+  min-height: 2.4rem;
+  margin-left: 0.3rem;
+  padding-inline: 1.1rem;
+  font-size: 0.85rem;
+}
+
+.chat-notices {
+  display: grid;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+}
+
+.chat-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.composer {
+  position: relative;
+  flex: 0 0 auto;
+  border-top: 1px solid var(--soft);
+  padding: 0.9rem 0 1rem;
+  background: var(--white);
+}
+
+.composer-stop {
+  position: absolute;
+  top: -2.2rem;
+  right: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 0.3rem 0.7rem;
+  color: var(--muted);
+  background: var(--white);
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.composer-note {
+  margin: 0.55rem 0 0;
+  color: var(--faint);
+  font-size: 0.72rem;
+  text-align: center;
+}
+
+.guest-trial {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.7rem;
+  border: 1px solid var(--tint);
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 0.75rem;
+  background: var(--tint);
+}
+
+.guest-trial__mark {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  color: var(--white);
+  background: var(--brand);
+  font-size: 0.75rem;
+}
+
+.guest-trial__copy {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.guest-trial__copy strong {
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.guest-trial__copy span {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.guest-trial__login {
+  margin-left: auto;
+  border: 0;
+  border-radius: var(--radius-pill);
+  padding: 0.4rem 0.8rem;
+  color: var(--white);
+  background: var(--brand);
+  font-size: 0.78rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.resume-draft {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  border: 1px solid var(--tint);
+  border-left: 3px solid var(--brand);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 0.8rem;
+  background: var(--tint);
+}
+
+.resume-draft__copy {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.resume-draft__copy strong {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.resume-draft__copy span {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.resume-draft__actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.resume-draft__secondary,
+.resume-draft__primary {
+  border-radius: var(--radius-pill);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.resume-draft__secondary {
+  border: 1px solid var(--border);
+  color: var(--muted);
+  background: var(--white);
+}
+
+.resume-draft__primary {
+  border: 1px solid var(--brand);
+  color: var(--white);
+  background: var(--brand);
+}
+
+.conversation-notice {
+  margin: 0;
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 0.75rem;
+  color: var(--muted);
+  background: var(--silver);
+  font-size: 0.8rem;
+}
+
+.source-rail {
+  min-width: 0;
+  padding: 0.4rem 0 1.5rem;
+}
+
+.rail-kicker {
+  margin: 0 0 0.5rem;
+  color: var(--faint);
+  font-size: 0.75rem;
+}
+
+.rail-title {
+  margin: 0 0 1rem;
+  color: var(--text);
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.rail-source {
+  margin-bottom: 0.85rem;
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  background: var(--silver);
+}
+
+.rail-source__tag {
+  display: inline-block;
+  border-radius: var(--radius-pill);
+  padding: 0.15rem 0.5rem;
+  color: var(--brand);
+  background: var(--tint);
+  font-size: 0.7rem;
+}
+
+.rail-source__title {
+  margin: 0.6rem 0 0.35rem;
+  color: var(--text);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.rail-source__meta {
+  margin: 0 0 0.55rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.rail-source__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: 0;
+  padding: 0;
+  color: var(--link);
+  background: transparent;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.rail-source__link img {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+
+.rail-source__note {
+  margin: 0.45rem 0 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.6;
+}
+
+.rail-note {
+  margin-top: 1.4rem;
+}
+
+.rail-note__title {
+  margin: 0 0 0.35rem;
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.rail-note__text {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.65;
+}
+
+.rail-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.7;
+}
+
+.voice-card {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 2rem;
+  border-radius: var(--radius-md);
+  padding: 1.1rem;
+  background: var(--silver);
+}
+
+.voice-card__icon {
+  width: 1.4rem;
+  height: 1.4rem;
+}
+
+.voice-card h3 {
+  margin: 0.35rem 0 0;
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.voice-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
+.voice-card__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  justify-self: start;
+  border: 0;
+  padding: 0.5rem 0 0;
+  color: var(--link);
+  background: transparent;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.voice-card__action img {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+
+.player-hidden {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.source-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(16, 16, 20, 0.32);
+}
+
+.source-sheet__panel {
+  width: min(100%, 560px);
+  max-height: 78vh;
+  overflow-y: auto;
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom));
+  background: var(--white);
+  box-shadow: var(--shadow-lg);
+}
+
+.source-sheet__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.source-sheet__head .rail-kicker {
+  margin: 0;
+}
+
+.source-sheet__close {
+  border: 0;
+  border-radius: var(--radius-pill);
+  padding: 0.3rem 0.7rem;
+  color: var(--muted);
+  background: var(--silver);
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.source-sheet__panel .rail-title {
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 63.99rem) {
+  .chat-shell {
+    grid-template-columns: minmax(0, 1fr);
+    width: min(100%, 760px);
+    gap: 0;
+  }
+
+  .source-rail {
+    display: none;
+  }
+
+  .chat-main {
+    min-height: calc(100dvh - 7rem);
+  }
+}
+
+@media (max-width: 47.99rem) {
+  .chat-shell {
+    padding: 0.75rem 1rem 0;
+  }
+
+  .chat-page-title {
+    font-size: 1.15rem;
+  }
+
+  .chat-page-actions {
+    gap: 0;
+  }
+
+  .chat-action {
+    padding-inline: 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .new-chat-btn {
+    margin-left: 0.15rem;
+    padding-inline: 0.85rem;
+  }
+
+  .composer {
+    position: sticky;
+    bottom: 0;
+    padding-bottom: calc(0.7rem + env(safe-area-inset-bottom));
+  }
+
+  .guest-trial__copy span {
+    display: none;
+  }
+
+  .guest-trial__login {
+    width: auto;
+    margin-left: auto;
+  }
+
+  .chat-body {
+    min-height: 50vh;
+  }
+}
+
+@media (min-width: 64rem) {
+  .chat-page {
+    height: 100%;
+  }
+
+  .chat-shell {
+    height: 100%;
   }
 }
 </style>

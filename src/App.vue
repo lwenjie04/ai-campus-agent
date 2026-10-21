@@ -140,7 +140,11 @@ const helpVisible = ref(false)
 
 const isAgentLayout = computed(() => route.meta.layout === 'agent')
 const isHomeActive = computed(
-  () => route.name === 'home' || route.name === 'chat' || route.name === 'chat-new',
+  () =>
+    route.name === 'home' ||
+    route.name === 'chat' ||
+    route.name === 'chat-new' ||
+    route.name === 'chat-detail',
 )
 const isCommunityActive = computed(() => route.path.startsWith('/community'))
 const isServicesActive = computed(() => route.path.startsWith('/services'))

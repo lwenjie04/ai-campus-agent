@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "completedAt": "2026-10-21T02:52:59.504Z",
+  "mode": "isolated_frontend_mock",
+  "targetUrl": "http://127.0.0.1:4177",
+  "ok": true,
+  "steps": [
+    {
+      "name": "问答页渲染",
+      "ok": true,
+      "detail": "/chat/new"
+    },
+    {
+      "name": "桌面阅读区 + 来源栏 + 底部输入区",
+      "ok": true,
+      "detail": "rail + composer in viewport"
+    },
+    {
+      "name": "来源栏展示当前回答来源",
+      "ok": true,
+      "detail": "cards=1"
+    },
+    {
+      "name": "消息操作：复制/朗读",
+      "ok": true,
+      "detail": "复制 / 朗读 / 复制 / 朗读"
+    },
+    {
+      "name": "手机来源入口与面板",
+      "ok": true,
+      "detail": "source-hint → source-sheet"
+    }
+  ]
+}

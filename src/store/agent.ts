@@ -403,6 +403,8 @@ export const useAgentStore = defineStore('agent', {
       let finalRequestId: string | undefined
       let narrationBuffer = ''
       let narrationStarted = false
+      // 4.5/2.4：默认不自动朗读，语音由来源栏“语音讲解”显式开启；后续偏好设置在此接入。
+      const autoNarration = false
 
       try {
         await streamChat(
@@ -421,6 +423,7 @@ export const useAgentStore = defineStore('agent', {
               if (!target) return
               target.content += delta
 
+              if (!autoNarration) return
               narrationBuffer += delta
               const { chunks, rest } = splitSpeakableChunks(narrationBuffer)
               narrationBuffer = rest
@@ -453,8 +456,8 @@ export const useAgentStore = defineStore('agent', {
           target.status = 'sent'
         }
 
-        // 流式结束后，把最后一个没凑成完整句号的尾句补进播报队列。
-        const tailNarration = narrationBuffer.trim()
+        // 流式结束后，按需朗读模式下不再自动补播尾句。
+        const tailNarration = autoNarration ? narrationBuffer.trim() : ''
         if (tailNarration) {
           if (!narrationStarted) {
             this.triggerVideoCue('teaching')
@@ -463,7 +466,7 @@ export const useAgentStore = defineStore('agent', {
           this.triggerNarration(tailNarration)
         }
 
-        const narration = (finalContent || target?.content || '').trim()
+        const narration = autoNarration ? (finalContent || target?.content || '').trim() : ''
         if (!narrationStarted && narration) {
           // 兜底：如果本次回复没有形成任何流式句子，仍然按完整文本播一次。
           this.triggerVideoCue('teaching')

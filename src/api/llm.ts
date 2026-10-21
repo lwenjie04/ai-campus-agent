@@ -53,9 +53,13 @@ const mockReply = (messages: Message[]): ChatApiResponse => {
       videoCue: 'teaching',
       sources: [
         {
-          type: 'academic_system',
-          confidence: 0.72,
+          sourceId: 'rule:academic_system_demo',
+          type: 'rule',
           title: '教务系统（示例）',
+          applicablePeriod: '2025-2026 学年',
+          publishedAt: null,
+          updatedAt: null,
+          validity: 'unknown',
           snippet: '此处为前端 Mock 来源示例，后续接入 RAG 后展示真实来源。',
         },
       ],
