@@ -54,15 +54,15 @@
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | S0 | 4 | 2 | 2 | 0 | 0 | 0 | 0.3 收尾 |
 | S1 | 5 | 5 | 0 | 0 | 0 | 0 | — |
-| S2 | 5 | 4 | 1 | 0 | 0 | 0 | **2.5** |
+| S2 | 5 | 5 | 0 | 0 | 0 | 0 | — |
 | S3 | 5 | 5 | 0 | 0 | 0 | 0 | — |
 | S4 | 6 | 4 | 1 | 0 | 0 | 1 | 4.5 / 4.6 |
 | S5 | 4 | 0 | 0 | 0 | 0 | 4 | 等 5.1 数据 |
 | S6 | 5 | 0 | 5 | 0 | 0 | 0 | 2.1 之后 |
 | S7 | 5 | 1 | 1 | 0 | 0 | 3 | **7.2 可启动** |
-| **合计** | **39** | **21** | **10** | **0** | **0** | **8** | — |
+| **合计** | **39** | **22** | **9** | **0** | **0** | **8** | — |
 
-> 已完成：0.1、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、2.1、2.2、2.3、2.4、3.1、3.2、3.3、3.4、3.5、4.1、4.2、4.3、4.4、7.1。S1/S3 已全部完成；S2 仅剩 2.5 响应式矩阵验证；4.5 剩余按需队列与取消；7.2 可启动。实时状态以本表为准。
+> 已完成：0.1、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、2.1、2.2、2.3、2.4、2.5、3.1、3.2、3.3、3.4、3.5、4.1、4.2、4.3、4.4、7.1。**S1/S2/S3 已全部完成**；前端剩余 4.5 收尾与 4.6 联测；7.2 可启动。实时状态以本表为准。
 
 ---
 
@@ -95,7 +95,7 @@
 | 2.2 | 首页与公共导航 | AI-1 | ✅ | 2.1 | `HomeView.vue` 独立：Figma hero、静态产品预览、四张常办事项卡、页脚；公共导航含问答/社区/办事指南/关于校答 + 登录；`HelpPanel` 说明面板可开；`/services` 先提供真实空态，不伪造未建数据；开始提问只进 `/chat/new` 并聚焦输入框，不发送、不建空历史。登录/注册弹窗按 `22:35` 重做：账号标题、登录/注册页签、绿色全宽主按钮、内联错误与关闭按钮（`22f176e`，截图 `docs/design/verify/login-1440.png`、`login-390.png`）。证据：`e5ba122`；`npm run home:journey` **6/6**（`server/evals/latest-home-flow.json`）；1440/390 截图 `docs/design/verify/home-new-*.png`；65 单测/type-check/lint/build 通过 |
 | 2.3 | 响应式问答布局 | AI-1 | ✅ | 2.1 | `53a6144`：阅读列 720px + 桌面来源栏 276px；页头历史/来源/新建对话；用户右侧气泡、校答阅读式回答、复制/朗读；`SourceCard` 统一来源卡；手机“查看 N 份官方来源”面板；来源绑定最近回答 ID；长回答/多来源不挤掉固定输入区。证据：`npm run chat:layout` **5/5**（`server/evals/latest-chat-layout.json`）；截图 `docs/design/verify/chat-answer-1440.png`、`chat-sources-390.png`；70 单测/type-check/lint/build 通过 |
 | 2.4 | 输入与推荐问题 | AI-1 | ✅ | 2.3 | `1c7a306`：`InputBox` 改自动增高 textarea；IME 组合期 Enter 不发送、Enter 发送、Shift+Enter 换行；空值与 800ms 内重复提交拦截、空文本禁用发送；推荐问题按上条回答关键词生成，只预填并聚焦；`/chat/new` 草稿单独落键并在刷新后恢复。证据：`npm run chat:layout` **10/10**（含 IME/Shift+Enter/空值/草稿恢复），`server/evals/latest-chat-layout.json`；截图 `docs/design/verify/chat-suggestions-1440.png`；70 单测/type-check/lint/build 通过 |
-| 2.5 | 连接问答并验证手机布局 | AI-1（主）+ AI-2（脚本矩阵） | 🟡 | 2.3、2.4 | 360/390/768/1024/1440 五宽度 0 溢出、发送控件可见；`inspect-responsive-layout` 支持宽度矩阵与截图落盘；真实流式回答正常 |
+| 2.5 | 连接问答并验证手机布局 | AI-1（主）+ AI-2（脚本矩阵） | ✅ | 2.3、2.4 | `e793745`：`inspect-responsive-layout` 支持宽度矩阵、逐宽度截图、溢出与关键控件可见性检查；`responsive:matrix` 覆盖首页与问答页 **360/390/768/1024/1440 共 10 组，0 溢出、CTA/发送按钮可见**；`chat:stream` 打真实后端 NDJSON `/api/chat/stream`（mock provider），桌面 1440 与手机 390 均 status=200 并收到流式回答。证据：`server/evals/latest-responsive-matrix.json`、`latest-chat-stream.json`、`docs/design/verify/responsive/*.png`、`chat-stream-*.png`；70 单测/type-check/lint/build 通过 |
 
 ### Sprint 3：多会话与登录恢复（3–4 天）
 
@@ -207,6 +207,7 @@
 | 日期 | 任务 ID | 执行者 | 证据（commit / 命令 / 文件） | 备注 |
 | --- | --- | --- | --- | --- |
 | 2026-10-21 | 2.4 输入与推荐问题 | AI-1 | `1c7a306`；`npm run chat:layout` 10/10；`server/evals/latest-chat-layout.json`；截图 `docs/design/verify/chat-suggestions-1440.png`；70 单测/type-check/lint/build 通过 | IME Enter 不发送、Shift+Enter 换行、空值/重复拦截、推荐只预填、草稿刷新恢复 |
+| 2026-10-21 | 2.5 响应式与真实流式 | AI-1 | `e793745`；`npm run responsive:matrix` 10/10；`npm run chat:stream` 2/2；`server/evals/latest-responsive-matrix.json`、`latest-chat-stream.json`；截图 `docs/design/verify/responsive/`、`chat-stream-*.png`；70 单测/type-check/lint/build 通过 | 五宽度 0 溢出、控件可见；真实 NDJSON 流式桌面+手机通过 |
 | 2026-10-21 | 2.2 首页与公共导航 | AI-1 | `e5ba122`；`npm run home:journey` 6/6；`server/evals/latest-home-flow.json`；1440/390 截图；65 单测/type-check/lint/build 通过 | HomeView、四导航、帮助面板、办事指南空态、CTA 聚焦且不建历史 |
 | 2026-10-21 | 2.1 设计 token | AI-1 | `71dcb6b` + `f511dde`；`npm run test:unit` 65/65；type-check/lint/build 通过；证据截图 `docs/design/verify/home-1440.png` | token/字体/图标/去纸张网格已完成；布局由 2.2/2.3 替换 |
 | 2026-10-21 | 2.3 响应式问答布局 | AI-1 | `53a6144`；`npm run chat:layout` 5/5；`server/evals/latest-chat-layout.json`；截图 `docs/design/verify/chat-answer-1440.png`、`chat-sources-390.png`；70 单测/type-check/lint/build 通过 | 阅读列 + 桌面来源栏 + 手机来源面板；来源绑定回答；固定输入区 |
@@ -279,6 +280,7 @@
 | 2026-10-21 | 完成 | 4.4 前端：来源类型/日期/时效展示统一，缺失日期“日期未提供”，移除可信度百分比；默认不自动 TTS 改由语音卡触发 | AI-1 |
 | 2026-10-21 | 完成 | 2.2 补充：登录/注册弹窗按 22:35 重做（账号标题、页签、绿色全宽按钮、内联错误、关闭按钮）；70 单测/type-check/lint/build 通过 | AI-1 |
 | 2026-10-21 | 完成 | 2.4 输入与推荐：textarea 自动增高、IME Enter 不发送、Shift+Enter 换行、空值/重复拦截、推荐问题只预填聚焦、/chat/new 草稿刷新恢复；chat:layout 10/10 | AI-1 |
+| 2026-10-21 | 完成 | 2.5 响应式与流式：`inspect-responsive-layout` 宽度矩阵 + 逐宽度截图；首页/问答 360-1440 共 10 组 0 溢出；真实 `/api/chat/stream` 桌面 1440 与手机 390 均通过 | AI-1 |
 
 ---
 
