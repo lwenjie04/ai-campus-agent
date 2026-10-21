@@ -1,6 +1,7 @@
 # 数智校答 V2 开发基线（任务 0.1 / 0.3）
 
 **建立日期**：2026-10-20  
+**最近复核**：2026-10-21<br>
 **分支**：`codex/campus-service-platform`  
 **起始提交**：`237ba72` fix: harden campus service release readiness（2026-08-18 16:45）  
 **配套**：[`v2-gap-analysis.md`](v2-gap-analysis.md)、[`v2-execution-board.md`](v2-execution-board.md)
@@ -34,14 +35,16 @@
 | Pinia / Element Plus | 3.0.4 / 2.13.2 | `package.json` |
 | TypeScript / vue-tsc | 5.9.3 / 3.2.4 | `package.json` |
 | ESLint / oxlint | 9.39.2 / 1.47.0 | `package.json` |
-| **vue-router** | **未安装** | 依赖清单与 lock 均无 |
-| **vitest / @vue/test-utils / jsdom** | **未安装** | 同上；`tsconfig.node.json` 仅残留 `vitest.config.*` 通配符 |
+| vue-router | 4.6.4 | `package.json` / lockfile；路由与守卫测试已启用 |
+| Vitest | 3.2.7 | `package.json` / lockfile；`test:unit` 已运行 |
+| @vue/test-utils | 2.5.1 | `package.json` / lockfile |
+| jsdom | 27.0.1 | `package.json` / lockfile |
 
-`package.json` 共 37 个 scripts；计划要求的 7 条中，`lint`、`build`、`test:server`、`rag:test:service`、`release:check`、`service:journey` 存在，**`test:unit` 缺失**。
+`package.json` 共 49 个 scripts；`lint`、`type-check`、`test:unit`、`test:server`、`rag:test:service`、`release:check`、`service:journey` 均已配置。
 
 ---
 
-## 3. 基线验证结果（本次实际执行）
+## 3. 基线验证结果（逐项记录实际执行时间）
 
 | 命令 | 结果 | 备注 |
 | --- | --- | --- |
@@ -52,17 +55,19 @@
 | `node server/tests/rag-confidence.test.mjs` | ✅ 2/2 | 进程内直跑 |
 | `node server/index.mjs` + curl | ✅ `/api/health`、`/health`、`/api/community/posts`、`/community/posts` 均 200；`/api/unknown` 返回 JSON 404；`/api/chat/stream` 返回 `start → delta×N → meta → done` | 端口 3100、`LLM_PROVIDER_MODE=mock` |
 | `npm run build`（由 `npm run service:journey` 调用） | ✅ 通过（普通终端、工作区临时目录） | 1650 模块，约 6.2s；type-check 与 Vite build 均通过 |
-| `npm run test:server` | ✅ 47/47 通过（普通终端） | 含 `/api/feedback` 端到端用例；HTTP 子进程测试需在沙箱外执行 |
-| `JOURNEY_ROUNDS=1 npm run service:journey` | 🟡 部分通过 | Chrome、backend、preview 启动；构建/type-check、访客答复、登录意图恢复、登录和后台审核步骤通过；最终等待“审核通过的社区知识出现在 RAG 来源”超时。当前旅程已更新为 `/chat/new`、自动增高 textarea、当前登录按钮与首页 CTA；完整 10 轮未完成，需等 6.5 闭环再复跑 |
+| `npm run test:unit` | ✅ 90/90（18 个测试文件；2026-10-21） | Vitest 3.2.7；包含路由、会话、流式取消、反馈、社区交互等单测 |
+| `npm run test:server` | ✅ 56/56（2026-10-21，普通终端） | 当前仓库版本复跑通过；测试明确使用 mock/内存回退，日志中的 MySQL `ECONNREFUSED` 是隔离配置预期，不代表真实库验证 |
+| `npm run service:journey` | ✅ 10/10（2026-10-21，9.6s） | 独立执行证据由 `5dda2a6` 产生、`8d060c2` 登记；`server/evals/latest-service-journey.json`；验证 10 轮游客问答、登录意图恢复与确认、社区知识审核及 RAG 来源闭环；构建和 type-check 在旅程中通过 |
 
-> 0.3 的服务端测试和构建基线已验证；浏览器旅程揭示 6.5 社区审核到 RAG 的闭环缺口，当前仍不能宣称旅程通过或完成 0.3。`server/evals/latest-service-journey.json` 只在全轮成功后写出，本次失败没有生成完整旅程结果文件。
+> 0.3 基线已复核：当前服务端测试 56/56，单测 90/90；服务旅程 10/10，社区审核到 RAG 来源及待恢复问题确认均闭环。旅程使用隔离 Mock/内存环境，不能据此宣称目标环境的真实服务已验证。
 
 ---
 
 ## 4. Mock 与真实服务边界
 
 - **本轮已验证为 Mock/内存**：`LLM_PROVIDER_MODE=mock` 的问答；`MYSQL_PORT=1` 触发的内存鉴权回退；无 LightRAG（`LIGHTRAG_PRIMARY=false`）。
-- **未验证真实依赖**：DeepSeek/兼容模型、MySQL 8、SMTP 验证码邮件、腾讯云 TTS、Nginx/HTTPS、真实向量索引（当前本地为 hash 索引）。
+- **已验证的隔离依赖**：本地 MySQL 8 隔离 schema 已完成 6.4 审核事务 9/9 与 7.1 反馈迁移/持久化验证；测试库已清理，详情见执行计划表 §6.1 和 `server/evals/latest-mysql-review-validation.json`。
+- **目标环境仍未验证**：DeepSeek/兼容模型、部署用 MySQL 配置与数据、SMTP 验证码邮件、腾讯云 TTS、Nginx/HTTPS、真实 embedding 向量索引（当前本地为 hash 索引）。
 - 任何“通过”结论仅覆盖隔离环境；发布门槛仍按计划 §7.2 在目标环境单独取证。
 
 ---
