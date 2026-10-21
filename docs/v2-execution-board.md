@@ -59,10 +59,10 @@
 | S4 | 6 | 6 | 0 | 0 | 0 | 0 | — |
 | S5 | 4 | 0 | 0 | 0 | 0 | 4 | 等 5.1 数据 |
 | S6 | 5 | 0 | 5 | 0 | 0 | 0 | 2.1 之后 |
-| S7 | 5 | 1 | 3 | 0 | 0 | 1 | **AI-1 7.2 组件** |
-| **合计** | **39** | **24** | **9** | **0** | **0** | **6** | — |
+| S7 | 5 | 2 | 2 | 0 | 0 | 1 | **7.3 / 6.x** |
+| **合计** | **39** | **25** | **8** | **0** | **0** | **6** | — |
 
-> 已完成：0.1、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、2.1、2.2、2.3、2.4、2.5、3.1、3.2、3.3、3.4、3.5、4.1、4.2、4.3、4.4、4.5、4.6、7.1。**S1/S2/S3/S4 已全部完成**；7.2 服务端已交付、前端组件待 AI-1；6.x 与 5.x 待推进。实时状态以本表为准。
+> 已完成：0.1、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、2.1、2.2、2.3、2.4、2.5、3.1、3.2、3.3、3.4、3.5、4.1、4.2、4.3、4.4、4.5、4.6、7.1、7.2。**S1/S2/S3/S4 已全部完成，7.2 已闭环**；6.x 与 5.x 待推进，7.3 等 5.4/6.5。实时状态以本表为准。
 
 ---
 
@@ -142,7 +142,7 @@
 | ID | 任务 | 主责 | 状态 | 依赖 | 完成判定 / 证据 |
 | --- | --- | --- | --- | --- | --- |
 | 7.1 | 请求凭据与反馈增量表 | AI-2 | ✅ | 4.3、0.4 | `4bd44ac`；`npm run test:server` 41/41；`npm run server:check` 58 模块；定向 ESLint、`git diff --check` 通过；MySQL 8.0.39 隔离测试库实测迁移、凭据读回、反馈 upsert/更新、主体隔离与唯一行数=1 |
-| 7.2 | 反馈接口与操作 | AI-2（接口）+ AI-1（组件） | 🟡 | 7.1、3.4 | AI-2 服务端与契约提交 `8840b43`；`npm run test:server` 47/47，`server:check` 66 模块，定向 ESLint/oxlint 通过。**剩余**：AI-1 完成 `MessageActions.vue`，只在 `feedbackEligible` 时开放 helpful/none，并按该契约处理成功、限频与可重试错误。 |
+| 7.2 | 反馈接口与操作 | AI-2（接口）+ AI-1（组件） | ✅ | 7.1、3.4 | 服务端 `8840b43`（47/47）。前端 `9335cee`：消费 `meta.feedbackEligible` 并随消息持久化；`MessageActions.vue` 仅在 eligible 时显示，提交 `requestId + helpful/none`；409 不可反馈、401 需登录、429 带 `Retry-After` 秒数可重试、503 可重试；成功后写回 `feedback` 并持久化。证据：新增 8 单测（`feedback.test.ts` + `MessageActions.test.ts`），82 单测/type-check/lint/build 通过；`regression:journey` **9/9** 含真实反馈提交，`server/evals/latest-regression-journey.json`、`docs/design/verify/regression-feedback-1440.png` |
 | 7.3 | CI 与可重复门禁 | AI-2 | 🟡 | 1.5、4.6、5.4、6.5、7.2 | `2036b7f`；已落地 `quality.yml` 的 lint/type-check/test:unit/test:server/build，`release:check` 已加入单测；`docs/ci-quality-gates-v2.md` 记录端口、临时数据和 Chrome 路径约定。验证：release-check 通过全部门禁（READY WITH WARNINGS）。**剩余**：4.6、5.4、6.5、7.2 完成后，再把 golden 和浏览器旅程纳入 CI 并验收。 |
 | 7.4 | 目标环境验证与性能 | 共同 | ⬜ | 7.3 | 真模型/MySQL/SMTP/TTS/HTTPS/反代实测并留证；50 条金标；首字/总耗时/取消耗时/资源体积；`RELEASE_LIVE_VALIDATION_CONFIRMED` 不得伪造 |
 | 7.5 | 交付、回滚与试用记录 | 人工 + AI-2 | 🟡 | 7.4 | `docs/releases/v2-handoff.md`：版本/迁移/构建清单、可验证回滚步骤、未完成项；`product-status.md` 更新（现为 8-12、13/13 口径过期） |
@@ -209,6 +209,7 @@
 | 2026-10-21 | 7.2 部分 | AI-2（Codex） | `8840b43`；`npm run test:server` 47/47；`node server/scripts/check-server-syntax.mjs` 66 模块；定向 ESLint/oxlint、`git diff --cached --check` 通过 | 服务端路由、receipt eligibility、主体校验、限频及 API 契约已交付；等待 AI-1 `MessageActions.vue` |
 | 2026-10-21 | 7.3 部分 | AI-2（Codex） | `2036b7f`；`npm run lint`、`npm run type-check`、`npm run test:unit` 74/74、`npm run test:server` 47/47、`npm run build` 均通过；`npm run release:check` READY WITH WARNINGS（前述门禁与 Top 20 golden 均通过）；`npx prettier --check .github/workflows/quality.yml docs/ci-quality-gates-v2.md`、`git diff --check` 通过 | CI 骨架与 release 单测步骤已验证；golden/journey 的正式 CI 收口等 4.6、5.4、6.5、7.2 完成后进行 |
 | 2026-10-21 | 0.3 部分 | AI-2（Codex） | `decdf75`；`npm run test:server` 47/47；`npm run service:journey` build/type-check 通过，旅程在社区审核后等待 RAG 来源超时 | 旅程脚本改为 `/chat/new`、textarea、现有登录控件和首页 CTA；完整 10 轮待 6.5 闭环后重跑 |
+| 2026-10-21 | 7.2 反馈接口与操作 | AI-1（组件） | `9335cee`；8 个新单测；82 单测/type-check/lint/build 通过；`regression:journey` 9/9（含真实反馈提交）；截图 `docs/design/verify/regression-feedback-1440.png` | eligible 才显示；成功写回并持久化；429/503 可重试，409/401 终态提示 |
 | 2026-10-21 | 4.6 生成/来源/媒体联测 | AI-1 | `regression:journey` 8/8；`server/evals/latest-regression-journey.json`；截图 `docs/design/verify/regression-interrupted-1440.png`；74 单测/type-check/lint 通过 | 刷新中断+重试、跨会话晚到、来源绑定、TTS 失败、自动播放拦截、过期登录隔离 |
 | 2026-10-21 | 2.4 输入与推荐问题 | AI-1 | `1c7a306`；`npm run chat:layout` 10/10；`server/evals/latest-chat-layout.json`；截图 `docs/design/verify/chat-suggestions-1440.png`；70 单测/type-check/lint/build 通过 | IME Enter 不发送、Shift+Enter 换行、空值/重复拦截、推荐只预填、草稿刷新恢复 |
 | 2026-10-21 | 4.5 按需语音收尾 | AI-1 | `5c17697`；`npm run chat:layout` 11/11；74 单测/type-check/lint/build 通过；`chat-layout` 含游客语音先登录 | 单队列、晚到丢弃、ObjectURL 释放、游客登录恢复、移动端播放拦截提示 |
@@ -292,6 +293,7 @@
 | 2026-10-21 | 完成 | 4.6 联测：`regression:journey` 8/8（刷新中断+重试、跨会话晚到、来源绑定、TTS 失败、移动端自动播放拦截、过期登录隔离）；S4 全部完成 | AI-1 |
 | 2026-10-21 | 部分 | 7.2 服务端 `/api/feedback` 与 receipt 接线完成，`feedbackEligible` 已进入流式/非流式回答；测试 47/47。**剩余**：AI-1 完成反馈操作组件并回归。 | AI-2（Codex） |
 | 2026-10-21 | 占用 | 领取 0.3：补跑运行基线服务端测试和浏览器旅程，并写回 `development-baseline-v2.md` | AI-2（Codex） |
+| 2026-10-21 | 完成 | 7.2 组件：`MessageActions.vue` 仅 eligible 显示；helpful/none 提交、429/503 可重试、409/401 终态提示；成功后写回会话；82 单测、regression 9/9 | AI-1 |
 | 2026-10-21 | 部分 | 0.3 记录 `npm run test:server` 47/47；构建/类型检查通过；旅程通过访客答复、登录恢复与审核操作后，在社区知识 RAG 来源闭环断言超时。已写回基线文档。**剩余**：等待 6.5 闭环并跑完默认 10 轮。 | AI-2（Codex） |
 | 2026-10-21 | 部分 | 7.3 第一阶段完成（`2036b7f`）：增加 `.github/workflows/quality.yml`，将 `test:unit` 加入 `release:check`，并写明可重复旅程约定；当前门禁通过，release 预检保留配置与本地 hash 向量索引警告。**剩余**：等待 4.6、5.4、6.5、7.2 完成，再接入 golden 与浏览器旅程并按全范围验收。 | AI-2（Codex） |
 
