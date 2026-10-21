@@ -122,7 +122,7 @@
 | 4.2 取消传递 | ⬜ | 服务端 `AbortController` 只用于超时（`index.mjs:289,360`） | 无 `req/res` close 监听；断开后仍写响应并结算；上游 `queryLightRag`/模型流不接收 signal |
 | 4.3 阶段事件与额度结算 | 🟡 | `guest-quota.mjs:136-163` 已有 `reserved/settled/commit/rollback`；`index.mjs:704/722/878/892` 已接线；`session-guest-quota.test.mjs`、`chat-fallback.test.mjs` 覆盖单次结算 | 全仓无 `phase` 事件；`start` 在检索之后才发（`index.mjs:673`）；断开即 commit，无 settled 竞态测试 |
 | 4.4 来源元数据 | 🟡 | `rag.mjs:625-644` 产出 `type/title/url/attachments`；低置信度已清空来源（8-20 改动） | 缺 `sourceId/publishedAt/updatedAt/applicablePeriod/validity`；三支来源结构各异无统一适配器；前端仍显示“可信度 xx%”（`MessageItem.vue:65-66`），与计划“不把分数当正确率”冲突 |
-| 4.5 按需语音 | 🟡 | 服务端已要求登录会话 + 用户/IP 限流（`tts.mjs:362-383`），`tts-auth.test.mjs` 覆盖 401/429/超长 | 前端仍默认按句自动讲解（`agent.ts` 的 `splitSpeakableChunks` 自动链路）；仍保留 `VITE_TTS_AUTH_TOKEN` 共享密钥旁路（`tts.mjs:351-361`、`tts.ts:18-20`）；无播放 token/队列取消/ObjectURL 释放 |
+| 4.5 按需语音 | 🟡 | 服务端现始终要求登录会话并按用户/IP 限流；旧共享密钥即使残留在部署环境也不能绕过，`tts-auth.test.mjs` 覆盖该边界及 401/429/超长 | 前端仍需移除 `VITE_TTS_AUTH_TOKEN` 配置和覆盖 Authorization 的逻辑；按需播放、队列取消和 ObjectURL 释放仍待完成 |
 | 4.6 联测 | ⬜ | 无 | 无 `chat-cancellation.test.mjs`；浏览器旅程未覆盖取消、切换、TTS 失败 |
 
 ### Sprint 5：办事指南
@@ -201,7 +201,7 @@
 
 ### 5.2 TTS 共享密钥与“必须登录”
 
-计划 4.5 要求“使用登录会话，不依赖前端共享密钥绕过登录”。现状 `server/tts.mjs:351-361` 仍保留 `TTS_AUTH_TOKEN` bearer 旁路，`src/api/tts.ts:18-20` 仍会下发 `VITE_TTS_AUTH_TOKEN`。二者同时存在时，4.5 的验收无法通过，需要明确：移除旁路（推荐）或限定为仅测试环境。
+**D-3 已于 2026-10-21 决定移除共享密钥，TTS 统一使用登录会话鉴权。** 服务端已不读取 `TTS_AUTH_TOKEN`，即使旧部署环境仍残留该值也不能绕过登录；根目录与服务端环境示例已移除对应变量。前端仍需删除 `VITE_TTS_AUTH_TOKEN` 配置和请求头覆盖逻辑后，才能完成 4.5。
 
 ### 5.3 `mobile-uniapp` 重构
 

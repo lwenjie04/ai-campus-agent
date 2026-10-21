@@ -152,8 +152,7 @@ MAIL_FROM=你的发信邮箱
 
 # TTS
 TTS_PROVIDER=tencentcloud
-TTS_AUTH_TOKEN=
-# 未配置 TTS_AUTH_TOKEN 时，/tts 要求登录会话
+# /tts 始终要求有效登录会话
 TTS_MAX_TEXT_LENGTH=2000
 TTS_RATE_WINDOW_MINUTES=60
 TTS_IP_LIMIT=20

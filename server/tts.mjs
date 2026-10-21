@@ -22,7 +22,6 @@ const hasTencentCloudCredentials = Boolean(
 // TTS 提供方优先使用腾讯云；如果本地开发机是 Windows 且未配置腾讯云密钥，则保留本地语音引擎兜底。
 const TTS_PROVIDER =
   process.env.TTS_PROVIDER || (hasTencentCloudCredentials ? 'tencentcloud' : process.platform === 'win32' ? 'windows_sapi' : 'disabled')
-const TTS_AUTH_TOKEN = process.env.TTS_AUTH_TOKEN || ''
 const TTS_MAX_TEXT_LENGTH = toPositiveNumber(process.env.TTS_MAX_TEXT_LENGTH, 2000)
 const TTS_RATE_WINDOW_MS = Math.max(60_000, toPositiveNumber(process.env.TTS_RATE_WINDOW_MINUTES, 60) * 60_000)
 const TTS_IP_LIMIT = Math.max(1, toPositiveNumber(process.env.TTS_IP_LIMIT, 20))
@@ -66,8 +65,7 @@ const toErrorPayload = (message, code, extra = {}) => ({
 })
 
 // TTS 调用频率限制：按客户端 IP 和登录用户两个维度分别限流。
-// 默认未配置 TTS_AUTH_TOKEN 时，必须登录后才能调用，因此用户维度通常也会命中；
-// 当配置了 TTS_AUTH_TOKEN 时，匿名调用只能按 IP 限流。
+// TTS 必须使用登录会话；所有请求同时按客户端 IP 和登录用户限流。
 const ttsRateBuckets = new Map()
 
 const readTtsClientIp = (req) =>
@@ -347,28 +345,15 @@ export const handleTtsRoute = async (req, res, tools) => {
   const path = new URL(req.url, `http://${req.headers.host || 'localhost'}`).pathname.replace(/^\/api/, '')
   if (!(req.method === 'POST' && path === '/tts')) return false
 
-  let ttsSession = null
-  if (TTS_AUTH_TOKEN) {
-    const authorization = String(req.headers.authorization || '')
-    if (authorization === `Bearer ${TTS_AUTH_TOKEN}`) {
-      // 使用 TTS 专用令牌，允许匿名内部调用；仍按 IP 限流。
-    } else {
-      try {
-        ttsSession = requireSession(req)
-      } catch {
-        return json(res, 401, toErrorPayload('TTS 鉴权失败。', 'TTS_UNAUTHORIZED'))
-      }
-    }
-  } else {
-    try {
-      ttsSession = requireSession(req)
-    } catch (error) {
-      return json(
-        res,
-        error?.statusCode || 401,
-        toErrorPayload(error?.message || 'TTS 鉴权失败。', error?.code || 'TTS_UNAUTHORIZED'),
-      )
-    }
+  let ttsSession
+  try {
+    ttsSession = requireSession(req)
+  } catch (error) {
+    return json(
+      res,
+      error?.statusCode || 401,
+      toErrorPayload(error?.message || 'TTS 鉴权失败。', error?.code || 'TTS_UNAUTHORIZED'),
+    )
   }
 
   try {

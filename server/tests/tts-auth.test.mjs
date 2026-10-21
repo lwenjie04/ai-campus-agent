@@ -3,7 +3,8 @@ import test from 'node:test'
 
 // 必须在动态导入 tts.mjs 前设置环境变量，因为模块加载时会读取这些配置。
 process.env.AUTH_SESSION_SECRET = 'competition-test-session-secret-32-chars'
-process.env.TTS_AUTH_TOKEN = ''
+// Legacy shared keys must not bypass user-session authentication even if still present in deployment env.
+process.env.TTS_AUTH_TOKEN = 'legacy-shared-tts-key'
 process.env.TTS_PROVIDER = 'disabled'
 process.env.TTS_MAX_TEXT_LENGTH = '2000'
 process.env.TTS_IP_LIMIT = '1'
@@ -37,11 +38,18 @@ const buildReq = (options = {}) => ({
   connection: { remoteAddress: options.remoteAddress || '203.0.113.30' },
 })
 
-test('H1: anonymous TTS call is rejected when TTS_AUTH_TOKEN is not configured', async () => {
+test('H1: legacy shared TTS key cannot bypass session authentication', async () => {
   const tools = buildTools()
   const res = {}
 
-  await handleTtsRoute(buildReq({ remoteAddress: '203.0.113.31' }), res, tools)
+  await handleTtsRoute(
+    buildReq({
+      headers: { authorization: 'Bearer legacy-shared-tts-key' },
+      remoteAddress: '203.0.113.31',
+    }),
+    res,
+    tools,
+  )
 
   assert.equal(tools.responses.length, 1)
   assert.equal(tools.responses[0].statusCode, 401)
