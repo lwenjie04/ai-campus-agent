@@ -143,9 +143,9 @@
 | --- | --- | --- | --- | --- | --- |
 | 7.1 | 请求凭据与反馈增量表 | AI-2 | ✅ | 4.3、0.4 | `4bd44ac`；`npm run test:server` 41/41；`npm run server:check` 58 模块；定向 ESLint、`git diff --check` 通过；MySQL 8.0.39 隔离测试库实测迁移、凭据读回、反馈 upsert/更新、主体隔离与唯一行数=1 |
 | 7.2 | 反馈接口与操作 | AI-2（接口）+ AI-1（组件） | ✅ | 7.1、3.4 | 服务端 `8840b43`（47/47）。前端 `9335cee`：消费 `meta.feedbackEligible` 并随消息持久化；`MessageActions.vue` 仅在 eligible 时显示，提交 `requestId + helpful/none`；409 不可反馈、401 需登录、429 带 `Retry-After` 秒数可重试、503 可重试；成功后写回 `feedback` 并持久化。证据：新增 8 单测（`feedback.test.ts` + `MessageActions.test.ts`），82 单测/type-check/lint/build 通过；`regression:journey` **9/9** 含真实反馈提交，`server/evals/latest-regression-journey.json`、`docs/design/verify/regression-feedback-1440.png` |
-| 7.3 | CI 与可重复门禁 | AI-2 | 🟡 | 1.5、4.6、5.4、6.5、7.2 | `2036b7f`；已落地 `quality.yml` 的 lint/type-check/test:unit/test:server/build，`release:check` 已加入单测；`docs/ci-quality-gates-v2.md` 记录端口、临时数据和 Chrome 路径约定。验证：release-check 通过全部门禁（READY WITH WARNINGS）。**剩余**：4.6、5.4、6.5、7.2 完成后，再把 golden 和浏览器旅程纳入 CI 并验收。 |
+| 7.3 | CI 与可重复门禁 | AI-2 | 🟡 | 1.5、4.6、5.4、6.5、7.2 | `2036b7f`；已落地 `quality.yml` 的 lint/type-check/test:unit/test:server/build，`release:check` 已加入单测；`docs/ci-quality-gates-v2.md` 记录端口、临时数据和 Chrome 路径约定。6.5 已新增 `closed-loop:journey`，浏览器旅程均可运行。**交接清单见 §5.3**：新增 Chrome+preview 的 browser-journeys job、Golden Top 20 job、MySQL service 测试与 artifacts；Top 50 仍受 5.4 限制。 |
 | 7.4 | 目标环境验证与性能 | 共同 | ⬜ | 7.3 | 真模型/MySQL/SMTP/TTS/HTTPS/反代实测并留证；50 条金标；首字/总耗时/取消耗时/资源体积；`RELEASE_LIVE_VALIDATION_CONFIRMED` 不得伪造 |
-| 7.5 | 交付、回滚与试用记录 | 人工 + AI-2 | 🟡 | 7.4 | `docs/releases/v2-handoff.md`：版本/迁移/构建清单、可验证回滚步骤、未完成项；`product-status.md` 更新（现为 8-12、13/13 口径过期） |
+| 7.5 | 交付、回滚与试用记录 | 人工 + AI-2 | 🟡 | 7.4 | `docs/releases/v2-handoff.md`：版本/迁移/构建清单、可验证回滚步骤、未完成项；`product-status.md` 更新（现为 8-12、13/13 口径过期）。**交接清单见 §5.4**：7.4 前可先写 handoff、更新 product-status/release-checklist、建试用记录模板；真实环境验证与 `RELEASE_LIVE_VALIDATION_CONFIRMED` 必须等 7.4 人工确认。 |
 
 ---
 
@@ -248,6 +248,74 @@
 覆盖失败重试、来源返回、普通账号越权、LightRAG 未配置、正式数据不被 Mock 旅程写入；由 AI-1 主导脚本，AI-2 配合服务端断言。
 
 **交接产物**：AI-2 的 6.4 commit + 计划表证据 + 契约 diff；AI-1 在收到契约定稿后再改 `AdminReviewView.vue`。
+
+### 5.3 7.3 CI 与可重复门禁交接（AI-2 主责，可在 5.4 前先做）
+
+**当前现状**
+
+- `.github/workflows/quality.yml` 已跑 `lint`、`type-check`、`test:unit`、`test:server`、`build`；`release:check` 已含单测。
+- 4.6/6.5/7.2 均已完成，6.5 新增 `closed-loop:journey`；5.4（Top 50 金标）仍等人工数据。
+- 现有浏览器旅程都是“单脚本 + 外部已启动后端/preview”，只有 `service:journey` 自带编排。
+- 6.4 的真实 MySQL 校验目前是临时脚本，未入库；7.3 需要把它变成可复跑测试。
+
+**AI-2 清单（建议按顺序）**
+
+1. **新增 `browser-journeys` job**（ubuntu-latest，超时 ≤30 分钟）：
+   - 安装 Chrome/Chromium 并显式设置 `CHROME_PATH`，不依赖 runner 预装；
+   - 只构建一次 `npm run build`；启动后端 `node server/index.mjs` 与 `node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 4176 --strictPort`，等待 `/health` 与 preview 就绪；
+   - 结束后关闭两个子进程；失败时上传 `server/evals/*.json` 与 `docs/design/verify/**` 作为 artifacts。
+2. **统一测试环境变量**（全部 mock、内存、无真实密钥）：
+   - `MYSQL_PORT=1`、`AUTH_ALLOW_MEMORY_FALLBACK=true`、`LLM_PROVIDER_MODE=mock`、`LIGHTRAG_PRIMARY=false`、`RAG_VECTOR_ENABLED=false`、`TTS_PROVIDER=disabled`、`FEEDBACK_TEST_MEMORY=true`；
+   - `CORS_ORIGIN=http://127.0.0.1:4176`；随机 `AUTH_SESSION_SECRET` / `GUEST_COOKIE_SECRET`；`AUTH_DEFAULT_ADMIN_USERNAME/PASSWORD` 与 `JOURNEY_ADMIN_ACCOUNT/PASSWORD` 一致且每次随机。
+3. **串行运行并断言结果 JSON**：
+   | 命令 | 目标 env | 证据 |
+   | --- | --- | --- |
+   | `npm run admin:journey` | `ADMIN_TARGET_URL=http://127.0.0.1:4176` | `latest-admin-journey.json` |
+   | `npm run community:journey` | `COMMUNITY_TARGET_URL=...4176` | `latest-community-journey.json` |
+   | `npm run regression:journey` | `REGRESSION_TARGET_URL=...4176` | `latest-regression-journey.json` |
+   | `npm run closed-loop:journey` | `CLOSED_LOOP_TARGET_URL=...4176`、同 secret | `latest-closed-loop-journey.json` |
+   | `npm run home:journey` / `chat:layout` / `chat:stream` / `responsive:matrix` | 各自 `*_TARGET_URL` / `RESPONSIVE_BASE_URL=...4176` | 对应 JSON |
+   - 每个脚本检查退出码，并校验 `ok === true` 与关键断言字段（如社区来源、POST=1、status=403）。
+4. **`service:journey` 单独 job 或最后串行执行**（它自建 3000/4173 并 `build`）；断言 `passedRounds>=10`、`communityClosureVerified`、`pendingQuestionRecoveryVerified`。
+5. **Golden job**：`npm run kb:prepare:offline` 后跑 `npm run rag:test:service`，先锁 **Top 20**；Top 50 在 5.4 数据到位后再扩，不要用假数据凑 50。若离线向量索引生成不稳定，把该 job 标为 `continue-on-error: false` 并先修可重复性，禁止跳过。
+6. **MySQL 模式测试**：把 6.4 的临时校验固化为仓库内测试/脚本（可新建 `server/tests/community-review-mysql.test.mjs` 或 `verify-community-mysql.mjs`）；CI 用 `mysql:8.0` service、在一次性的 `ai_campus_agent_ci` 库建表后运行；校验状态机 409、并发单次、生成幂等/唯一键；结束后删库或丢弃容器。禁止跑旧含 `DROP TABLE` 的 SQL 到共享库。
+7. **文档**：更新 `docs/ci-quality-gates-v2.md`（新 job、Chrome、环境变量、artifacts、Top 20/50 边界、耗时）；说明 CI 仍不直接跑 `release:check` 的原因或已改为分步；写明 `RELEASE_LIVE_VALIDATION_CONFIRMED` 只属于 7.4，CI 不设置。
+8. **验收**：push/PR 上 workflow 全绿；任一旅程失败会 fail job；无密钥/真实数据依赖；单 job ≤30 分钟；计划表 7.3 证据含 workflow run URL、命令、artifacts 名单与仍受 5.4 限制的说明。
+9. **禁止**：把失败步骤改成 `continue-on-error`、伪造 evidence、在 CI 连接开发者 MySQL/真实模型。
+
+**阻塞**：Top 50 金标与 5.4 数据；浏览器旅程本身不阻塞。5.4 未完成前 7.3 可保持 🟡，但 CI 骨架与已可用旅程必须全绿。
+
+### 5.4 7.5 交付、回滚与试用记录交接（人工 + AI-2，7.4 后收口）
+
+**当前现状**
+
+- `docs/releases/v2-handoff.md` 尚不存在；`docs/product-status.md` 仍是 2026-08-12 口径（后端 13/13、15 条金标时代），与当前 56/56、90 单测、Top 20 金标、多旅程不符。
+- `docs/release-checklist.md` 有总流程，但缺少本次版本号、构建产物、迁移顺序、回滚演练和试用记录。
+- 7.4 的目标环境（真模型/MySQL/SMTP/TTS/HTTPS/反代）未完成，7.5 不得提前标 ✅。
+
+**可在 7.4 前先完成的准备（AI-2）**
+
+1. 新建 `docs/releases/v2-handoff.md`，至少包含：
+   - 发布标识：分支、commit、tag（建议 `v2.0.0`）、日期、运行环境；
+   - 构建清单：`npm ci`、`npm run build`、`dist/` 产物；Node/依赖版本；不提交 `dist` 到仓库时给出生成命令与校验和；
+   - 迁移清单与顺序：`auth-users.sql` → `community-feature-v1.sql`（只允许在全新/可清空库执行其 DROP）→ `migrations/20261020-chat-feedback.sql`；已有数据环境只跑增量，禁止重跑删表 SQL；
+   - 环境变量表：模型/MySQL/SMTP/TTS/会话/CORS/功能开关，只写变量名与用途，不写密钥值；
+   - 部署步骤：后端进程守护、preview/静态、Nginx `/api` 与 SSE 代理、HTTPS、健康检查；
+   - 回滚步骤：保留上一版 git commit/构建产物；应用回滚不动新增表（兼容旧版本），数据库先备份；给出回滚命令、验证 `/health`、首页、问答与审核路径；
+   - 已知未完成项：5.x 数据、Top 50 金标、7.4 真实环境验证、试用问题，明确“未验证不等于通过”。
+2. 更新 `docs/product-status.md` 为当前事实：90 单测、56 服务端测试、Top 20 RAG 金标通过（Top 50 待 5.4）、`service:journey` 10/10、admin 11/11、community 13/13、closed-loop 9/9、responsive 10/10、隔离 MySQL 9/9；并列出真实模型/MySQL/TTS 未验证边界。
+3. 更新 `docs/release-checklist.md`：与实际命令/脚本名一致，加入 `release:gate` 的前置条件与“不得伪造确认”的说明。
+4. 新建 `docs/releases/v2-trial-record.md` 模板：试运营日期、环境、参与人数、成功/失败问题、回滚触发条件、结论；7.5 完成时填真实记录，不写虚构数据。
+5. （可选）加 `server/scripts/write-release-manifest.mjs` 生成 `docs/releases/v2-manifest.json`（commit、Node 版本、dist 文件哈希、迁移列表），便于回滚比对；若新增脚本须同步 CI/doc。
+
+**7.4 完成后的收口步骤**
+
+1. 人工提供目标环境与真实密钥，完成真实模型/MySQL/SMTP/TTS/HTTPS/反代验证；运行 `npm run service:smoke` 与真实问答、社区审核、RAG 来源、移动端检查，记录首字/总耗时/取消耗时/构建体积。
+2. 只有全部通过后才由人工设置 `RELEASE_LIVE_VALIDATION_CONFIRMED=true`，随后 `npm run release:gate`；Git 工作区必须干净。
+3. 打 tag、写 handoff、填试用记录；更新计划表 7.4/7.5 证据（命令、日志、截图、版本号）。
+4. 任一项未通过：保持 🟡/⬜，写明阻塞与负责人；禁止用修改脚本/环境变量绕过。
+
+**人工输入**：目标服务器/域名/证书、真实 LLM/MySQL/SMTP/TTS 凭据、试运营名单与时间窗、回滚窗口确认。
 
 ---
 
@@ -366,6 +434,7 @@
 | 2026-10-21 | 完成 | 6.4 收口：前端结构化错误/拒绝确认/部分失败重试已验；隔离 MySQL8 schema 上 9/9 真实事务通过并清理；6.4 ✅，D-8 关闭，可复跑 MySQL 测试留 7.3 | AI-1 |
 | 2026-10-21 | 完成 | 6.5 闭环：失败注入→只重试生成→知识审核→问答返回社区来源→回链帖子；普通账号 /403 + API 403；LightRAG 未配置降级；closed-loop:journey 9/9；S6 全部完成 | AI-1 |
 | 2026-10-21 | 部分 | 0.3 服务旅程：修正失效 `.source-link` 选择器后 `service:journey` 10/10（9.6s），社区知识 RAG 来源与待恢复问题均通过；证据 `server/evals/latest-service-journey.json`；待 Codex 写回基线文档 | AI-1（代跑） |
+| 2026-10-21 | 交接 | 7.3/7.5 交接清单入库（§5.3/§5.4）：CI 加 browser-journeys/Golden/MySQL service 与 artifacts；交付补 handoff/回滚/试用模板，真实环境确认只由 7.4 人工放行 | AI-1 |
 | 2026-10-21 | 完成 | 6.4 前端：保留结构化社区 API 错误；拒绝二次确认、行级 loading、通过+生成部分失败独立面板与只重试生成（不重复 approve）；admin:journey 11/11；专用 MySQL 事务实测仍待 D-8 | AI-1 |
 
 ---
