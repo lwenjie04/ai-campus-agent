@@ -3,10 +3,8 @@
     <header class="admin-hero">
       <div class="admin-hero__content">
         <div class="admin-kicker">KNOWLEDGE OPERATIONS</div>
-        <h1 data-testid="knowledge-ops-title">知识运营后台</h1>
-        <p>
-          把分散的校园经验变成可追溯、可审核、可发布的知识，让服务台的下一次回答更可靠。
-        </p>
+        <h1 data-testid="knowledge-ops-title">知识运营</h1>
+        <p>审核社区内容、生成可检索知识，并查看语义检索运行状态。</p>
         <ol class="admin-pipeline" aria-label="知识运营流程">
           <li><span>01</span>发现候选</li>
           <li><span>02</span>生成草稿</li>
@@ -17,27 +15,29 @@
 
       <div class="admin-actions">
         <el-button round @click="$emit('go-login')">切换身份</el-button>
-        <el-button type="danger" plain round @click="$emit('logout')">退出登录</el-button>
+        <el-button plain round @click="$emit('logout')">退出登录</el-button>
       </div>
     </header>
 
-    <!-- 二级导航 -->
+    <!-- 二级导航：审核路由 / 检索路由 -->
     <nav class="admin-subnav" aria-label="知识运营后台导航">
       <button
         type="button"
         class="admin-subnav__tab"
         :class="{ 'is-active': activeTab === 'review' }"
-        @click="activeTab = 'review'"
+        data-testid="admin-tab-review"
+        @click="switchTab('review')"
       >
-        知识运营
+        内容审核
       </button>
       <button
         type="button"
         class="admin-subnav__tab"
         :class="{ 'is-active': activeTab === 'lightrag' }"
-        @click="activeTab = 'lightrag'"
+        data-testid="admin-tab-retrieval"
+        @click="switchTab('lightrag')"
       >
-        检索运行
+        检索管理
       </button>
     </nav>
 
@@ -443,6 +443,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
+import { useRoute, useRouter } from 'vue-router'
 import { useCommunityStore } from '@/store/community'
 import { formatDateTime } from '@/utils/date'
 import { apiUrl, appConfig } from '@/config/app'
@@ -458,12 +459,32 @@ defineEmits<{
 }>()
 
 const store = useCommunityStore()
+const route = useRoute()
+const router = useRouter()
 const detailDialogVisible = ref(false)
 const detailDialogTitle = ref('帖子详情')
 
-// 二级导航：内容审核 | LightRAG 管理
-// 路由 /admin/retrieval 通过 initialTab 直接落在检索运行面板。
-const activeTab = ref<'review' | 'lightrag'>(props.initialTab === 'lightrag' ? 'lightrag' : 'review')
+// 6.3：审核与检索拆成两个路由，页签与 URL 双向同步。
+type AdminTab = 'review' | 'lightrag'
+const activeTab = ref<AdminTab>(
+  route.name === 'admin-retrieval' || props.initialTab === 'lightrag' ? 'lightrag' : 'review',
+)
+
+const switchTab = (tab: AdminTab) => {
+  activeTab.value = tab
+  const targetName = tab === 'review' ? 'admin-review' : 'admin-retrieval'
+  if (route.name !== targetName) {
+    void router.replace({ name: targetName })
+  }
+}
+
+watch(
+  () => route.name,
+  (name) => {
+    if (name === 'admin-review') activeTab.value = 'review'
+    else if (name === 'admin-retrieval') activeTab.value = 'lightrag'
+  },
+)
 
 watch(
   () => props.initialTab,
@@ -1059,5 +1080,317 @@ onMounted(async () => {
 @media (min-width: 70rem) {
   .board-grid--knowledge { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .board-grid--content { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+</style>
+
+<style scoped>
+/* 6.3：知识运营后台银白/深绿视觉与移动端可用性。 */
+.admin-page {
+  width: min(100%, 84rem);
+  margin: 0 auto;
+  padding: clamp(1.5rem, 3vw, 2.5rem) 1.5rem 4rem;
+}
+
+.admin-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+  margin-bottom: 1.5rem;
+  border: 0;
+  padding: 0;
+  color: var(--text);
+  background: transparent;
+  box-shadow: none;
+}
+
+.admin-hero::after {
+  display: none;
+}
+
+.admin-hero__content {
+  max-width: 46rem;
+}
+
+.admin-kicker {
+  margin: 0;
+  color: var(--faint);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+}
+
+.admin-hero h1 {
+  margin: 0.35rem 0 0.5rem;
+  color: var(--text);
+  font-size: clamp(2rem, 3.6vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.admin-hero p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+
+.admin-pipeline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-pipeline li {
+  border: 1px solid var(--soft);
+  border-radius: var(--radius-pill);
+  padding: 0.3rem 0.7rem;
+  color: var(--muted);
+  background: var(--white);
+  font-size: 0.78rem;
+}
+
+.admin-pipeline span {
+  color: var(--brand);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  margin-right: 0.25rem;
+}
+
+.admin-actions {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.admin-actions :deep(.el-button) {
+  min-height: 2.5rem;
+  border-color: var(--border);
+  color: var(--muted);
+  background: var(--white);
+}
+
+.admin-subnav {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--soft);
+  border-radius: var(--radius-pill);
+  padding: 0.3rem;
+  background: var(--white);
+  width: fit-content;
+}
+
+.admin-subnav__tab {
+  border: 0;
+  border-radius: var(--radius-pill);
+  padding: 0.5rem 1.1rem;
+  color: var(--muted);
+  background: transparent;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.admin-subnav__tab.is-active {
+  color: var(--brand);
+  background: var(--tint);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-card {
+  border: 1px solid var(--soft);
+  border-radius: var(--radius-lg);
+  padding: 1.1rem;
+  background: var(--white);
+  box-shadow: none;
+}
+
+.stat-card--candidate,
+.stat-card--knowledge,
+.stat-card--post,
+.stat-card--reply {
+  box-shadow: none;
+}
+
+.stat-card__label {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.stat-card__value {
+  display: block;
+  margin: 0.35rem 0;
+  color: var(--text);
+  font-size: 1.8rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.stat-card__hint {
+  margin: 0;
+  color: var(--faint);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.board-section,
+.lightrag-panel {
+  border: 1px solid var(--soft);
+  border-radius: var(--radius-lg);
+  padding: clamp(1.1rem, 2vw, 1.5rem);
+  background: var(--white);
+}
+
+.lightrag-hero h2,
+.board-section__header h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+
+.board-section__eyebrow {
+  color: var(--faint);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+}
+
+.board-grid,
+.panel-card,
+.item-card,
+.detail-block,
+.reply-timeline__item {
+  border-color: var(--soft);
+  background: var(--white);
+  box-shadow: none;
+}
+
+.item-card,
+.detail-block,
+.reply-timeline__item,
+.panel-card {
+  border: 1px solid var(--soft);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+}
+
+.item-card__content,
+.detail-content,
+.reply-timeline__content,
+.panel-card__header p,
+.item-card__head p,
+.item-card__foot,
+.detail-block__head,
+.reply-timeline__head {
+  color: var(--muted);
+}
+
+.item-card h4,
+.detail-block h3,
+.panel-card__header h3 {
+  color: var(--text);
+}
+
+.detail-metrics,
+.lightrag-status-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.lr-card {
+  border: 1px solid var(--soft);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  background: var(--silver);
+}
+
+.lr-card__label,
+.lr-card__hint {
+  color: var(--muted);
+}
+
+.lr-card__value {
+  display: block;
+  margin: 0.3rem 0;
+  color: var(--text);
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.lr-card__value--ok {
+  color: var(--brand);
+}
+
+.lr-card__value--bad {
+  color: var(--text);
+}
+
+.lightrag-hero p,
+.lightrag-tip {
+  color: var(--muted);
+}
+
+.lightrag-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 63.99rem) {
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .detail-metrics,
+  .lightrag-status-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 47.99rem) {
+  .admin-page {
+    padding-inline: 1rem;
+  }
+
+  .admin-hero {
+    align-items: flex-start;
+  }
+
+  .stats-grid,
+  .detail-metrics,
+  .lightrag-status-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-subnav {
+    width: 100%;
+  }
+
+  .admin-subnav__tab {
+    flex: 1;
+    text-align: center;
+  }
+
+  .admin-pipeline {
+    gap: 0.35rem;
+  }
+
+  .item-card__actions,
+  .item-card__foot,
+  .board-section__actions {
+    flex-wrap: wrap;
+  }
 }
 </style>

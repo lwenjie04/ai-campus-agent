@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "completedAt": "2026-10-21T08:10:19.687Z",
+  "mode": "isolated_real_backend_memory",
+  "targetUrl": "http://127.0.0.1:4176",
+  "ok": true,
+  "steps": [
+    {
+      "name": "管理员登录",
+      "ok": true,
+      "detail": "admin"
+    },
+    {
+      "name": "审核路由与队列面板",
+      "ok": true,
+      "detail": "/admin/review"
+    },
+    {
+      "name": "检索路由与面板",
+      "ok": true,
+      "detail": "知识检索运行中心"
+    },
+    {
+      "name": "检索路由刷新保持",
+      "ok": true,
+      "detail": "/admin/retrieval"
+    },
+    {
+      "name": "创建待审核帖子",
+      "ok": true,
+      "detail": "status=200"
+    },
+    {
+      "name": "手机端可审核",
+      "ok": true,
+      "detail": "overflow=0 approveVisible"
+    },
+    {
+      "name": "无权限 URL 与接口拒绝",
+      "ok": true,
+      "detail": "path=/ api=401"
+    }
+  ]
+}
