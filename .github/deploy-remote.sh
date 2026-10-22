@@ -27,7 +27,7 @@ if ((app_port_number < 1 || app_port_number > 65535)); then
   exit 2
 fi
 
-for required_command in curl node npm pm2 tar; do
+for required_command in curl node npm pm2 tar timeout; do
   command -v "$required_command" >/dev/null 2>&1 || {
     echo "Required server command is missing: $required_command" >&2
     exit 2
@@ -135,6 +135,7 @@ case "$action" in
 
     mkdir -p "$base_dir/releases" "$base_dir/shared/data" "$base_dir/shared/logs"
     mkdir "$release_dir"
+    echo "Extracting release archive to $release_dir."
     tar -xzf "$archive_path" -C "$release_dir"
 
     [[ -f "$release_dir/package.json" && -f "$release_dir/server/index.mjs" ]] || {
@@ -156,13 +157,16 @@ case "$action" in
     ln -s "$base_dir/shared/server.env" "$release_dir/server/.env"
 
     cd "$release_dir"
+    echo "Installing production dependencies."
     npm ci --omit=dev
 
+    echo "Switching active release and reloading the backend."
     if [[ -n "$active_release" ]]; then
       switch_link "$active_release" "$previous_link"
     fi
     switch_link "$release_dir" "$current_link"
 
+    echo "Waiting for local health check at $health_url."
     if ! reload_backend || ! wait_for_health; then
       echo "New release failed its local health check; restoring the previous release." >&2
       rollback_current || true

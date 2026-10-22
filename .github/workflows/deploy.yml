@@ -4,13 +4,10 @@ on:
   workflow_run:
     workflows: [Quality]
     types: [completed]
+    branches: [master]
 
 permissions:
   contents: read
-
-concurrency:
-  group: production-deploy
-  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -20,6 +17,9 @@ jobs:
       github.event.workflow_run.event == 'push' &&
       github.event.workflow_run.head_branch == github.event.repository.default_branch &&
       vars.CD_ENABLED == 'true'
+    concurrency:
+      group: production-deploy
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 25
     environment: production
@@ -96,10 +96,12 @@ jobs:
           set -euo pipefail
           target="$DEPLOY_USER@$DEPLOY_HOST"
           remote_archive="/tmp/ai-campus-agent-$RELEASE_ID.tar.gz"
-          ssh_options=(-i "$HOME/.ssh/ai-campus-deploy" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$HOME/.ssh/known_hosts")
-          scp -P "$DEPLOY_PORT" "${ssh_options[@]}" "$RUNNER_TEMP/ai-campus-agent-release.tar.gz" "$target:$remote_archive"
-          ssh -p "$DEPLOY_PORT" "${ssh_options[@]}" "$target" \
-            "bash -s -- deploy '$DEPLOY_PATH' '$RELEASE_ID' '$DEPLOY_APP_PORT' '$remote_archive'" \
+          ssh_options=(-i "$HOME/.ssh/ai-campus-deploy" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$HOME/.ssh/known_hosts" -o ConnectTimeout=10 -o ServerAliveInterval=15 -o ServerAliveCountMax=3)
+          echo "Uploading release archive to $target."
+          timeout --foreground 3m scp -P "$DEPLOY_PORT" "${ssh_options[@]}" "$RUNNER_TEMP/ai-campus-agent-release.tar.gz" "$target:$remote_archive"
+          echo "Starting remote deployment and local health check."
+          timeout --foreground 18m ssh -p "$DEPLOY_PORT" "${ssh_options[@]}" "$target" \
+            "timeout --kill-after=30s 17m bash -s -- deploy '$DEPLOY_PATH' '$RELEASE_ID' '$DEPLOY_APP_PORT' '$remote_archive'" \
             < .github/deploy-remote.sh
 
       - name: Check public HTTPS health endpoint
@@ -112,7 +114,7 @@ jobs:
         run: |
           set -euo pipefail
           target="$DEPLOY_USER@$DEPLOY_HOST"
-          ssh_options=(-i "$HOME/.ssh/ai-campus-deploy" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$HOME/.ssh/known_hosts")
-          ssh -p "$DEPLOY_PORT" "${ssh_options[@]}" "$target" \
+          ssh_options=(-i "$HOME/.ssh/ai-campus-deploy" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$HOME/.ssh/known_hosts" -o ConnectTimeout=10 -o ServerAliveInterval=15 -o ServerAliveCountMax=3)
+          timeout --foreground 3m ssh -p "$DEPLOY_PORT" "${ssh_options[@]}" "$target" \
             "bash -s -- rollback '$DEPLOY_PATH' '$RELEASE_ID' '$DEPLOY_APP_PORT'" \
             < .github/deploy-remote.sh
