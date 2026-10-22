@@ -327,7 +327,7 @@ try {
   if (pendingKnowledge.status !== 200) throw new Error(`knowledge list failed: ${pendingKnowledge.status}`)
   const knowledgeItem = (pendingKnowledge.json.data?.list || []).find((item) => item.postId === postId)
   if (!knowledgeItem) throw new Error('generated knowledge not found')
-  await clickCardAction('学生社区经验总结', '审核并发布')
+  await clickCardAction(knowledgeItem.title, '审核并发布')
   if (requestCounts.knowledgeApprove !== 1) {
     throw new Error(`knowledge approve requests: ${requestCounts.knowledgeApprove}`)
   }
