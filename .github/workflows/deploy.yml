@@ -21,7 +21,7 @@ jobs:
       group: production-deploy
       cancel-in-progress: false
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
     environment: production
     env:
       DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
@@ -75,9 +75,11 @@ jobs:
           set -euo pipefail
           package_dir="$RUNNER_TEMP/ai-campus-agent-release"
           mkdir -p "$package_dir"
-          git archive --format=tar "$RELEASE_SHA" | tar -xf - -C "$package_dir"
+          git archive --format=tar "$RELEASE_SHA" package.json package-lock.json ecosystem.config.cjs server | tar -xf - -C "$package_dir"
+          rm -rf "$package_dir/server/tests" "$package_dir/server/evals"
           cp -a dist "$package_dir/dist"
           tar -czf "$RUNNER_TEMP/ai-campus-agent-release.tar.gz" -C "$package_dir" .
+          du -h "$RUNNER_TEMP/ai-campus-agent-release.tar.gz"
 
       - name: Configure pinned SSH access
         id: ssh-config
@@ -97,8 +99,11 @@ jobs:
           target="$DEPLOY_USER@$DEPLOY_HOST"
           remote_archive="/tmp/ai-campus-agent-$RELEASE_ID.tar.gz"
           ssh_options=(-i "$HOME/.ssh/ai-campus-deploy" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$HOME/.ssh/known_hosts" -o ConnectTimeout=10 -o ServerAliveInterval=15 -o ServerAliveCountMax=3)
+          echo "Checking remote temporary storage before upload."
+          timeout --foreground 30s ssh -p "$DEPLOY_PORT" "${ssh_options[@]}" "$target" \
+            "set -eu; df -h /tmp '$DEPLOY_PATH'; df -i /tmp '$DEPLOY_PATH'; test -w /tmp; probe='/tmp/.ai-campus-deploy-probe-$RELEASE_ID'; dd if=/dev/zero of=\"\$probe\" bs=1M count=1 conv=fsync status=none; rm -f -- \"\$probe\""
           echo "Streaming release archive to $target over SSH."
-          timeout --foreground 3m ssh -p "$DEPLOY_PORT" "${ssh_options[@]}" "$target" \
+          timeout --foreground 10m ssh -p "$DEPLOY_PORT" "${ssh_options[@]}" "$target" \
             "umask 077 && cat > '$remote_archive'" \
             < "$RUNNER_TEMP/ai-campus-agent-release.tar.gz"
           echo "Starting remote deployment and local health check."
