@@ -135,6 +135,7 @@ try {
 
   await command('Page.enable')
   await command('Runtime.enable')
+  await command('Network.enable')
   await command('Emulation.setDeviceMetricsOverride', {
     width: 1440,
     height: 900,
@@ -173,7 +174,8 @@ try {
     mobile: true,
   })
   await sleep(300)
-  // 清掉游客试问标记后重新进入，保证手机端还能再发一条。
+  // 切换为新的游客身份，保证手机端独立验证第二次真实流式问答。
+  await command('Network.clearBrowserCookies')
   await evaluate('localStorage.clear()')
   await command('Page.navigate', { url: `${targetUrl}/chat/new` })
   await waitFor(async () => evaluate('document.readyState === "complete"'), 'mobile chat page load')
