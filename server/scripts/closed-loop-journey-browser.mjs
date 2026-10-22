@@ -126,6 +126,7 @@ try {
   let commandId = 0
   const command = (method, params) => sendCommand(socket, ++commandId, method, params)
   const requestCounts = { approve: 0, generate: 0, knowledgeApprove: 0 }
+  const knowledgeApproveResponses = []
   const pageErrors = []
   let failGenerateOnce = true
   socket.addEventListener('message', (event) => {
@@ -144,6 +145,13 @@ try {
             if (request.url.includes('/knowledge/')) requestCounts.knowledgeApprove += 1
             else requestCounts.approve += 1
           }
+        }
+        return
+      }
+      if (message.method === 'Network.responseReceived') {
+        const response = message.params.response
+        if (response?.url.includes('/community/knowledge/') && response.url.endsWith('/approve')) {
+          knowledgeApproveResponses.push({ url: response.url, status: response.status })
         }
         return
       }
@@ -309,6 +317,16 @@ try {
   await clickCardAction('学生社区经验总结', '审核并发布')
   if (requestCounts.knowledgeApprove !== 1) {
     throw new Error(`knowledge approve requests: ${requestCounts.knowledgeApprove}`)
+  }
+  const knowledgeApprovalResponse = await waitFor(
+    async () =>
+      knowledgeApproveResponses.find((response) =>
+        response.url.endsWith(`/community/knowledge/${knowledgeItem.id}/approve`),
+      ),
+    'knowledge approval response',
+  )
+  if (knowledgeApprovalResponse.status !== 200) {
+    throw new Error(`knowledge approval returned HTTP ${knowledgeApprovalResponse.status}`)
   }
   await waitFor(
     async () => {
