@@ -59,7 +59,7 @@
     "format": "prettier --write --experimental-cli src/"
   },
   "dependencies": {
-    "axios": "^1.13.5",
+    "axios": "^1.20.0",
     "element-plus": "^2.13.2",
     "mysql2": "^3.20.0",
     "nodemailer": "^8.0.4",
