@@ -59,6 +59,7 @@ reload_backend() {
 }
 
 wait_for_health() {
+  local allow_missing_release_id="${1:-false}"
   local attempt
   local active_release
   local active_release_id
@@ -68,7 +69,7 @@ wait_for_health() {
   [[ -n "$active_release" && -d "$active_release" ]] || return 1
   for attempt in {1..30}; do
     response="$(curl --silent --fail --max-time 4 "$health_url" 2>/dev/null || true)"
-    if [[ -n "$response" ]] && node -e 'const [expected, raw] = process.argv.slice(1); try { const health = JSON.parse(raw); process.exitCode = health.ok === true && health.releaseId === expected ? 0 : 1 } catch { process.exitCode = 1 }' "$active_release_id" "$response" >/dev/null 2>&1; then
+    if [[ -n "$response" ]] && node -e 'const [expected, raw, allowMissing] = process.argv.slice(1); try { const health = JSON.parse(raw); process.exitCode = health.ok === true && (health.releaseId === expected || (allowMissing === "true" && !health.releaseId)) ? 0 : 1 } catch { process.exitCode = 1 }' "$active_release_id" "$response" "$allow_missing_release_id" >/dev/null 2>&1; then
       return 0
     fi
     sleep 2
@@ -87,7 +88,7 @@ rollback_current() {
     if [[ -n "$failed_release" && -d "$failed_release" ]]; then
       switch_link "$failed_release" "$previous_link"
     fi
-    if reload_backend && wait_for_health; then
+    if reload_backend && wait_for_health true; then
       echo "Rolled back to $stable_release."
       return 0
     fi

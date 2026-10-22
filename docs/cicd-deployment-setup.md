@@ -6,7 +6,7 @@
 
 ## 一次性服务器准备
 
-部署账号需要 Node.js 22.12+、npm、PM2、curl、tar，并能写入部署目录。Nginx 应能读取 `current/dist`，并把 `/api/` 代理到 `127.0.0.1:3000`；`/api/chat/stream` 需关闭代理缓冲。PM2 的开机启动服务需要由服务器管理员预先执行 `pm2 startup` 并按 PM2 输出完成系统配置。
+服务器需要 Node.js 22.12+、npm、PM2、curl、tar。SSH 部署账号必须能通过 `sudo -n` 执行远程部署脚本；如果现有 PM2 服务由 root 管理，部署与回滚也必须由 root 的 PM2 daemon 执行，不能另起一个用户级 PM2 实例。Nginx 应能读取 `current/dist`，并把 `/api/` 代理到 `127.0.0.1:3000`；`/api/chat/stream` 需关闭代理缓冲。PM2 的开机启动服务需要由服务器管理员预先配置。
 
 部署目录采用以下结构：
 
@@ -21,9 +21,9 @@
     logs/
 ```
 
-首次启用前，在服务器上创建 `shared/server.env`，内容使用 `docs/deploy-server-checklist.md` 的生产配置；权限设为仅部署账号可读。不要把密钥放进 GitHub Actions 日志、仓库文件或部署包。若已有线上 `server/data` 中的生成向量索引或本地数据，先将其备份并复制到 `shared/data`，再启用第一次部署。CD 会把每个版本的已跟踪 `server/data` 文件同步到共享目录，保留其中额外的生成文件。
+首次启用前，在服务器上创建 `shared/server.env`，内容使用 `docs/deploy-server-checklist.md` 的生产配置；权限设为仅部署进程可读。不要把密钥放进 GitHub Actions 日志、仓库文件或部署包。若已有线上 `server/data` 中的生成向量索引或本地数据，先将其备份并复制到 `shared/data`，再启用第一次部署。CD 会把每个版本的已跟踪 `server/data` 文件同步到共享目录，保留其中额外的生成文件。
 
-部署账号的 SSH 公钥需加入服务器 `authorized_keys`。第一次部署前，现有部署目录中的 `current` 若存在，必须是指向当前稳定版本目录的符号链接，且该目录包含兼容的 `ecosystem.config.cjs`；脚本会拒绝覆盖普通目录或无法自动恢复的旧版本。首次迁移时先把当前稳定程序改为用此 PM2 配置运行，并验证一次手动 reload。Nginx 的静态根目录配置为：
+部署账号的 SSH 公钥需加入服务器 `authorized_keys`。第一次部署前，现有部署目录中的 `current` 若存在，必须是指向当前稳定版本目录的符号链接，且该目录包含兼容的 `ecosystem.config.cjs`；脚本会拒绝覆盖普通目录或无法自动恢复的旧版本。首次迁移时先把当前稳定程序改为用此 PM2 配置运行，并验证一次手动 reload。对于原先由宝塔管理、PM2 服务以 root 运行的主机，应先备份服务器配置，再创建上述目录；把现有 `.env` 安全复制到 `shared/server.env`（权限 `600`），把 `server/data` 和 `server/logs` 复制到共享目录，并让 `current` 暂时指向现有稳定程序目录。首次新版本通过本机健康检查后，再将 Nginx 静态根目录改为：
 
 ```nginx
 root /var/www/ai-campus-agent/current/dist;
@@ -53,10 +53,10 @@ root /var/www/ai-campus-agent/current/dist;
 
 在仓库 Settings → Secrets and variables → Actions → Variables 添加仓库级变量 `CD_ENABLED=true`。该开关位于仓库级变量，因为 GitHub 在判断 job 是否运行时不会加载 Environment-scoped variables。配置完成前保持未设置或 `false`。
 
-第一次配置建议由服务器管理员核对 host key、权限、`server.env`、Nginx 路由和 `/health`，再启用 `CD_ENABLED`。其后，合并到默认分支的代码会先完整通过 CI，再自动发布；PR 和其他分支不会触发生产部署。可在 `production` Environment 配置 required reviewers 作为人工发布批准门。
+第一次配置由服务器管理员核对 host key、权限、`server.env`、Nginx 路由和 `/health`，再启用 `CD_ENABLED`。当前服务器现状、首次迁移与验证记录写在 `docs/v2-execution-board.md` 的 7.3/7.4 行。其后，合并到默认分支的代码会先完整通过 CI，再自动发布；PR 和其他分支不会触发生产部署。可在 `production` Environment 配置 required reviewers 作为人工发布批准门。
 
 ## 回滚与故障排查
 
 部署脚本每次创建独立 release 目录，并保留 `current` 与 `previous` 链接。新版本本机健康检查失败会自动回滚；公网健康检查失败会由 workflow 发起回滚。数据库迁移仍按 [`release-checklist.md`](release-checklist.md) 人工备份和执行；不自动运行旧 SQL 或增量迁移。
 
-若部署 job 被跳过，检查 push 是否来自默认分支、`Quality` 是否全绿，以及 `CD_ENABLED` 是否为 `true`。若配置校验失败，检查 Environment secrets/variables 是否齐全、host key 是否准确、部署用户是否有目录写入权限，以及服务器是否已安装依赖工具和 PM2。
+若部署 job 被跳过，检查 push 是否来自默认分支、`Quality` 是否全绿，以及 `CD_ENABLED` 是否为 `true`。若配置校验失败，检查 Environment secrets/variables 是否齐全、host key 是否准确、部署用户是否能无交互 sudo，以及服务器是否已安装依赖工具和 PM2。
