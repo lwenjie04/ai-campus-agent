@@ -9,6 +9,7 @@
 - TTS 配置
 - 进程守护
 - Nginx 反向代理
+- GitHub Actions 自动部署（可选）
 
 适用于当前这版功能：
 
@@ -295,7 +296,7 @@ npm install -g pm2
 启动后端：
 
 ```bash
-pm2 start server/index.mjs --name ai-campus-agent-backend
+pm2 start ecosystem.config.cjs --env production
 ```
 
 查看状态：
@@ -316,6 +317,8 @@ pm2 startup
 ```bash
 pm2 logs ai-campus-agent-backend
 ```
+
+自动部署 workflow 也使用仓库根目录的 `ecosystem.config.cjs` 管理同名服务；现有 PM2 服务迁移到 CD 前，先用该配置手动启动或 reload 并验证 `/health`。
 
 ---
 
@@ -448,6 +451,8 @@ server {
 6. 配置 Nginx
 7. 使用 pm2 托管后端
 8. 最后全链路验收
+
+如要在 CI 通过后自动上线，按 [GitHub Actions 自动部署配置](cicd-deployment-setup.md) 配置 `production` Environment。CD 使用版本目录与 `current` 符号链接发布，Nginx 静态根目录需指向 `/var/www/ai-campus-agent/current/dist`；目标服务器、密钥、`server.env` 与健康检查地址必须由管理员配置，CD 默认关闭。
 
 ---
 

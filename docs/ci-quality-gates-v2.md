@@ -49,4 +49,10 @@ workflow 不设置 `RELEASE_LIVE_VALIDATION_CONFIRMED`，也不连接真实模�
 
 CI 将 `release:check` 拆成单独可诊断的门禁，并用离线 hash 索引跑完整 Top 20；不直接运行 monolithic `release:check`，因为它复用发布环境的向量就绪配置和默认 Golden 参数，既会与显式 Node/测试/构建 job 重复，也不能替代 Top 20 离线向量检查。发布前仍按 [release-checklist.md](release-checklist.md) 执行目标环境验证与 `release:gate`。
 
-7.3 的远端验收仍需在真实 push/PR workflow 全绿后登记 run URL、耗时与 artifacts。此文档和本地验证本身不代表 GitHub Actions 已运行通过。
+## 自动部署（CD）
+
+`.github/workflows/deploy.yml` 监听 `Quality` workflow 完成事件，仅接受默认分支 push 且完整 CI 成功的 commit；PR 和其他分支不会发布。它重新构建同一 commit，再通过 SSH 更新前端、Node 服务和 PM2 进程，检查本机 `/health` 与公网 HTTPS 健康地址，检查失败时回滚上一 release。
+
+CD 默认关闭。启用步骤、GitHub Environment secrets/variables、服务器目录结构、Nginx 根目录与首次迁移要求见 [cicd-deployment-setup.md](cicd-deployment-setup.md)。CI 不读取部署密钥，也不执行数据库迁移；部署目标须先完成 7.4 的环境核对。
+
+7.3 质量 workflow 已在 2026-10-22 的 [run 39714486081](https://github.com/lwenjie04/ai-campus-agent/actions/runs/39714486081) 全绿。该结果证明 CI 门禁执行通过，不代表目标生产环境已完成 7.4 验收。

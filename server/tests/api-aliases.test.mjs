@@ -53,6 +53,7 @@ test('V2 /api aliases preserve health, chat stream, login, and download authoriz
       AUTH_NOTIFY_EMAIL: 'api-alias-admin@example.test',
       AUTH_SESSION_SECRET: sessionSecret,
       GUEST_COOKIE_SECRET: 'api-alias-guest-secret-at-least-32-chars',
+      DEPLOY_RELEASE_ID: 'api-alias-test-release',
     },
     stdio: ['ignore', 'pipe', 'pipe'],
     windowsHide: true,
@@ -73,7 +74,9 @@ test('V2 /api aliases preserve health, chat stream, login, and download authoriz
 
     const healthResponse = await fetch(`${baseUrl}/api/health`)
     assert.equal(healthResponse.status, 200)
-    assert.equal((await healthResponse.json()).ok, true)
+    const healthBody = await healthResponse.json()
+    assert.equal(healthBody.ok, true)
+    assert.equal(healthBody.releaseId, 'api-alias-test-release')
 
     const chatResponse = await fetch(`${baseUrl}/api/chat/stream`, {
       method: 'POST',

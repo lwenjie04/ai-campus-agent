@@ -39,13 +39,14 @@ npm run rag:test:service -- --limit 20 --vector --json --output server/evals/lat
 
 ## 3. CI 与隔离旅程
 
-- [ ] `.github/workflows/quality.yml` 的 push/PR run 全绿；将 workflow run URL、job 耗时与 artifacts 记入 handoff。
+- [x] `.github/workflows/quality.yml` 的 push run 全绿；2026-10-22 workflow run [39714486081](https://github.com/lwenjie04/ai-campus-agent/actions/runs/39714486081) 五个 job 全通过。后续发布候选仍须记录自身 commit 对应的 workflow run、耗时与 artifacts。
+- [ ] 生产 CD 的部署目标、GitHub Environment secrets/variables、`server.env`、Nginx `current/dist` 根目录和 health URL 已按 [自动部署配置文档](cicd-deployment-setup.md) 完成核对；仅在 7.4 目标环境验收后启用 `CD_ENABLED`。
 - [ ] 确认 Browser journeys、service journey、Top 20 Golden、MySQL 8 review service 都实际运行；不得把本地单测或旧 JSON 当成本次 CI 证据。
 - [ ] 使用隔离 Mock 旅程检查 10 轮服务闭环：`npm run service:journey`。该脚本会自建 build、后端与 preview，不代替真实服务验证。
 - [ ] 在目标后端启动后运行 `npm run service:smoke`；确认 `/health`、`/api/health`、CORS 与真实部署代理。
 - [ ] `RELEASE_LIVE_VALIDATION_CONFIRMED` 不应在 CI 设置，也不能用来跳过任何测试。
 
-当前 7.3 workflow 尚待一次真实 push/PR run 全绿；在 run 记录落入计划表前，不将它视为已通过发布门禁。
+CI workflow 的一次真实 push run 已全绿。该结果不代表真实模型、目标数据库、SMTP、TTS、HTTPS/Nginx 或回滚演练通过；这些仍由 7.4 目标环境验收确认。
 
 ## 4. 7.4 目标环境验收
 

@@ -86,7 +86,8 @@ node server/index.mjs
 ## 尚未完成与后续签收
 
 - 0.2 视觉状态稿确认、5.x 办事指南人工数据、5.4 Top 50 金标仍待处理。
-- 7.3 新增 GitHub Actions workflow 尚未记录一次真实 push/PR 全绿 run；CI 中 Top 20 job 与 browser/MySQL job 需要远端证据。
+- 7.3 GitHub Actions workflow 已于 2026-10-22 在 [run 39714486081](https://github.com/lwenjie04/ai-campus-agent/actions/runs/39714486081) 全绿；Top 20、browser 和 MySQL job 均有远端证据。后续发布候选仍须记录对应 commit 的 run。
+- CD workflow 已准备但默认关闭；服务器、密钥、健康检查地址与 7.4 目标环境验收完成后再启用。
 - 7.4 尚未验证真实模型、目标 MySQL、SMTP、TTS、HTTPS/Nginx、性能与回滚。
 - 发布版本、tag、目标服务器、试用日期/人数、实际试用问题和结论尚未提供；不在此草案中预填。
 

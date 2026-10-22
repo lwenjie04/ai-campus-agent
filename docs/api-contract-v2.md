@@ -31,6 +31,8 @@
 | `/api/lightrag/*` | 按管理代理既有方法 | 管理员会话；未配置上游时返回可识别的不可用错误。 |
 | `POST` | `/api/feedback` | 本文 §8 定义的回答反馈。仅在凭据持久化可用时启用。 |
 
+健康响应返回 `ok`、`service`、`releaseId`、`providerMode`、`model`、`time`。`releaseId` 由部署环境注入，未部署时为 `local`；响应不包含密钥或个人数据。
+
 API 未命中返回 JSON 404；不得被 SPA 的 `index.html` 回退吞掉。下载未登录与登录无权必须区分 401/403。完整社区、认证、TTS 字段仍以各自端点实现为准，本任务不重定义它们的既有 payload。
 
 ## 3. 问答请求、消息和状态

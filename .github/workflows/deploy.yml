@@ -1,0 +1,118 @@
+name: Deploy production
+
+on:
+  workflow_run:
+    workflows: [Quality]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy after successful default-branch CI
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == github.event.repository.default_branch &&
+      vars.CD_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: production
+    env:
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+      DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+      DEPLOY_PORT: ${{ vars.DEPLOY_PORT || '22' }}
+      DEPLOY_APP_PORT: ${{ vars.DEPLOY_APP_PORT || '3000' }}
+      DEPLOY_HEALTH_URL: ${{ vars.DEPLOY_HEALTH_URL }}
+      RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
+      RELEASE_ID: ${{ github.event.workflow_run.head_sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - name: Validate deployment settings
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "$DEPLOY_HOST" && -n "$DEPLOY_USER" && -n "$DEPLOY_SSH_KEY" && -n "$DEPLOY_KNOWN_HOSTS" ]]
+          [[ -n "$DEPLOY_PATH" && -n "$DEPLOY_HEALTH_URL" ]]
+          [[ "$DEPLOY_HOST" =~ ^[A-Za-z0-9.-]+$ ]]
+          [[ "$DEPLOY_USER" =~ ^[A-Za-z_][A-Za-z0-9_-]*$ ]]
+          [[ "$DEPLOY_PATH" =~ ^/[A-Za-z0-9._/-]+$ && "$DEPLOY_PATH" != "/" ]]
+          [[ "$DEPLOY_PATH" != *"/../"* && "$DEPLOY_PATH" != */.. ]]
+          [[ "$DEPLOY_PORT" =~ ^[0-9]{1,5}$ ]]
+          [[ "$DEPLOY_APP_PORT" =~ ^[0-9]{1,5}$ ]]
+          deploy_port_number=$((10#$DEPLOY_PORT))
+          deploy_app_port_number=$((10#$DEPLOY_APP_PORT))
+          ((deploy_port_number >= 1 && deploy_port_number <= 65535))
+          ((deploy_app_port_number >= 1 && deploy_app_port_number <= 65535))
+          [[ "$DEPLOY_HEALTH_URL" == https://* ]]
+
+      - name: Check out the exact commit that passed CI
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install and build production frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Package the exact release source and frontend build
+        run: |
+          set -euo pipefail
+          package_dir="$RUNNER_TEMP/ai-campus-agent-release"
+          mkdir -p "$package_dir"
+          git archive --format=tar "$RELEASE_SHA" | tar -xf - -C "$package_dir"
+          cp -a dist "$package_dir/dist"
+          tar -czf "$RUNNER_TEMP/ai-campus-agent-release.tar.gz" -C "$package_dir" .
+
+      - name: Configure pinned SSH access
+        id: ssh-config
+        shell: bash
+        run: |
+          set -euo pipefail
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$DEPLOY_SSH_KEY" | tr -d '\r' > "$HOME/.ssh/ai-campus-deploy"
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/ai-campus-deploy" "$HOME/.ssh/known_hosts"
+
+      - name: Deploy release and check local health
+        id: deploy
+        shell: bash
+        run: |
+          set -euo pipefail
+          target="$DEPLOY_USER@$DEPLOY_HOST"
+          remote_archive="/tmp/ai-campus-agent-$RELEASE_ID.tar.gz"
+          ssh_options=(-i "$HOME/.ssh/ai-campus-deploy" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$HOME/.ssh/known_hosts")
+          scp -P "$DEPLOY_PORT" "${ssh_options[@]}" "$RUNNER_TEMP/ai-campus-agent-release.tar.gz" "$target:$remote_archive"
+          ssh -p "$DEPLOY_PORT" "${ssh_options[@]}" "$target" \
+            "bash -s -- deploy '$DEPLOY_PATH' '$RELEASE_ID' '$DEPLOY_APP_PORT' '$remote_archive'" \
+            < .github/deploy-remote.sh
+
+      - name: Check public HTTPS health endpoint
+        id: public-health
+        run: curl --fail --silent --show-error --location --retry 8 --retry-delay 3 --retry-connrefused --max-time 15 "$DEPLOY_HEALTH_URL"
+
+      - name: Roll back if the public health check fails
+        if: failure() && steps.ssh-config.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          target="$DEPLOY_USER@$DEPLOY_HOST"
+          ssh_options=(-i "$HOME/.ssh/ai-campus-deploy" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$HOME/.ssh/known_hosts")
+          ssh -p "$DEPLOY_PORT" "${ssh_options[@]}" "$target" \
+            "bash -s -- rollback '$DEPLOY_PATH' '$RELEASE_ID' '$DEPLOY_APP_PORT'" \
+            < .github/deploy-remote.sh

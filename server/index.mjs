@@ -1061,6 +1061,7 @@ const server = createServer(async (req, res) => {
     return json(res, 200, {
       ok: true,
       service: 'ai-campus-agent-backend',
+      releaseId: process.env.DEPLOY_RELEASE_ID || 'local',
       providerMode: PROVIDER_MODE,
       model: LLM_MODEL,
       time: new Date().toISOString(),
