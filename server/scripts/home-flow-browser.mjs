@@ -169,8 +169,8 @@ try {
   const focused = await waitFor(
     async () =>
       evaluate(`(() => {
-        const active = document.activeElement
-        return Boolean(active) && active.tagName === 'INPUT' && (active.placeholder || '').includes('描述')
+        const input = document.querySelector('.input-box textarea')
+        return Boolean(input) && document.activeElement === input
       })()`),
     'chat input focused',
   )
