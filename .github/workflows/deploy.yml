@@ -97,8 +97,10 @@ jobs:
           target="$DEPLOY_USER@$DEPLOY_HOST"
           remote_archive="/tmp/ai-campus-agent-$RELEASE_ID.tar.gz"
           ssh_options=(-i "$HOME/.ssh/ai-campus-deploy" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$HOME/.ssh/known_hosts" -o ConnectTimeout=10 -o ServerAliveInterval=15 -o ServerAliveCountMax=3)
-          echo "Uploading release archive to $target with the legacy SCP protocol."
-          timeout --foreground 3m scp -O -P "$DEPLOY_PORT" "${ssh_options[@]}" "$RUNNER_TEMP/ai-campus-agent-release.tar.gz" "$target:$remote_archive"
+          echo "Streaming release archive to $target over SSH."
+          timeout --foreground 3m ssh -p "$DEPLOY_PORT" "${ssh_options[@]}" "$target" \
+            "umask 077 && cat > '$remote_archive'" \
+            < "$RUNNER_TEMP/ai-campus-agent-release.tar.gz"
           echo "Starting remote deployment and local health check."
           timeout --foreground 18m ssh -p "$DEPLOY_PORT" "${ssh_options[@]}" "$target" \
             "timeout --kill-after=30s 17m bash -s -- deploy '$DEPLOY_PATH' '$RELEASE_ID' '$DEPLOY_APP_PORT' '$remote_archive'" \
