@@ -126,6 +126,7 @@ try {
   let commandId = 0
   const command = (method, params) => sendCommand(socket, ++commandId, method, params)
   const requestCounts = { approve: 0, generate: 0, knowledgeApprove: 0 }
+  const knowledgeApproveRequests = []
   const knowledgeApproveResponses = []
   const pageErrors = []
   let failGenerateOnce = true
@@ -142,16 +143,28 @@ try {
         if (request?.method === 'POST' && typeof request.url === 'string') {
           if (request.url.includes('/knowledge/generate')) requestCounts.generate += 1
           else if (request.url.endsWith('/approve')) {
-            if (request.url.includes('/knowledge/')) requestCounts.knowledgeApprove += 1
-            else requestCounts.approve += 1
+            if (request.url.includes('/knowledge/')) {
+              requestCounts.knowledgeApprove += 1
+              knowledgeApproveRequests.push({
+                requestId: message.params.requestId,
+                url: request.url,
+              })
+            } else requestCounts.approve += 1
           }
         }
         return
       }
       if (message.method === 'Network.responseReceived') {
         const response = message.params.response
-        if (response?.url.includes('/community/knowledge/') && response.url.endsWith('/approve')) {
-          knowledgeApproveResponses.push({ url: response.url, status: response.status })
+        const request = knowledgeApproveRequests.find(
+          (item) => item.requestId === message.params.requestId,
+        )
+        if (request) {
+          knowledgeApproveResponses.push({
+            requestId: message.params.requestId,
+            url: request.url,
+            status: response.status,
+          })
         }
         return
       }
@@ -318,12 +331,18 @@ try {
   if (requestCounts.knowledgeApprove !== 1) {
     throw new Error(`knowledge approve requests: ${requestCounts.knowledgeApprove}`)
   }
+  const knowledgeApprovalRequest = knowledgeApproveRequests.find((request) =>
+    request.url.includes(`/community/knowledge/${knowledgeItem.id}/approve`),
+  )
+  if (!knowledgeApprovalRequest) {
+    throw new Error(`approval request did not target ${knowledgeItem.id}`)
+  }
   const knowledgeApprovalResponse = await waitFor(
     async () =>
-      knowledgeApproveResponses.find((response) =>
-        response.url.endsWith(`/community/knowledge/${knowledgeItem.id}/approve`),
+      knowledgeApproveResponses.find(
+        (response) => response.requestId === knowledgeApprovalRequest.requestId,
       ),
-    'knowledge approval response',
+    `knowledge approval response (${knowledgeApprovalRequest.url})`,
   )
   if (knowledgeApprovalResponse.status !== 200) {
     throw new Error(`knowledge approval returned HTTP ${knowledgeApprovalResponse.status}`)
