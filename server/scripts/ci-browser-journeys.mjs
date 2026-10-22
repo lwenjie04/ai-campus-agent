@@ -181,6 +181,9 @@ const stopService = async (child) => {
 const runJourney = async (journey) => {
   const resultPath = resolve(root, journey.result)
   await rm(resultPath, { force: true })
+  for (const directory of Object.values(journey.shotEnv || {})) {
+    await mkdir(resolve(root, directory), { recursive: true })
+  }
   console.log(`[ci-browser-journeys] ${journey.name}`)
   const child = spawn(process.execPath, [journey.script], {
     cwd: root,
