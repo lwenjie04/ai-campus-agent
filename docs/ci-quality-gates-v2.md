@@ -6,7 +6,7 @@
 
 `quality` 检查发布资产与服务端语法，然后依次运行 lint、type-check、前端单测、普通服务端测试和生产构建。服务端集成测试 `test:mysql:review` 不属于内存测试入口，单独由 MySQL job 执行。
 
-该 job 不需要真实密钥。工作流显式设置 `LLM_PROVIDER_MODE=mock`，因此 `check-release-assets` 会输出 mock 配置警告而不会要求 `LLM_API_KEY`；缺少仓库必须文件或检测到错误配置仍会失败。
+该 job 不需要真实密钥。工作流只在发布资产检查步骤设置 `LLM_PROVIDER_MODE=mock`，因此该检查会输出 mock 配置警告而不会要求 `LLM_API_KEY`，同时避免改变服务端测试的 provider 行为；缺少仓库必须文件或检测到错误配置仍会失败。
 
 ## 浏览器旅程 job
 
@@ -21,7 +21,7 @@
 - `chat:stream`
 - `responsive:matrix`
 
-每个脚本必须成功退出，结果 JSON 必须满足 `ok === true` 且所有步骤成功。runner 还核对管理员“只重试生成”请求数、普通投稿 `POST=1`、社区来源回链和越权 `403` 等关键断言。服务关闭由 runner 的 `finally` 清理。
+每个脚本必须成功退出，结果 JSON 必须满足 `ok === true` 且所有步骤成功。runner 还核对管理员“只重试生成”请求数、普通投稿 `POST=1`、社区来源回链和越权 `403` 等关键断言；知识审核完成状态以指定条目从 pending 队列移除并进入 approved 队列作为依据。服务关闭由 runner 的 `finally` 清理。
 
 旅程环境固定使用 `MYSQL_PORT=1`、`AUTH_ALLOW_MEMORY_FALLBACK=true`、`LLM_PROVIDER_MODE=mock`、`LIGHTRAG_PRIMARY=false`、`RAG_VECTOR_ENABLED=false`、`TTS_PROVIDER=disabled`、`FEEDBACK_TEST_MEMORY=true`。每个旅程运行前会创建该旅程声明的截图目录。管理员账号与密码、`AUTH_SESSION_SECRET`、`GUEST_COOKIE_SECRET` 在 runner 内随机生成；管理员环境变量与各旅程变量一致。`CORS_ORIGIN` 为 preview 源，不读取开发者 `.env` 或连接真实服务。
 

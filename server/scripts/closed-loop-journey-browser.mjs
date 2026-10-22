@@ -307,8 +307,17 @@ try {
   const knowledgeItem = (pendingKnowledge.json.data?.list || []).find((item) => item.postId === postId)
   if (!knowledgeItem) throw new Error('generated knowledge not found')
   await clickCardAction('学生社区经验总结', '审核并发布')
+  if (requestCounts.knowledgeApprove !== 1) {
+    throw new Error(`knowledge approve requests: ${requestCounts.knowledgeApprove}`)
+  }
   await waitFor(
-    async () => !(await evaluate(`document.body.textContent.includes('学生社区经验总结')`)),
+    async () => {
+      const currentPending = await apiJson('GET', '/community/knowledge?status=pending')
+      return (
+        currentPending.status === 200 &&
+        !(currentPending.json.data?.list || []).some((item) => item.id === knowledgeItem.id)
+      )
+    },
     'knowledge item approved',
   )
   const approvedKnowledge = await apiJson('GET', '/community/knowledge?status=approved')
