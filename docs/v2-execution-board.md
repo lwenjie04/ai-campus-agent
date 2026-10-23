@@ -59,10 +59,10 @@
 | S4 | 6 | 6 | 0 | 0 | 0 | 0 | — |
 | S5 | 4 | 0 | 0 | 0 | 0 | 4 | 等 5.1 数据 |
 | S6 | 5 | 5 | 0 | 0 | 0 | 0 | — |
-| S7 | 5 | 2 | 2 | 0 | 0 | 1 | 7.3 等真实 CI run；7.5 等 7.4 收口 |
-| **合计** | **39** | **31** | **3** | **0** | **0** | **5** | — |
+| S7 | 5 | 2 | 2 | 1 | 0 | 0 | 7.4 正在由 AI-2 验证目标环境；7.3 等 Top 50；7.5 等 7.4 收口 |
+| **合计** | **39** | **31** | **3** | **1** | **0** | **4** | — |
 
-> 已完成：0.1、0.3、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、2.1、2.2、2.3、2.4、2.5、3.1、3.2、3.3、3.4、3.5、4.1、4.2、4.3、4.4、4.5、4.6、6.1、6.2、6.3、6.4、6.5、7.1、7.2。**S1/S2/S3/S4/S6 已全部完成**；0.2 等 Figma 状态稿，5.x 等人工数据；7.3 的 CI 骨架与本地检查已交付，等待 push/PR 全绿及 5.4 Top 50 数据；7.5 的 7.4 前置文档准备已完成，真实环境验收与试用记录仍待人工环境。实时状态以本表为准。
+> 已完成：0.1、0.3、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、2.1、2.2、2.3、2.4、2.5、3.1、3.2、3.3、3.4、3.5、4.1、4.2、4.3、4.4、4.5、4.6、6.1、6.2、6.3、6.4、6.5、7.1、7.2。**S1/S2/S3/S4/S6 已全部完成**；0.2 等 Figma 状态稿，5.x 等人工数据；7.3 的 CI 与生产部署已取得全绿和公网验证证据，仍等 5.4 Top 50 数据；7.4 目标环境验证由 AI-2 主导进行；7.5 的前置文档已准备，真实验收、回滚演练与试用记录待完成。实时状态以本表为准。
 
 ---
 
@@ -144,7 +144,7 @@
 | 7.1 | 请求凭据与反馈增量表 | AI-2 | ✅ | 4.3、0.4 | `4bd44ac`；`npm run test:server` 41/41；`npm run server:check` 58 模块；定向 ESLint、`git diff --check` 通过；MySQL 8.0.39 隔离测试库实测迁移、凭据读回、反馈 upsert/更新、主体隔离与唯一行数=1 |
 | 7.2 | 反馈接口与操作 | AI-2（接口）+ AI-1（组件） | ✅ | 7.1、3.4 | 服务端 `8840b43`（47/47）。前端 `9335cee`：消费 `meta.feedbackEligible` 并随消息持久化；`MessageActions.vue` 仅在 eligible 时显示，提交 `requestId + helpful/none`；409 不可反馈、401 需登录、429 带 `Retry-After` 秒数可重试、503 可重试；成功后写回 `feedback` 并持久化。证据：新增 8 单测（`feedback.test.ts` + `MessageActions.test.ts`），82 单测/type-check/lint/build 通过；`regression:journey` **9/9** 含真实反馈提交，`server/evals/latest-regression-journey.json`、`docs/design/verify/regression-feedback-1440.png` |
 | 7.3 | CI 与可重复门禁 | AI-2（Codex，实机部署） | 🟡 | 1.5、4.6、5.4、6.5、7.2 | `574359c`：新增 browser-journeys（8 条串行旅程、随机隔离凭据、结果/artifact）、独立 10 轮 service journey、Top 20 offline golden、MySQL 8 隔离 service/审核事务测试；更新 `docs/ci-quality-gates-v2.md`。CI 本地与远端验证通过（远端：[run 39713334922](https://github.com/lwenjie04/ai-campus-agent/actions/runs/39713334922)、[run 39714486081](https://github.com/lwenjie04/ai-campus-agent/actions/runs/39714486081)，五个 job 全绿）。run 39741476125 完成发布包上传，但因 `/var/www/ai-campus-agent` 尚不存在而在磁盘预检失败。服务器核验确认旧后端由 root PM2 管理（`/www/ai-campus-agent`，LightRAG 同属 root PM2），宝塔 Nginx 静态目录为 `/www/wwwroot/ai-campus-agent-web`、`/api/` 代理到 3000。已无停机完成首次迁移准备：新 `current` 暂指向旧后端作为回滚点；现有 `.env` 以 `600` 权限复制到共享目录，6 个数据文件和 2 个日志文件已复制并逐项比对；两个 PM2 服务仍在线，后端 `/health`、副本一致性及 Nginx 配置检查通过。部署 workflow 检查根文件系统、以 sudo 调用现有 root PM2，并在回滚旧程序时允许其缺少 releaseId。run 39744028916 的 Quality 五个 job 全通过；deploy run 39744208752 因上传超时未切换。commit 23d81b4 修复 PM2 沿用旧 CWD 的问题：每次从 current 指向的真实 release 目录重建后端进程。该提交的 Quality run 39887012403 五个 job 全绿；Deploy run 39887175711 attempt 1 因原 TrustAsia 证书过期自动回滚，签发新证书后 attempt 2 全绿。首次成功部署 release 为 23d81b41a8306872e3ca1a3b295c45e87766304d-39887175711-2；后续文档登记提交 7115da6 的 Quality run 39890973878 五个 job 全绿、Deploy run 39891110847 成功。当前 release 为 7115da6ea3113d51442c5bd005c1baddf0906771-39891110847-1；新证书有效至 2027-01-21，certbot.timer active，certbot renew --dry-run 通过。Nginx 静态根已切到 current/dist，配置检查/reload 通过；公网首页与 dist HTML SHA256 一致、JS 资源 200、/api/health 的 releaseId 匹配。CI 仍不设置 RELEASE_LIVE_VALIDATION_CONFIRMED。剩余：5.4 Top 50 金标完成后接入并复验；7.4 的真实模型/MySQL/SMTP/TTS 等目标环境验收仍待完成。 |
-| 7.4 | 目标环境验证与性能 | 共同 | ⬜ | 7.3 | 真模型/MySQL/SMTP/TTS/HTTPS/反代实测并留证；50 条金标；首字/总耗时/取消耗时/资源体积；`RELEASE_LIVE_VALIDATION_CONFIRMED` 不得伪造 |
+| 7.4 | 目标环境验证与性能 | 共同（AI-2 / Codex 主导本轮） | 🔵 | 7.3 | 核查真模型/MySQL/SMTP/TTS/HTTPS/反代与性能指标并留证；50 条金标依赖 5.4；`RELEASE_LIVE_VALIDATION_CONFIRMED` 不得伪造 |
 | 7.5 | 交付、回滚与试用记录 | 人工 + AI-2 | 🟡 | 7.4 | 前置准备 `4f8dd90`：新建 `docs/releases/v2-handoff.md`、`docs/releases/v2-trial-record.md`，更新 `docs/product-status.md`、`docs/release-checklist.md` 和基线风险项；Prettier、相对链接检查、`git diff --check` 通过。**剩余**：7.4 目标环境验收后补真实版本/tag/commit、部署与回滚演练证据，人工试用后填记录与结论；未验证字段保持空白。 |
 
 ---
@@ -379,6 +379,7 @@
 
 | 日期 | 类型 | 内容 | 执行者 |
 | --- | --- | --- | --- |
+| 2026-10-23 | 占用 | 领取 7.4 目标环境验证与性能；先检查生产环境依赖是否配置、只核验变量名和服务健康，再按安全边界验证真实集成与性能；50 条金标等待 5.4 | AI-2（Codex） |
 | 2026-10-23 | 部分 | 补记 7.3 最新发布证据：`7115da6` 的 Quality run 39890973878 五个 job 全绿，Deploy run 39891110847 success；线上 current release 为 `7115da6ea3113d51442c5bd005c1baddf0906771-39891110847-1`；公网首页 HTML SHA256 与 release 一致、JS 资源 200、`/api/health` releaseId 匹配。7.3 维持 🟡，仍待 5.4 Top 50 与 7.4 真实目标环境验收 | AI-2（Codex） |
 | 2026-10-23 | 阶段验证 | 7.3 实机部署完成：push 23d81b4 后 Quality 5/5 通过；首次 Deploy attempt 1 因 maila.club 原 TrustAsia 证书过期而回滚。安装 Certbot、配置独立 HTTP-01 目录与 Nginx renew hook，签发 Let's Encrypt 证书（至 2027-01-21）；certbot renew --dry-run 通过。重跑 Deploy attempt 2 全绿，公网首页 HTML SHA256 与 current/dist/index.html 一致、JS 资源 200、API releaseId 精确匹配。Nginx 当前静态根为 /var/www/ai-campus-agent/current/dist。剩余仅 5.4 Top 50 与 7.4 目标环境验证 | AI-2（Codex） |
 | 2026-10-23 | 部分 | 两次首次部署均已成功上传；run 39745301735 与 39746496435 在本机健康检查失败后自动回滚。服务器只读核验发现 PM2 后端仍以 `/www/ai-campus-agent` 为 cwd，健康请求因此落到旧进程。修正 `.github/deploy-remote.sh`：按 `current` 的真实 release 目录删除并重建后端 PM2 进程，回滚复用同一启动路径；文档注明短暂 API 重启。已跑 Git Bash `bash -n .github/deploy-remote.sh`、`node --check ecosystem.config.cjs`、`npx prettier --check docs/cicd-deployment-setup.md`、`git diff --check`；待新 CI/CD、本机与公网健康验证及 Nginx 静态根切换 | AI-2（Codex） |
