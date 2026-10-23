@@ -53,8 +53,12 @@ reload_backend() {
   active_release="$(readlink -f "$current_link" 2>/dev/null || true)"
   active_release_id="$(basename "$active_release")"
   [[ -n "$active_release" && -d "$active_release" ]] || return 1
-  CAMPUS_APP_DIR="$current_link" CAMPUS_APP_PORT="$app_port" CAMPUS_RELEASE_ID="$active_release_id" \
-    pm2 startOrReload "$current_link/ecosystem.config.cjs" --env production --update-env
+  # PM2 can retain an existing app's old cwd when startOrReload reads the new
+  # ecosystem file. Delete the named process first so it starts from this exact
+  # release path; rollback calls this same function after switching `current`.
+  pm2 delete ai-campus-agent-backend >/dev/null 2>&1 || true
+  CAMPUS_APP_DIR="$active_release" CAMPUS_APP_PORT="$app_port" CAMPUS_RELEASE_ID="$active_release_id" \
+    pm2 start "$active_release/ecosystem.config.cjs" --env production --update-env
   pm2 save
 }
 
