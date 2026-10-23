@@ -125,7 +125,7 @@
 | 5.1 | 事项清单 | 人工（数据）+ AI-1（落地） | ⬜ | 0.4、4.4 | ≥12 条、四类各 ≥3；稳定 ID/标题/关键词/用途/提问模板/已核对来源/核对日期；无可靠链接不显示办理入口 |
 | 5.2 | 指南列表与详情 | AI-1 | ⬜ | 5.1、2.1 | 分类/关键词/详情/空态/不存在；筛选入 URL；返回保留列表状态；首页四卡与加号到正确分类 |
 | 5.3 | 事项搜索与提问桥接 | AI-1 | ⬜ | 5.2、3.4 | 只搜标题与关键词；无结果保留搜索词并可转问；预填后不自动请求模型；刷新不重复发送 |
-| 5.4 | 目录与金标核对 | AI-2（Codex，2026-10-23；评估集）+ 人工（核对） | 🟡 | 5.3（先并行完成不依赖前端目录的手册评估管线） | `server/evals/campus-service-golden-questions-v2-draft.json` 补充原 Top 20 至 50 题（教务15/考试10/奖助15/生活10）及 10 个负例；全题标记待人工核对。`npm run kb:prepare:offline` 从跟踪的学生手册 DOCX 重建 33 条手册来源，与 396 条通知生成 660 个分块及本地 hash 向量；Top 20 仍 20/20。`npm run test:server` 60/60。全量草案检索（合并来源库、向量开启）仅 31/50 正例（62%）、3/10 负例（30%），未达到 90%/100% 阈值。剩余：核对学生手册现行性和事项覆盖；修复来源抽取/检索排序与负例误召回；等 5.1–5.3 目录完成后才冻结 Top 50 |
+| 5.4 | 目录与金标核对 | AI-2（Codex，2026-10-23；评估集）+ 人工（核对） | 🟡 | 5.3（先并行完成不依赖前端目录的手册评估管线） | `dcca658`；`server/evals/campus-service-golden-questions-v2-draft.json` 补充原 Top 20 至 50 题（教务15/考试10/奖助15/生活10）及 10 个负例；全题标记待人工核对。`npm run kb:prepare:offline` 从跟踪的学生手册 DOCX 重建 33 条手册来源，与 396 条通知生成 660 个分块及本地 hash 向量；Top 20 仍 20/20。`npm run test:server` 60/60。全量草案检索（合并来源库、向量开启）仅 31/50 正例（62%）、3/10 负例（30%），未达到 90%/100% 阈值。剩余：核对学生手册现行性和事项覆盖；修复来源抽取/检索排序与负例误召回；等 5.1–5.3 目录完成后才冻结 Top 50 |
 
 ### Sprint 6：社区与知识运营（3–4 天）
 
@@ -325,7 +325,7 @@
 
 | 日期 | 任务 ID | 执行者 | 证据（commit / 命令 / 文件） | 备注 |
 | --- | --- | --- | --- | --- |
-| 2026-10-23 | 5.4 目录与金标核对（部分） | AI-2（Codex）+ 人工待核对 | 实施提交待登记；`npm run kb:prepare:offline`：手册 33 条 + 通知 396 条，生成 660 个 chunk/hash vectors；`npm run test:server` 60/60；Top 20：20/20；草案：50 正例结构配额 15/10/15/10、10 负例；合并来源库与向量评估 31/50（62%）、3/10 负例（30%），未达阈值；改动文件定向 ESLint、`oxlint .`、目标文件 Prettier 与 `git diff --check` 通过 | 新增 Top 50 草案与结构测试；手册 DOCX 可重建，导入分类在目录标题纠正后重新推断。全量 `npm run lint` 被既有未跟踪 `server/scripts/robot-preview-browser.mjs` 的 `WebSocket` no-undef 阻断；该文件未改动。来源有效性与 5.1–5.3 覆盖未人工核对，检索/负例结果不合格，维持 🟡 |
+| 2026-10-23 | 5.4 目录与金标核对（部分） | AI-2（Codex）+ 人工待核对 | `dcca658`；`npm run kb:prepare:offline`：手册 33 条 + 通知 396 条，生成 660 个 chunk/hash vectors；`npm run test:server` 60/60；Top 20：20/20；草案：50 正例结构配额 15/10/15/10、10 负例；合并来源库与向量评估 31/50（62%）、3/10 负例（30%），未达阈值；改动文件定向 ESLint、`oxlint .`、目标文件 Prettier 与 `git diff --check` 通过 | 新增 Top 50 草案与结构测试；手册 DOCX 可重建，导入分类在目录标题纠正后重新推断。全量 `npm run lint` 被既有未跟踪 `server/scripts/robot-preview-browser.mjs` 的 `WebSocket` no-undef 阻断；该文件未改动。来源有效性与 5.1–5.3 覆盖未人工核对，检索/负例结果不合格，维持 🟡 |
 | 2026-10-23 | 7.4 生产邮件到达确认（部分） | AI-2（Codex） | 用户确认已收到生产邮箱检测邮件；本次仅记录人工确认，未读取/记录收件地址或验证码 | 邮件到达检查由用户确认通过；真实注册验证码全流程的到达、过期与重发仍未验证。登录和登录态 TTS 按用户决定暂缓，真实 Embedding 密钥待用户在服务器配置；7.4 继续保持 🟡 |
 | 2026-10-23 | 7.4 目标环境验证（部分） | AI-2（Codex） | 生产 release `a6f94f3d9dacae5e5b6630172a6c01cf3b09d18f-39893338172-1`；公网 `/api/health`、匿名 TTS 401、真实 LLM 首段后取消、响应式 10/10；部署脚本回滚到 `7115da6...` 后恢复，健康检查通过；备份恢复检查通过 | 完整证据与未完成项见 §3 的 7.4 行；响应式结果 `server/evals/production-7.4-responsive-full-20261023.json` 和 10 张截图；7.4 继续保持 🟡，尚无用户试用或人工签收 |
 | 2026-10-23 | 7.4 生产 MySQL 与反馈闭环（部分） | AI-2（Codex） | `npm run test:server` 56/56；生产 MySQL 5.7.44 增量迁移成功，表/唯一键/FK 检查通过；事务验证写入、幂等 upsert 与 rollback 清理；公网 `/api/chat/stream` 200 且 `feedbackEligible:true`，`/api/feedback` 200，数据库持久化读回后清除测试行；备份 SHA-256 `b8aaab1b5ee88a80230ac3e19c9e0a36364babe9e0c25d91e055b2a3d1c545ed` | 迁移 collation 调整为 MySQL 5.7/8.0 兼容；生产备份路径 `/var/backups/ai-campus-agent/ai_campus_agent_pre_chat_feedback_20261023T034120Z.sql.gz`（600）。7.4 仍待邮件实投、登录/TTS 边界、取消/资源、回滚演练、Embedding 凭据；7.3 等 5.4 Top 50 |
@@ -385,7 +385,7 @@
 | 日期 | 类型 | 内容 | 执行者 |
 | --- | --- | --- | --- |
 | 2026-10-23 | 占用 | 5.4 修改 `package.json` 的离线知识库准备脚本，并调整 `.github/workflows/quality.yml` 继续使用同一可重复入口；保留既有 Top 20 门禁，待 5.1–5.3 目录和人工核对完成后再升级 Top 50 | AI-2（Codex） |
-| 2026-10-23 | 部分 | 5.4 从跟踪的学生手册 DOCX 重建来源并纳入离线 chunks/hash index；新增 30 条 Top 50 候选题和 10 条无命中负例，结构满足四类配额。修正 DOCX 导入器在目录标题回填后仍保留旧分类的问题；Golden evaluator 支持额外来源库路径，并分别报告正例 Top1 与负例拒答指标。原 Top 20 仍 20/20；合并来源评估 31/50、3/10，未达门槛。Top 50 不进入 CI，等待 5.1–5.3 事项目录、人工核对与检索质量修复 | AI-2（Codex） |
+| 2026-10-23 | 部分 | `dcca658`：5.4 从跟踪的学生手册 DOCX 重建来源并纳入离线 chunks/hash index；新增 30 条 Top 50 候选题和 10 条无命中负例，结构满足四类配额。修正 DOCX 导入器在目录标题回填后仍保留旧分类的问题；Golden evaluator 支持额外来源库路径，并分别报告正例 Top1 与负例拒答指标。原 Top 20 仍 20/20；合并来源评估 31/50、3/10，未达门槛。Top 50 不进入 CI，等待 5.1–5.3 事项目录、人工核对与检索质量修复 | AI-2（Codex） |
 | 2026-10-23 | 部分 | 用户确认收到生产邮箱检测邮件，记录 SMTP 邮件到达检查通过；不代表注册验证码过期/重发流程已验证。按用户决定，管理员登录与登录态 TTS 实测暂记阻塞；真实 Embedding API 密钥由用户在服务器配置后再验。7.4 维持 🟡，不设置人工发布确认标志 | AI-2（Codex） |
 | 2026-10-23 | 部分 | 7.4 生产 MySQL 与反馈闭环通过：先以受限权限创建并校验 gzip 数据库备份，再对 MySQL 5.7.44 应用仅增量迁移；为兼容 5.7 将新表 collation 从 `utf8mb4_0900_ai_ci` 调整为 `utf8mb4_unicode_ci`。唯一键、外键、事务写入、幂等 upsert 及测试数据回滚均通过；公网流式问答返回 `feedbackEligible:true`，反馈接口 HTTP 200 且数据库读回成功，之后清理测试行。`npm run test:server` 56/56。7.4 仍保持 🟡，未完成项与备份校验值登记在 7.4 行及 §6.1 | AI-2（Codex） |
 | 2026-10-23 | 部分 | 7.4 已完成生产服务与前端路由部分验收；发现原 Nginx 将 `/chat`、`/community` 整段转发到后端且缺少 SPA fallback，导致问答/社区/审核页面 404。备份 `/www/server/panel/vhost/nginx/html_maila.club.conf` 后改为前端路由回退、保留精确 `/chat/stream` 兼容，并为 `/api/chat/stream` 增加无缓冲代理；回滚备份为同目录 `*.codex-20261023-7.4-pre-spa.bak` 和 `*.codex-20261023-7.4-pre-sse.bak`。`nginx -t`/reload、公网 6 条路由、真实 SSE、390/1440 响应式矩阵均通过。MySQL 的 `chat_request_receipts` 与 `chat_feedback` 仍缺，未在未备份前改生产数据库；真实 Embedding 与 5.4 Top 50 仍待完成 | AI-2（Codex） |
