@@ -1,0 +1,313 @@
+{
+  "version": 2,
+  "status": "draft",
+  "extends": "campus-service-golden-questions.json",
+  "updatedAt": "2026-10-23",
+  "targetTop1Accuracy": 0.9,
+  "targetNegativeAccuracy": 1,
+  "description": "5.4 Top 50 draft. Extends the locked Top 20 with 30 student-handbook candidates and 10 no-hit candidates. Do not promote to CI until 5.1–5.3 coverage and human source/currentness review are complete.",
+  "items": [
+    {
+      "id": "teaching-semester-registration",
+      "category": "teaching",
+      "query": "每学期开学学生没能按时注册，要办理什么手续？",
+      "expectedTitleIncludes": ["广东第二师范学院全日制学生学籍管理规定"],
+      "validationStatus": "pending-human-review"
+    },
+    {
+      "id": "teaching-transfer-conditions-handbook",
+      "category": "teaching",
+      "query": "普通本科生申请转专业要符合什么基本条件？",
+      "expectedTitleIncludes": ["广东第二师范学院普通本科生转专业管理规定"],
+      "validationStatus": "pending-human-review",
+      "reviewNote": "手册收录的转专业规定标注为 2018 年修订，需人工确认现行有效性。"
+    },
+    {
+      "id": "teaching-grade-point-average",
+      "category": "teaching",
+      "query": "平均学分绩点按什么公式计算？",
+      "expectedTitleIncludes": ["广东第二师范学院成绩管理办法"],
+      "validationStatus": "pending-human-review"
+    },
+    {
+      "id": "teaching-retake-score-record",
+      "category": "teaching",
+      "query": "补考或重修取得的成绩会怎样记在成绩单上？",
+      "expectedTitleIncludes": ["广东第二师范学院成绩管理办法"],
+      "validationStatus": "pending-human-review"
+    },
+    {
+      "id": "teaching-study-period",
+      "category": "teaching",
+      "query": "普通本科的学制几年，最长可以在校学习几年？",
+      "expectedTitleIncludes": ["广东第二师范学院学分制实施办法"],
+      "validationStatus": "pending-human-review"
+    },
+    {
+      "id": "teaching-elective-modules",
+      "category": "teaching",
+      "query": "公共选修课按学科性质分为哪些模块？",
+      "expectedTitleIncludes": ["广东第二师范学院公共选修课管理办法"],
+      "validationStatus": "pending-human-review"
+    },
+    {
+      "id": "teaching-academic-warning-levels",
+      "category": "teaching",
+      "query": "本科生学业预警分为哪几个等级？",
+      "expectedTitleIncludes": ["广东第二师范学院本科学生学业预警管理办法"],
+      "validationStatus": "pending-human-review"
+    },
+    {
+      "id": "teaching-leave-approval-duration",
+      "category": "teaching",
+      "query": "学生请假十天以上需要经过哪些部门审批？",
+      "expectedTitleIncludes": ["广东第二师范学院学生考勤、请假规定"],
+      "validationStatus": "pending-human-review",
+      "reviewNote": "手册所载请假规定标注为 2016 年，需人工确认现行审批规则。"
+    },
+    {
+      "id": "teaching-degree-basic-conditions",
+      "category": "teaching",
+      "query": "普通本科毕业生申请学士学位需要满足哪些基本条件？",
+      "expectedTitleIncludes": ["广东第二师范学院学士学位授予管理办法"],
+      "validationStatus": "pending-human-review"
+    },
+    {
+      "id": "teaching-new-student-late-registration",
+      "category": "teaching",
+      "query": "新生因故不能按期入学，应该怎么处理？",
+      "expectedTitleIncludes": ["广东第二师范学院全日制学生学籍管理规定"],
+      "validationStatus": "pending-human-review"
+    },
+    {
+      "id": "exam-arrival-time",
+      "category": "exam",
+      "query": "参加考试要提前多久到考场？",
+      "expectedTitleIncludes": ["广东第二师范学院学生考试规则"],
+      "validationStatus": "pending-human-review",
+      "reviewNote": "手册所载考试规则标注为 2016 年，需人工确认现行有效性。"
+    },
+    {
+      "id": "exam-late-entry",
+      "category": "exam",
+      "query": "考试迟到超过半小时还能进入考场吗？",
+      "expectedTitleIncludes": ["广东第二师范学院学生考试规则"],
+      "validationStatus": "pending-human-review"
+    },
+    {
+      "id": "exam-identification",
+      "category": "exam",
+      "query": "考试入场时需要出示哪些证件？",
+      "expectedTitleIncludes": ["广东第二师范学院学生考试规则"],
+      "validationStatus": "pending-human-review"
+    },
+    {
+      "id": "exam-forbidden-devices",
+      "category": "exam",
+      "query": "参加考试时哪些电子设备不能带到座位上？",
+      "expectedTitleIncludes": ["广东第二师范学院学生考试规则"],
+      "validationStatus": "pending-human-review"
+    },
+    {
+      "id": "exam-violation-types",
+      "category": "exam",
+      "query": "学校规定的考试违纪和考试作弊包括哪些情况？",
+      "expectedTitleIncludes": ["广东第二师范学院学生考试违规处分规定"],
+      "validationStatus": "pending-human-review"
+    },
+    {
+      "id": "scholarship-hardship-recognition-process",
+      "category": "scholarship",
+      "query": "家庭经济困难学生认定要经过哪些评议和审核环节？",
+      "expectedTitleIncludes": ["广东第二师范学院家庭经济困难学生认定办法"],
+      "validationStatus": "pending-human-review"
+    },
+    {
+      "id": "scholarship-national-award-amounts",
+      "category": "scholarship",
+      "query": "国家奖学金、国家励志奖学金和国家助学金的资助标准分别是什么？",
+      "expectedTitleIncludes": ["广东第二师范学院国家奖助学金实施办法"],
+      "validationStatus": "pending-human-review",
+      "reviewNote": "金额可能因年度政策更新，CI 来源命中不代表金额仍有效。"
+    },
+    {
+      "id": "scholarship-national-grade-rank",
+      "category": "scholarship",
+      "query": "申请国家奖学金对年级和成绩排名有什么要求？",
+      "expectedTitleIncludes": ["广东第二师范学院国家奖助学金实施办法"],
+      "validationStatus": "pending-human-review",
+      "reviewNote": "需人工确认手册规定与当前评审年度通知一致。"
+    },
+    {
+      "id": "scholarship-grant-tiering",
+      "category": "scholarship",
+      "query": "国家助学金根据什么划分资助档次？",
+      "expectedTitleIncludes": ["广东第二师范学院国家奖助学金实施办法"],
+      "validationStatus": "pending-human-review",
+      "reviewNote": "资助金额和档次需对照当前年度通知核实。"
+    },
+    {
+      "id": "scholarship-work-study-scope",
+      "category": "scholarship",
+      "query": "学校规定的勤工助学活动是什么？",
+      "expectedTitleIncludes": ["广东第二师范学院学生勤工助学管理办法"],
+      "validationStatus": "pending-human-review"
+    },
+    {
+      "id": "scholarship-work-study-management",
+      "category": "scholarship",
+      "query": "校内勤工助学岗位由哪个部门负责具体实施？",
+      "expectedTitleIncludes": ["广东第二师范学院学生勤工助学管理办法"],
+      "validationStatus": "pending-human-review"
+    },
+    {
+      "id": "scholarship-work-study-principles",
+      "category": "scholarship",
+      "query": "学校组织勤工助学时遵循哪些基本原则？",
+      "expectedTitleIncludes": ["广东第二师范学院学生勤工助学管理办法"],
+      "validationStatus": "pending-human-review"
+    },
+    {
+      "id": "scholarship-overseas-exchange-support",
+      "category": "scholarship",
+      "query": "参加国际交换生项目的奖学金通常承担哪些费用，比例是多少？",
+      "expectedTitleIncludes": ["广东第二师范学院优秀学生海外研学奖学金管理办法"],
+      "validationStatus": "pending-human-review",
+      "reviewNote": "办法标注为 2018 年，需人工确认项目仍执行。"
+    },
+    {
+      "id": "scholarship-overseas-camp-support",
+      "category": "scholarship",
+      "query": "参加海外专项训练营项目可以获得什么奖学金支持？",
+      "expectedTitleIncludes": ["广东第二师范学院优秀学生海外研学奖学金管理办法"],
+      "validationStatus": "pending-human-review",
+      "reviewNote": "办法标注为 2018 年，需人工确认项目仍执行。"
+    },
+    {
+      "id": "scholarship-funding-review-flow",
+      "category": "scholarship",
+      "query": "学校资助资金从申请到发放经过什么流程？",
+      "expectedTitleIncludes": ["广东第二师范学院学生资助工作实施办法"],
+      "validationStatus": "pending-human-review"
+    },
+    {
+      "id": "life-dorm-residency-eligibility",
+      "category": "life",
+      "query": "哪些学生可以在学校学生宿舍住宿？",
+      "expectedTitleIncludes": ["广东第二师范学院学生宿舍管理条例"],
+      "validationStatus": "pending-human-review"
+    },
+    {
+      "id": "life-dorm-change-process",
+      "category": "life",
+      "query": "因教学需要申请调整宿舍，要经过什么流程？",
+      "expectedTitleIncludes": ["广东第二师范学院学生宿舍管理条例"],
+      "validationStatus": "pending-human-review"
+    },
+    {
+      "id": "life-dorm-checkout-process",
+      "category": "life",
+      "query": "休学或退学时需要到哪里办理退宿？",
+      "expectedTitleIncludes": ["广东第二师范学院学生宿舍管理条例"],
+      "validationStatus": "pending-human-review"
+    },
+    {
+      "id": "life-tuberculosis-screening",
+      "category": "life",
+      "query": "学校体检会对新生和在校生开展哪些肺结核筛查？",
+      "expectedTitleIncludes": ["广东第二师范学院结核病防控管理办法"],
+      "validationStatus": "pending-human-review",
+      "reviewNote": "健康筛查规则需人工确认当前执行要求。"
+    },
+    {
+      "id": "life-library-borrowing-limit",
+      "category": "life",
+      "query": "学生在图书馆最多可以借几本书，借阅期限是多久？",
+      "expectedTitleIncludes": ["文献资源借阅管理规定"],
+      "validationStatus": "pending-human-review",
+      "reviewNote": "导入条目标题格式异常，需人工检查原文及当前图书馆规则。"
+    }
+  ],
+  "negativeItems": [
+    {
+      "id": "negative-weather",
+      "category": "out-of-scope",
+      "query": "广州明天会不会下雨？",
+      "expectedNoHit": true,
+      "rationale": "天气信息不在校园知识库。",
+      "validationStatus": "pending-human-review"
+    },
+    {
+      "id": "negative-food-price",
+      "category": "out-of-scope",
+      "query": "今天花都校区食堂二楼红烧排骨多少钱？",
+      "expectedNoHit": true,
+      "rationale": "知识库没有实时食堂菜单和价格。",
+      "validationStatus": "pending-human-review"
+    },
+    {
+      "id": "negative-rental",
+      "category": "out-of-scope",
+      "query": "学校附近哪个小区租房最便宜？",
+      "expectedNoHit": true,
+      "rationale": "知识库不提供周边租房信息。",
+      "validationStatus": "pending-human-review"
+    },
+    {
+      "id": "negative-astrology",
+      "category": "out-of-scope",
+      "query": "帮我看看这周的星座运势和幸运颜色。",
+      "expectedNoHit": true,
+      "rationale": "与学校办事和校内规定无关。",
+      "validationStatus": "pending-human-review"
+    },
+    {
+      "id": "negative-financial-password",
+      "category": "out-of-scope",
+      "query": "我绑定的银行卡密码是多少？",
+      "expectedNoHit": true,
+      "rationale": "个人账户隐私不在知识库，也不可推断。",
+      "validationStatus": "pending-human-review"
+    },
+    {
+      "id": "negative-job-email",
+      "category": "out-of-scope",
+      "query": "请帮我代写一封申请外企实习的英文邮件。",
+      "expectedNoHit": true,
+      "rationale": "这是通用写作请求，不属于校内事项来源检索。",
+      "validationStatus": "pending-human-review"
+    },
+    {
+      "id": "negative-sports-schedule",
+      "category": "out-of-scope",
+      "query": "学校篮球队下一场比赛具体在什么时候？",
+      "expectedNoHit": true,
+      "rationale": "知识库没有校队赛事日程。",
+      "validationStatus": "pending-human-review"
+    },
+    {
+      "id": "negative-shopping",
+      "category": "out-of-scope",
+      "query": "珠江新城周末有哪些适合逛街的商场？",
+      "expectedNoHit": true,
+      "rationale": "与学校办事和校内规定无关。",
+      "validationStatus": "pending-human-review"
+    },
+    {
+      "id": "negative-future-cet",
+      "category": "unsupported-date",
+      "query": "2027年上半年英语四六级报名的具体日期是哪天？",
+      "expectedNoHit": true,
+      "rationale": "当前知识库没有该年度已发布的报名日期。",
+      "validationStatus": "pending-human-review"
+    },
+    {
+      "id": "negative-ambiguous-dorm",
+      "category": "ambiguous",
+      "query": "我想搬一下，学校怎么办？",
+      "expectedNoHit": true,
+      "rationale": "没有说明搬宿舍、转校区或其他事项，应先澄清。",
+      "validationStatus": "pending-human-review"
+    }
+  ]
+}

@@ -52,6 +52,7 @@ rag_storage/
 
 # Generated RAG data (reproducible via server/scripts/build-*.mjs)
 server/data/chunked-knowledge-base.json
+server/data/offline-knowledge-base.json
 server/data/combined-knowledge.json
 server/data/handbook-chunked.json
 server/data/student-handbook.json

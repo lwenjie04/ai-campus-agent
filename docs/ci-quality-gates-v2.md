@@ -33,7 +33,7 @@
 
 ## Golden job
 
-`golden-top20` 在独立 runner 上按顺序执行 `npm run kb:prepare:offline` 和 `npm run rag:test:service -- --limit 20 --vector --json --output server/evals/ci/latest-rag-golden-ci.json`，再断言实际条目数为 20 且达到数据集阈值。失败不允许 `continue-on-error` 或跳过，报告始终作为 artifact 上传。
+`golden-top20` 在独立 runner 上按顺序执行 `npm run kb:prepare:offline` 和 `npm run rag:test:service -- --limit 20 --vector --json --output server/evals/ci/latest-rag-golden-ci.json`。离线准备会从仓库跟踪的 2025 学生手册 DOCX 重建 33 条手册来源，与学校通知合并后生成 660 个 hash 向量分块，并写出忽略跟踪的 `server/data/offline-knowledge-base.json` 供扩展评估显式使用 `--knowledge-base`。之后仍只断言既有 Top 20 数量与数据集阈值，不将尚未人工核对的扩展来源用于 CI Top 50。失败不允许 `continue-on-error` 或跳过，报告始终作为 artifact 上传。手册源文档或抽取失败会直接使 job 失败，不会静默退回仅通知库。
 
 CI 目前只锁定仓库已有 **Top 20**；Top 50 需要 5.4 的人工核对数据，准备好之前不补造样本，也不阻止 Top 20 job 运行。
 

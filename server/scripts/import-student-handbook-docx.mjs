@@ -213,6 +213,21 @@ const compactTitle = (title) =>
     .replace(/）/g, ')')
     .trim()
 
+const inferCategory = (title) => {
+  const compact = compactTitle(title)
+  const lower = compact.toLowerCase()
+
+  if (/奖学金|助学金|资助|困难补助|勤工助学/.test(compact)) return 'scholarship'
+  if (/考试|考核|补考|重修/.test(compact)) return 'exam'
+  if (/学籍|转专业|成绩|学分|选修课|学位|考勤|请假|学业预警/.test(compact)) {
+    return 'teaching'
+  }
+  if (/违规|违纪|处分|申诉|行为准则/.test(compact)) return 'student_affairs'
+  if (/宿舍|医疗保险|就医|传染病|结核病|图书馆/.test(compact)) return 'life'
+  if (lower.includes('就业')) return 'career'
+  return 'general'
+}
+
 const finalizeEntry = (entries, current, fileMeta) => {
   if (!current?.title) return
 
@@ -227,15 +242,8 @@ const finalizeEntry = (entries, current, fileMeta) => {
   const title = normalizeLine(current.title)
   const compact = compactTitle(title)
   const hash = createHash('md5').update(`${compact}|${current.part}`).digest('hex').slice(0, 8)
-  const lower = compact.toLowerCase()
 
-  let category = 'general'
-  if (/奖学金|助学金|资助|困难补助|勤工助学/.test(compact)) category = 'scholarship'
-  else if (/学籍|转专业|成绩|学分|选修课|学位|考试|考勤|请假|学业预警/.test(compact)) category = 'teaching'
-  else if (/违规|违纪|处分|申诉/.test(compact)) category = 'student_affairs'
-  else if (/宿舍|医疗保险|就医|传染病|结核病|图书馆/.test(compact)) category = 'life'
-  else if (/行为准则/.test(compact)) category = 'student_affairs'
-  else if (lower.includes('就业')) category = 'career'
+  const category = inferCategory(title)
 
   const keywordSeeds = [
     '学籍',
@@ -350,6 +358,7 @@ const buildEntries = (paragraphs, fileMeta) => {
     if (TITLE_REPLACEMENTS.has(entry.title)) {
       entry.title = TITLE_REPLACEMENTS.get(entry.title)
     }
+    entry.category = inferCategory(entry.title)
   }
 
   return cleanedEntries

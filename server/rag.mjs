@@ -4,7 +4,10 @@ import { isMySqlConfigured, query } from './mysql.mjs'
 import { searchVectorIndex } from './vector-index.mjs'
 import { getApprovedMockCommunityKnowledge } from './community.mjs'
 
-const KB_PATH = resolve(process.cwd(), 'server/data/knowledge-base.json')
+const KB_PATH = resolve(
+  process.cwd(),
+  process.env.RAG_KNOWLEDGE_BASE_PATH || 'server/data/knowledge-base.json',
+)
 const LOG_DIR = resolve(process.cwd(), 'server/logs')
 const LOG_PATH = resolve(LOG_DIR, 'rag-search.log.ndjson')
 
