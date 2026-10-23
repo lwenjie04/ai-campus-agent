@@ -31,6 +31,18 @@ root /var/www/ai-campus-agent/current/dist;
 
 示例 `DEPLOY_PATH` 为 `/var/www/ai-campus-agent`。`current` 切换使用同一文件系统内的原子符号链接替换。每次切换都会删除并重新创建 PM2 后端进程，使它从当前 release 的实际目录启动；这会造成短暂的 API 重启。部署先检查本机 `/health` 返回的 `releaseId` 与本次发布一致，再由 GitHub runner 检查外部 HTTPS 健康地址。检查失败时会切回上一版本并重新启动旧进程。CD 不会自动执行数据库 SQL 或修改 MySQL 数据。
 
+## HTTPS 证书与自动续期
+
+`maila.club` 使用 Certbot 管理 Let's Encrypt 证书，Nginx 读取 `/etc/letsencrypt/live/maila.club/fullchain.pem` 和 `privkey.pem`。HTTP-01 challenge 使用固定目录 `/var/www/ai-campus-agent/acme`，Nginx 的 `/.well-known/acme-challenge/` location 指向这个目录，因此部署切换 `current/dist` 不会改变续期路径。不要删除此目录或 challenge location。
+
+Ubuntu 的 `certbot.timer` 负责定期检查和续期；`/etc/letsencrypt/renewal-hooks/deploy/10-reload-baota-nginx` 在证书续期成功后先执行 Nginx 配置检查，再平滑 reload。可用下面的命令模拟续期，确认 HTTP 验证和续期配置仍有效：
+
+```sh
+sudo certbot renew --dry-run
+```
+
+当前 Certbot 账户未设置联系邮箱，因此不会收到 CA 的到期提醒；自动续期和 Nginx reload 不依赖该邮箱。
+
 ## GitHub 配置
 
 在仓库 Settings → Environments 创建 `production` 环境，并添加以下 **Environment secrets**：
