@@ -90,7 +90,7 @@ node server/index.mjs
 - 7.3 GitHub Actions workflow 已于 2026-10-22 在 [run 39714486081](https://github.com/lwenjie04/ai-campus-agent/actions/runs/39714486081) 全绿；Top 20、browser 和 MySQL job 均有远端证据。后续发布候选仍须记录对应 commit 的 run。
 - CD workflow 已在默认分支成功部署当前线上 release（[Deploy run 39893338172](https://github.com/lwenjie04/ai-campus-agent/actions/runs/39893338172)）；这只证明自动部署链路可用，不代表 7.4 完成或发布已签收。
 - 7.4 已有生产验证：真实 LLM/RAG 样本、MySQL 增量迁移与反馈持久化、备份恢复、HTTPS/Nginx/SSE、五档响应式检查、首段后取消、资源体积与回滚演练。详细结果和未完成项见 [`release-checklist.md`](../release-checklist.md) 及 [`product-status.md`](../product-status.md)。
-- 7.4 仍待登录会话与社区知识管理 API 验证、验证码邮件到达/过期/重发、登录态 TTS 播放/限频、真实模型异常处理和人工确认。真实 embedding 未配置，MySQL 应用账号最小权限需 DBA 复核。
+- 7.4 的邮箱检测邮件到达已由用户确认；注册验证码实际流程的过期/重发仍待验证。管理员登录与登录态 TTS 按用户决定暂记阻塞；社区知识管理 API、真实模型异常处理和人工确认也未完成。真实 Embedding 密钥待用户在服务器配置后验证，MySQL 应用账号最小权限需 DBA 复核。
 - 发布版本与 tag、试用日期/人数、实际用户问题与结论尚未提供；不在此草案中预填。
 
 **收口动作**：7.4 通过后，补齐上方发布标识、验证链接/附件、回滚演练和审批人，并填写 [`v2-trial-record.md`](v2-trial-record.md)。
