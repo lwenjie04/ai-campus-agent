@@ -29,6 +29,8 @@
 root /var/www/ai-campus-agent/current/dist;
 ```
 
+Vue 页面路由需要由 Nginx 回退到应用入口。保留 `/api/` 到 Node 服务的代理，并为 `/api/chat/stream` 配置独立代理、关闭缓冲；站点根路径使用 `try_files $uri $uri/ /index.html;`。不要把 `/chat` 或 `/community` 整段转发给后端，这两个路径同时承载前端页面；如果仍需兼容裸路径流接口，只对 `/chat/stream` 做精确匹配。这样未知 `/api/*` 仍由后端返回 JSON 404，页面路由则交给 Vue Router。
+
 示例 `DEPLOY_PATH` 为 `/var/www/ai-campus-agent`。`current` 切换使用同一文件系统内的原子符号链接替换。每次切换都会删除并重新创建 PM2 后端进程，使它从当前 release 的实际目录启动；这会造成短暂的 API 重启。部署先检查本机 `/health` 返回的 `releaseId` 与本次发布一致，再由 GitHub runner 检查外部 HTTPS 健康地址。检查失败时会切回上一版本并重新启动旧进程。CD 不会自动执行数据库 SQL 或修改 MySQL 数据。
 
 ## HTTPS 证书与自动续期
