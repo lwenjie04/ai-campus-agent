@@ -58,7 +58,7 @@ const CATEGORY_RULES = [
   },
   {
     category: 'teaching',
-    patterns: [/转专业/, /补退选/, /课程认定/, /学分认定/, /成绩认定/, /选课/, /课表/, /教务/],
+    patterns: [/学籍/, /转专业/, /补退选/, /课程认定/, /学分认定/, /成绩认定/, /选课/, /课表/, /教务/],
   },
   {
     category: 'exam',
@@ -66,7 +66,7 @@ const CATEGORY_RULES = [
   },
   {
     category: 'life',
-    patterns: [/宿舍/, /图书馆/, /食堂/, /后勤/, /报修/, /交通车/, /校车/],
+    patterns: [/宿舍/, /退宿/, /图书馆/, /食堂/, /后勤/, /报修/, /交通车/, /校车/, /肺结核/, /结核病/, /体检/],
   },
   {
     category: 'research',
@@ -78,7 +78,7 @@ const CATEGORY_RULES = [
   },
   {
     category: 'student_affairs',
-    patterns: [/学籍/, /请假/, /评优/, /评先/, /辅导员/, /学生事务/],
+    patterns: [/请假/, /考勤/, /评优/, /评先/, /辅导员/, /学生事务/],
   },
 ]
 
@@ -100,6 +100,7 @@ const DOMAIN_KEYWORDS = [
   '补考',
   '重修',
   '宿舍',
+  '退宿',
   '图书馆',
   '食堂',
   '后勤',
@@ -107,7 +108,66 @@ const DOMAIN_KEYWORDS = [
   '课题',
   '立项',
   '项目申报',
+  '肺结核',
+  '结核病',
+  '体检',
 ]
+
+const QUERY_FILLER_PHRASES = [
+  '请问',
+  '帮我',
+  '告诉我',
+  '我想',
+  '我绑定的',
+  '学校附近',
+  '学校的',
+  '校园的',
+  '具体',
+  '分别',
+  '最多',
+  '需要经过',
+  '需要',
+  '怎么办理',
+  '怎么申请',
+  '怎么报名',
+  '怎么处理',
+  '怎么填写',
+  '怎么做',
+  '怎么办',
+  '如何办理',
+  '如何申请',
+  '如何',
+  '怎么',
+  '什么时候',
+  '什么时间',
+  '什么',
+  '哪些',
+  '有哪些',
+  '有什么',
+  '多少',
+  '多少钱',
+  '是多久',
+  '是什么',
+  '怎么办',
+  '吗',
+  '呢',
+  '吧',
+  '一下',
+  '今天',
+  '明天',
+  '现在',
+  '上半年',
+  '下半年',
+  '和',
+  '要',
+  '的',
+  '是',
+]
+
+const QUERY_FILLER_PATTERN = new RegExp(
+  QUERY_FILLER_PHRASES.sort((left, right) => right.length - left.length).join('|'),
+  'g',
+)
 
 const SYNONYM_GROUPS = [
   ['奖学金', '奖助', '资助', '助学金'],
@@ -210,8 +270,9 @@ const loadCommunityKnowledge = async () => {
 const expandBySynonyms = (terms) => {
   const set = new Set(terms)
   for (const term of terms) {
+    if (term.length < 3) continue
     for (const group of SYNONYM_GROUPS) {
-      if (group.some((item) => term.includes(item) || item.includes(term))) {
+      if (group.includes(term)) {
         group.forEach((item) => set.add(item))
       }
     }
@@ -239,22 +300,70 @@ const extractQueryTerms = (query) => {
   const q = normalize(query)
   if (!q) return []
 
-  const terms = new Set([q])
+  const focusedQuery = q.replace(QUERY_FILLER_PATTERN, '')
 
-  q.split(/[\s,，。！？；:：、（）()[\]\-_/]+/g)
+  const terms = new Set(focusedQuery ? [focusedQuery] : [])
+
+  focusedQuery.split(/[\s,，。！？；:：、（）()[\]\-_/]+/g)
     .map((item) => item.trim())
-    .filter((item) => item.length >= 2)
+    .filter((item) => item.length >= 3)
     .forEach((item) => terms.add(item))
 
-  for (const gram of generateChineseNgrams(q)) {
-    if (gram.length >= 2) terms.add(gram)
+  for (const gram of generateChineseNgrams(focusedQuery)) {
+    if (gram.length >= 3) terms.add(gram)
   }
 
   for (const keyword of DOMAIN_KEYWORDS) {
-    if (q.includes(keyword)) terms.add(keyword)
+    if (focusedQuery.includes(keyword)) terms.add(keyword)
   }
 
   return expandBySynonyms(Array.from(terms))
+}
+
+const createQueryTermWeights = (entries, terms) => {
+  const uniqueTerms = new Set(terms.filter((term) => term.length >= 2))
+  const weights = new Map()
+  const searchableEntries = entries.map((entry) =>
+    [entry.title, entry.content, ...(entry.keywords || [])]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase(),
+  )
+
+  for (const term of uniqueTerms) {
+    if (term.length === 2) {
+      weights.set(term, 1)
+      continue
+    }
+    let documentFrequency = 0
+    for (const searchableText of searchableEntries)
+      if (searchableText.includes(term)) documentFrequency += 1
+    const inverseDocumentFrequency = 1 + Math.log((entries.length + 1) / (documentFrequency + 1))
+    weights.set(term, Math.min(2.5, inverseDocumentFrequency))
+  }
+
+  return weights
+}
+
+const isExplicitlyUnsupportedQuery = (query) => {
+  const value = normalize(query)
+  return (
+    /(?:银行卡|账号|密码|验证码).{0,10}(?:是多少|是什么|告诉我|查一下)/.test(value) ||
+    /(?:食堂|餐厅|菜品|饭菜).{0,12}(?:多少钱|价格|售价)/.test(value) ||
+    /(?:代写|写一封).{0,20}(?:邮件|英文|实习)/.test(value)
+  )
+}
+
+const matchesExplicitQueryYear = (entry, query) => {
+  const years = [...String(query || '').matchAll(/\b(20\d{2})\b/g)].map((match) => match[1])
+  if (years.length === 0) return true
+
+  const dateSpecificQuery = /(?:何时|哪天|什么时候|报名|日期|时间|安排|哪一年)/.test(String(query || ''))
+  if (!dateSpecificQuery) return true
+
+  const sourceYears = [entry.title, entry.content].join(' ').match(/\b20\d{2}\b/g)
+  if (!sourceYears?.length) return true
+  return years.some((year) => sourceYears.includes(year))
 }
 
 const inferQueryCategories = (query) => {
@@ -279,7 +388,7 @@ const computeTimeDecayFactor = (updatedAt) => {
   return Math.max(TIME_DECAY.minFactor, factor)
 }
 
-const scoreEntry = (entry, query, terms, preferredCategories = []) => {
+const scoreEntry = (entry, query, terms, preferredCategories = [], termWeights = new Map()) => {
   const q = normalize(query)
   const title = normalize(entry.title)
   const content = normalize(entry.content)
@@ -302,24 +411,27 @@ const scoreEntry = (entry, query, terms, preferredCategories = []) => {
 
   for (const term of terms) {
     if (!term || term.length < 2) continue
+    const termWeight = termWeights.get(term) || 1
 
     if (title.includes(term)) {
-      baseScore += term.length >= 4 ? RAG_WEIGHTS.termTitleLong : RAG_WEIGHTS.termTitleShort
+      baseScore +=
+        (term.length >= 4 ? RAG_WEIGHTS.termTitleLong : RAG_WEIGHTS.termTitleShort) * termWeight
       matchedTerms.add(term)
     }
 
     if (content.includes(term)) {
-      baseScore += term.length >= 4 ? RAG_WEIGHTS.termContentLong : RAG_WEIGHTS.termContentShort
+      baseScore +=
+        (term.length >= 4 ? RAG_WEIGHTS.termContentLong : RAG_WEIGHTS.termContentShort) * termWeight
       matchedTerms.add(term)
     }
 
-    if (keywords.some((keyword) => keyword.includes(term) || term.includes(keyword))) {
-      baseScore += RAG_WEIGHTS.keywordMatch
+    if (keywords.includes(term)) {
+      baseScore += RAG_WEIGHTS.keywordMatch * termWeight
       matchedTerms.add(term)
     }
 
     if (category && (category.includes(term) || term.includes(category))) {
-      baseScore += RAG_WEIGHTS.categoryMatch
+      baseScore += RAG_WEIGHTS.categoryMatch * termWeight
       matchedTerms.add(term)
     }
   }
@@ -402,7 +514,7 @@ const logSearch = (query, options, hits, meta = {}) => {
   }
 }
 
-const rankEntries = (entries, query, terms, preferredCategories, options) =>
+const rankEntries = (entries, query, terms, preferredCategories, options, termWeights) =>
   entries
     .map((entry) => {
       const { score, baseScore, decayFactor, matchedTerms } = scoreEntry(
@@ -410,6 +522,7 @@ const rankEntries = (entries, query, terms, preferredCategories, options) =>
         query,
         terms,
         preferredCategories,
+        termWeights,
       )
 
       return {
@@ -523,12 +636,15 @@ export const searchKnowledgeBase = async (query, options = {}) => {
   if (options.signal?.aborted) throw options.signal.reason
   const q = normalize(query)
   if (!q) return []
+  if (isExplicitlyUnsupportedQuery(q)) return []
 
   const officialKnowledge = loadKnowledgeBase()
   const communityKnowledge = options.includeCommunity === false ? [] : await loadCommunityKnowledge()
   if (options.signal?.aborted) throw options.signal.reason
-  const allEntries = [...officialKnowledge, ...communityKnowledge]
+  const requestedEntries = [...officialKnowledge, ...communityKnowledge]
+  const allEntries = requestedEntries.filter((entry) => matchesExplicitQueryYear(entry, query))
   const terms = extractQueryTerms(q)
+  const termWeights = createQueryTermWeights(allEntries, terms)
   const preferredCategories = inferQueryCategories(query)
 
   let ranked = []
@@ -539,18 +655,32 @@ export const searchKnowledgeBase = async (query, options = {}) => {
     const routedEntries = allEntries.filter((entry) =>
       preferredCategories.includes(String(entry.category || '')),
     )
-    const routedRanked = rankEntries(routedEntries, q, terms, preferredCategories, { minScore })
+    const routedRanked = rankEntries(
+      routedEntries,
+      q,
+      terms,
+      preferredCategories,
+      { minScore },
+      termWeights,
+    )
 
     if (routedRanked.length >= ROUTE_MIN_HITS) {
       ranked = dedupeRankedHits(routedRanked)
       routeMode = 'category_only'
     } else {
-      const globalRanked = rankEntries(allEntries, q, terms, preferredCategories, { minScore })
+      const globalRanked = rankEntries(
+        allEntries,
+        q,
+        terms,
+        preferredCategories,
+        { minScore },
+        termWeights,
+      )
       ranked = dedupeRankedHits(globalRanked)
       routeMode = routedRanked.length > 0 ? 'category_then_global' : 'global_fallback'
     }
   } else {
-    ranked = dedupeRankedHits(rankEntries(allEntries, q, terms, [], { minScore }))
+    ranked = dedupeRankedHits(rankEntries(allEntries, q, terms, [], { minScore }, termWeights))
   }
 
   const keywordHits = ranked.slice(0, keywordLimit)

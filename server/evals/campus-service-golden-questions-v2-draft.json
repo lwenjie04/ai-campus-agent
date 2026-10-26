@@ -2,7 +2,7 @@
   "version": 2,
   "status": "draft",
   "extends": "campus-service-golden-questions.json",
-  "updatedAt": "2026-10-23",
+  "updatedAt": "2026-10-26",
   "targetTop1Accuracy": 0.9,
   "targetNegativeAccuracy": 1,
   "description": "5.4 Top 50 draft. Extends the locked Top 20 with 30 student-handbook candidates and 10 no-hit candidates. Do not promote to CI until 5.1–5.3 coverage and human source/currentness review are complete.",
@@ -26,20 +26,20 @@
       "id": "teaching-grade-point-average",
       "category": "teaching",
       "query": "平均学分绩点按什么公式计算？",
-      "expectedTitleIncludes": ["广东第二师范学院成绩管理办法"],
+      "expectedTitleIncludes": ["广东第二师范学院成绩管理办法", "广东第二师范学院学分制实施办法"],
       "validationStatus": "pending-human-review"
     },
     {
       "id": "teaching-retake-score-record",
       "category": "teaching",
-      "query": "补考或重修取得的成绩会怎样记在成绩单上？",
-      "expectedTitleIncludes": ["广东第二师范学院成绩管理办法"],
+      "query": "受到考试处分后，通过补考或重修取得的成绩如何记入成绩单？",
+      "expectedTitleIncludes": ["广东第二师范学院学生考试违规处分规定", "广东第二师范学院成绩管理办法"],
       "validationStatus": "pending-human-review"
     },
     {
       "id": "teaching-study-period",
       "category": "teaching",
-      "query": "普通本科的学制几年，最长可以在校学习几年？",
+      "query": "《学分制实施办法》规定的本科标准学制和最长学习年限分别是多久？",
       "expectedTitleIncludes": ["广东第二师范学院学分制实施办法"],
       "validationStatus": "pending-human-review"
     },
@@ -60,7 +60,7 @@
     {
       "id": "teaching-leave-approval-duration",
       "category": "teaching",
-      "query": "学生请假十天以上需要经过哪些部门审批？",
+      "query": "《学生考勤、请假规定》中，请假十天以上由谁批准？",
       "expectedTitleIncludes": ["广东第二师范学院学生考勤、请假规定"],
       "validationStatus": "pending-human-review",
       "reviewNote": "手册所载请假规定标注为 2016 年，需人工确认现行审批规则。"
@@ -91,7 +91,7 @@
       "id": "exam-late-entry",
       "category": "exam",
       "query": "考试迟到超过半小时还能进入考场吗？",
-      "expectedTitleIncludes": ["广东第二师范学院学生考试规则"],
+      "expectedTitleIncludes": ["广东第二师范学院学生考试规则", "广东第二师范学院学生考试违规处分规定"],
       "validationStatus": "pending-human-review"
     },
     {
@@ -105,7 +105,7 @@
       "id": "exam-forbidden-devices",
       "category": "exam",
       "query": "参加考试时哪些电子设备不能带到座位上？",
-      "expectedTitleIncludes": ["广东第二师范学院学生考试规则"],
+      "expectedTitleIncludes": ["广东第二师范学院学生考试规则", "广东第二师范学院学生考试违规处分规定"],
       "validationStatus": "pending-human-review"
     },
     {
@@ -125,10 +125,10 @@
     {
       "id": "scholarship-national-award-amounts",
       "category": "scholarship",
-      "query": "国家奖学金、国家励志奖学金和国家助学金的资助标准分别是什么？",
-      "expectedTitleIncludes": ["广东第二师范学院国家奖助学金实施办法"],
+      "query": "2024-2025学年国家奖学金和国家励志奖学金的奖励标准分别是多少？",
+      "expectedTitleIncludes": ["关于做好2024-2025学年国家奖学金和国家励志奖学金评审工作的通知"],
       "validationStatus": "pending-human-review",
-      "reviewNote": "金额可能因年度政策更新，CI 来源命中不代表金额仍有效。"
+      "reviewNote": "本题限定为2024-2025学年历史标准；不得据此回答新年度金额，来源现行性与金额仍需人工复核。"
     },
     {
       "id": "scholarship-national-grade-rank",
@@ -207,7 +207,7 @@
     {
       "id": "life-dorm-checkout-process",
       "category": "life",
-      "query": "休学或退学时需要到哪里办理退宿？",
+      "query": "因休学或退学需要退出学生宿舍时，应到哪个部门办理退宿？",
       "expectedTitleIncludes": ["广东第二师范学院学生宿舍管理条例"],
       "validationStatus": "pending-human-review"
     },
@@ -215,7 +215,7 @@
       "id": "life-tuberculosis-screening",
       "category": "life",
       "query": "学校体检会对新生和在校生开展哪些肺结核筛查？",
-      "expectedTitleIncludes": ["广东第二师范学院结核病防控管理办法"],
+      "expectedTitleIncludes": ["广东第二师范学院结核病防控管理办法", "广东第二师范学院传染病防控管理办法"],
       "validationStatus": "pending-human-review",
       "reviewNote": "健康筛查规则需人工确认当前执行要求。"
     },

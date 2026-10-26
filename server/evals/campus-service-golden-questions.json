@@ -1,20 +1,21 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-09",
+  "updatedAt": "2026-10-26",
   "targetTop1Accuracy": 0.9,
   "description": "校园智能服务台高频事项检索金标。expectedTitleIncludes 仅接受已核对的本地正式来源标题。",
   "items": [
     {
       "id": "teaching-makeup-registration",
       "category": "teaching",
-      "query": "补考怎么报名？",
-      "expectedTitleIncludes": ["第二学期补考、成绩录入和毕业审核安排"]
+      "query": "依据全日制学生学籍管理规定，课程不及格后多久能补考、最多几次？",
+      "expectedTitleIncludes": ["广东第二师范学院全日制学生学籍管理规定"]
     },
     {
       "id": "teaching-transfer-requirements",
       "category": "teaching",
       "query": "普通本科生申请转专业需要什么条件？",
-      "expectedTitleIncludes": ["普通本科生转专业工作的通知"]
+      "expectedTitleIncludes": ["普通本科生转专业工作的通知", "广东第二师范学院普通本科生转专业管理规定"],
+      "reviewNote": "手册收录的替代来源标注为2018年修订，现行有效性仍待人工确认。"
     },
     {
       "id": "teaching-elective-registration",
@@ -32,7 +33,7 @@
       "id": "teaching-academic-warning",
       "category": "teaching",
       "query": "收到学业预警后要怎么处理？",
-      "expectedTitleIncludes": ["本科学生学业预警工作的通知"]
+      "expectedTitleIncludes": ["本科学生学业预警工作的通知", "广东第二师范学院本科学生学业预警管理办法"]
     },
     {
       "id": "exam-cet-registration",
@@ -43,7 +44,7 @@
     {
       "id": "exam-cet-arrangements",
       "category": "exam",
-      "query": "英语四六级考试有哪些注意事项？",
+      "query": "2025年12月全国英语四、六级考试考生要注意哪些事项？",
       "expectedTitleIncludes": ["全国大学英语四、六级考试有关事项"]
     },
     {
@@ -73,7 +74,7 @@
     {
       "id": "scholarship-national-materials",
       "category": "scholarship",
-      "query": "国家奖学金申请表怎么填写和报送？",
+      "query": "国家奖学金申请审批表的填写和报送有什么要求？",
       "expectedTitleIncludes": ["国家奖学金申请审批表填写与报送要求"]
     },
     {
@@ -86,7 +87,8 @@
       "id": "scholarship-financial-difficulty",
       "category": "scholarship",
       "query": "家庭经济困难学生认定怎么办理？",
-      "expectedTitleIncludes": ["家庭经济困难学生认定工作的通知"]
+      "expectedTitleIncludes": ["家庭经济困难学生认定工作的通知", "广东第二师范学院家庭经济困难学生认定办法"],
+      "reviewNote": "替代制度来源标注为试行，现行有效性仍待人工确认；年度通知仅用于当前学年流程。"
     },
     {
       "id": "scholarship-competition",
@@ -97,7 +99,7 @@
     {
       "id": "life-repair",
       "category": "life",
-      "query": "宿舍报修怎么申请？",
+      "query": "两校区智能报修遇到操作问题时，应该联系谁？",
       "expectedTitleIncludes": ["更换两校区智能报修系统的通知"]
     },
     {
