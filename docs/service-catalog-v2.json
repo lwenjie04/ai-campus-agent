@@ -1,14 +1,16 @@
 {
   "schemaVersion": 1,
-  "status": "draft-needs-current-cycle-review",
+  "status": "approved-topic-directory",
   "checkedAt": "2026-10-26",
-  "publishable": false,
+  "approvedAt": "2026-10-26",
+  "publishable": true,
   "categoryIds": ["teaching", "exam", "scholarship", "life"],
   "notes": [
     "referenceUrl points to a source notice only; it is not a verified application portal.",
     "actionUrl is null until a current official application or service entry is verified.",
     "Handbook page numbers were not preserved by DOCX text extraction; sourceLocator uses policy titles and article or section numbers where available.",
-    "checkedAt records review of the repository copy, not confirmation that the cited annual notice remains current."
+    "checkedAt records review of the repository copy, not confirmation that the cited annual notice remains current.",
+    "The user approved this 12-item topic directory on 2026-10-26; annual notices remain references only and must not be presented as current procedures."
   ],
   "items": [
     {
