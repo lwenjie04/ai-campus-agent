@@ -4,9 +4,8 @@ import test from 'node:test'
 process.env.RAG_VECTOR_ENABLED = 'false'
 process.env.RAG_LOG_ENABLED = 'false'
 
-const { formatPolicyUpdateContext, matchPolicyUpdates, policyUpdatesToSources } = await import(
-  '../policy-updates.mjs'
-)
+const { formatPolicyUpdateContext, matchPolicyUpdates, mergePolicySources, policyUpdatesToSources } =
+  await import('../policy-updates.mjs')
 const { buildRagContext } = await import('../rag.mjs')
 const { formatLightragContext } = await import('../lightrag.mjs')
 
@@ -52,6 +51,29 @@ test('policy sources expose the verified official notices', () => {
   assert.match(sources[0].title, /财政部、教育部/)
   assert.equal(sources[0].validity, 'current')
   assert.match(sources[1].url, /gdei\.edu\.cn/)
+})
+
+test('policy sources replace duplicate knowledge-base sources with the same title', () => {
+  const duplicate = {
+    title: '关于做好2024-2025学年国家奖学金和国家励志奖学金评审工作的通知',
+    type: 'official_notice',
+    url: '/kb/download?id=abc',
+  }
+  const other = { title: '其他来源', type: 'knowledge_base', url: '/kb/download?id=other' }
+
+  const merged = mergePolicySources('国家奖学金金额是多少？', [duplicate, other])
+
+  assert.equal(merged.length, 3)
+  assert.match(merged[0].title, /财政部、教育部/)
+  assert.equal(merged.filter((source) => source.title === duplicate.title).length, 1)
+  assert.match(merged.find((source) => source.title === duplicate.title)?.url || '', /gdei\.edu\.cn/)
+  assert.equal(merged.at(-1).title, '其他来源')
+})
+
+test('non-matching query keeps original sources untouched', () => {
+  const sources = [{ title: '示例来源', type: 'knowledge_base', url: '/kb/download?id=1' }]
+
+  assert.deepEqual(mergePolicySources('国家奖学金申请条件是什么？', sources), sources)
 })
 
 test('context stays unchanged without a matching query', () => {

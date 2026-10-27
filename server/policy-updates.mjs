@@ -104,3 +104,25 @@ export const policyUpdatesToSources = (query) =>
         snippet: entry.statement,
       })),
   )
+
+/**
+ * 把命中的现行政策来源合并到检索来源前面：保留官方原文链接，
+ * 去掉与政策来源同标题的本地知识库重复来源。
+ */
+export const mergePolicySources = (query, sources = []) => {
+  const policySources = policyUpdatesToSources(query)
+  if (policySources.length === 0) return sources
+
+  const sourceKey = (source) => `${source.type || ''}|${source.title || ''}|${source.url || ''}`
+  const titleKey = (source) => String(source.title || '').trim()
+
+  const policyKeys = new Set(policySources.map(sourceKey))
+  const policyTitles = new Set(policySources.map(titleKey).filter(Boolean))
+
+  return [
+    ...policySources,
+    ...sources.filter(
+      (source) => !policyKeys.has(sourceKey(source)) && !policyTitles.has(titleKey(source)),
+    ),
+  ]
+}

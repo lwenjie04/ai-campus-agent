@@ -15,7 +15,7 @@ import {
   searchKnowledgeBase,
 } from './rag.mjs'
 import { checkLightRagHealth, formatLightragContext, lightragContextToSources, queryLightRag } from './lightrag.mjs'
-import { policyUpdatesToSources } from './policy-updates.mjs'
+import { mergePolicySources } from './policy-updates.mjs'
 import { handleTtsRoute } from './tts.mjs'
 import { beginChatAccess } from './guest-quota.mjs'
 import { requireAdmin } from './session.mjs'
@@ -526,14 +526,7 @@ const appendRagContextToMessages = (messages, ragHits, query) => {
 }
 
 // 5.4：命中现行政策提示时，把政策来源放在来源列表前面，避免只展示被取代的手册旧条文。
-const mergePolicySources = (query, sources) => {
-  const policySources = policyUpdatesToSources(query)
-  if (policySources.length === 0) return sources
-
-  const sourceKey = (source) => `${source.type || ''}|${source.title || ''}|${source.url || ''}`
-  const seen = new Set(sources.map(sourceKey))
-  return [...policySources.filter((source) => !seen.has(sourceKey(source))), ...sources]
-}
+// 合并与去重逻辑在 policy-updates.mjs 中，便于单元测试。
 
 // 知识库附件下载接口。
 // 前端点击来源中的附件链接时，会通过这个接口下载本地知识库文件。
