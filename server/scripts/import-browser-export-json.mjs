@@ -1,12 +1,12 @@
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
-import { extname, resolve } from 'node:path'
+import { extname, relative, resolve } from 'node:path'
 
 const cwd = process.cwd()
 
 const parseArgs = (argv) => {
   const args = {
-    input: 'src/project-text',
+    input: '_ingest/project-text',
     out: 'server/data/knowledge-base.json',
     dryRun: false,
     replace: false,
@@ -166,7 +166,7 @@ const main = () => {
             url: normalize(a?.url),
           }))
         : [],
-      importedFrom: abs.replace(/\\/g, '/'),
+      importedFrom: relative(cwd, abs).replace(/\\/g, '/'),
     }
 
     const existing = byUrl.get(entry.url) || byId.get(entry.id)

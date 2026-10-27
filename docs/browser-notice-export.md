@@ -45,8 +45,10 @@
 
 1. 用浏览器登录官网并打开通知详情页
 2. 用本脚本导出 JSON
-3. 把 JSON 放到 `src/project-text/exports/`（或你自己的目录）
-4. 再用本地批量入库脚本做下一步整理
+3. 把 JSON 放到 `_ingest/project-text/exports/`（或你自己的目录）
+4. 用专用浏览器导入脚本预览并导入：`node server/scripts/import-browser-export-json.mjs --dry-run`；确认后去掉 `--dry-run` 正式导入
+
+仓库归档目录为 `_ingest/project-text/exports/`，不放在 `src/` 中。可先运行 `node server/scripts/import-browser-export-json.mjs --dry-run` 检查解析结果，再去掉 `--dry-run` 正式导入。
 
 ## 注意事项
 
