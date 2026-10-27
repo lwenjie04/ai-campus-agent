@@ -53,6 +53,15 @@ test('policy sources expose the verified official notices', () => {
   assert.match(sources[1].url, /gdei\.edu\.cn/)
 })
 
+test('national grant standard and school-defined tier range are included', () => {
+  const context = formatPolicyUpdateContext('国家助学金的金额是多少？')
+
+  assert.match(context, /3700 元/)
+  assert.match(context, /2500—5000 元/)
+  assert.match(context, /具体标准由高校/)
+  assert.equal(matchPolicyUpdates('国家助学金金额是多少？').length, 1)
+})
+
 test('policy sources replace duplicate knowledge-base sources with the same title', () => {
   const duplicate = {
     title: '关于做好2024-2025学年国家奖学金和国家励志奖学金评审工作的通知',
