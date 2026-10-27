@@ -31,6 +31,9 @@ const RAG_WEIGHTS = {
   categoryTeachingBoost: toNumber(process.env.RAG_WEIGHT_CATEGORY_TEACHING_BOOST, 3),
   categoryExamBoost: toNumber(process.env.RAG_WEIGHT_CATEGORY_EXAM_BOOST, 2),
   routeBoost: toNumber(process.env.RAG_WEIGHT_ROUTE_BOOST, 6),
+  // 2 字领域词（如“调宿”“补考”）不会进入 3 字以上的 n-gram，标题命中时单独加权，
+  // 避免长句查询因只有短领域词可匹配而丢失正确事项。
+  domainTitleBoost: toNumber(process.env.RAG_WEIGHT_DOMAIN_TITLE_BOOST, 7),
 }
 
 const TIME_DECAY = {
@@ -101,6 +104,20 @@ const DOMAIN_KEYWORDS = [
   '重修',
   '宿舍',
   '退宿',
+  '调宿',
+  '复学',
+  '床位',
+  '报修',
+  '挂失',
+  '借阅',
+  '补办',
+  '缴费',
+  '请假',
+  '考勤',
+  '学生证',
+  '校园卡',
+  '缓交',
+  '减免',
   '图书馆',
   '食堂',
   '后勤',
@@ -112,6 +129,8 @@ const DOMAIN_KEYWORDS = [
   '结核病',
   '体检',
 ]
+
+const DOMAIN_KEYWORD_SET = new Set(DOMAIN_KEYWORDS)
 
 const QUERY_FILLER_PHRASES = [
   '请问',
@@ -416,6 +435,9 @@ const scoreEntry = (entry, query, terms, preferredCategories = [], termWeights =
     if (title.includes(term)) {
       baseScore +=
         (term.length >= 4 ? RAG_WEIGHTS.termTitleLong : RAG_WEIGHTS.termTitleShort) * termWeight
+      if (term.length === 2 && DOMAIN_KEYWORD_SET.has(term)) {
+        baseScore += RAG_WEIGHTS.domainTitleBoost * termWeight
+      }
       matchedTerms.add(term)
     }
 
