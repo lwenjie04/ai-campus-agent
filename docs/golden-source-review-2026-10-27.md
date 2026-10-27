@@ -37,3 +37,35 @@
 - 对 `server/evals/campus-service-golden-questions-v2-draft.json` 和 `server/data/offline-knowledge-base.json` 执行 `node server/scripts/evaluate-rag-golden.mjs --golden server/evals/campus-service-golden-questions-v2-draft.json --knowledge-base server/data/offline-knowledge-base.json --limit 3`，分别加和不加 `--vector`：均为正例 50/50、负例 10/10；这是标题命中与空结果指标。
 - `node server/tests/rag-golden-evaluator.test.mjs`：4/4 通过。迟到题在两种评估中均命中《学生考试规则》。
 - 继续补齐通知正文、修正来源时效和更新时间语义，逐题审核问题与答案依据、建立独立问题集，并由学校相关部门确认仍有疑问的现行制度。完成前 5.4 保持 🟡，Top 50 不作为已签收金标接入 7.3。
+
+## Lead 接手补充（2026-10-27）
+
+AI-2（Codex）额度中断后，由 AI-1（Lead）接手 5.4 的未提交改动，验证并收口如下。
+
+### 时间语义与检索上下文
+
+- `server/scripts/import-student-handbook-docx.mjs` 不再把 DOCX 本地文件修改时间写入 `updatedAt`；重建离线库后 33 条手册来源该项为空，避免把导入日期当成制度修订日期，也避免时间衰减因此高估旧制度的新鲜度。
+- `server/rag.mjs`、`server/lightrag.mjs`、`server/scripts/import-kb-to-lightrag.mjs` 的回答上下文补充来源标注、适用时期、发布日期、现行状态，并明确：旧年度通知只作历史参考、只有标题/附件线索不得推断正文结论、来源冲突时要说明不确定性。
+- 新增 `server/tests/rag-currentness.test.mjs`（3 条）：`npm run test:server` 67/67、`npm run server:check` 80 模块通过。
+
+### 目录诊断集与结果（非金标）
+
+新增 `server/evals/service-catalog-retrieval-diagnostic-v2.json`：12 个已人工确认事项各 1 问，仅检查首条标题是否匹配事项参考标题，不验证正文、答案正确性或制度现行性，不接入 CI。
+
+| 模式 | 正例 | 负例 | 结论 |
+| --- | --- | --- | --- |
+| 离线关键词 | 9/12（75%） | 0 条（未设负例） | 未达 90% 目标，仅作诊断 |
+| 离线向量 | 9/12（75%） | 0 条（未设负例） | 与关键词一致 |
+
+结果文件：`server/evals/service-catalog-retrieval-diagnostic-v2-keyword-results.json`、`server/evals/service-catalog-retrieval-diagnostic-v2-vector-results.json`。
+
+失败 3 题（两种模式相同）：
+
+- `teaching-transfer-major`：Top1 是手册《普通本科生转专业管理规定(2018年修订)》（无日期、内容覆盖广），2025 年转专业通知排第 3；无日期旧制度不受时间衰减影响，需人工决定旧制度与学年通知的优先级或引入时效排序。
+- `exam-retake`：Top1 是手册《成绩管理办法》38 分，2026-03 补考通知 36.75 分排第 2；最新通知未胜出，排序差距需要处理。
+- `life-dorm-adjustment`：Top1 是无关的个税汇算提示（5 分）；期望的宿舍调宿通知在库中，但长句查询未召回（“调宿”等 2 字领域词不在领域词表、长句 n-gram 与标题不匹配），需补领域词或改进中文查询切分。
+
+### 回归与未完成
+
+- 回归：Top 20 关键词/向量均 20/20；Top 50 草案关键词/向量均 50/50、负例 10/10；`rag-golden-evaluator` 4/4；`npm run test:server` 67/67。
+- 未完成：手册旧金额（8000/5000）与 2024 年国家政策（10000/6000）的冲突仍未在检索层消解，只在回答上下文加了冲突规则；诊断/金标中多条通知正文仍缺失、多题未限定学年；检索排序与中文查询切分本轮未调整（避免为 12 题诊断过拟合，应作为独立检索任务并跑金标回归）；逐题核验、独立问题集与人工签收仍未完成，5.4 保持 🟡。
