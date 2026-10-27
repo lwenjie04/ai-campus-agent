@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
 
@@ -374,10 +374,10 @@ const main = () => {
   const args = parseArgs(process.argv.slice(2))
   const docxPath = findDocxFile(args.input, args.docx)
   const outputPath = resolve(cwd, args.output)
-  const stats = statSync(docxPath)
   const paragraphs = extractParagraphs(docxPath)
   const fileMeta = {
-    updatedAt: new Date(stats.mtimeMs).toISOString().slice(0, 10),
+    // Local file mtime records copying/importing, not when the handbook or its rules changed.
+    updatedAt: '',
     importedFrom: docxPath.replace(/\\/g, '/'),
     downloadPath: docxPath.replace(/\\/g, '/').replace(`${cwd.replace(/\\/g, '/')}/`, ''),
     downloadName: docxPath.split(/[/\\]/).pop() || '',

@@ -1,0 +1,167 @@
+{
+  "summary": {
+    "goldenPath": "server/evals/service-catalog-retrieval-diagnostic-v2.json",
+    "vectorEnabled": false,
+    "total": 12,
+    "passed": 9,
+    "failed": 3,
+    "top1Accuracy": 0.75,
+    "threshold": 0.9,
+    "negativeTotal": 0,
+    "negativePassed": 0,
+    "negativeFailed": 0,
+    "negativeAccuracy": 1,
+    "negativeThreshold": 1,
+    "status": "fail"
+  },
+  "results": [
+    {
+      "kind": "positive",
+      "id": "teaching-transfer-major",
+      "category": "teaching",
+      "query": "我想了解本学年转专业的申请条件、时间、材料和考核方式，请按学校最新通知说明；如果当前通知尚未发布，请明确告诉我。",
+      "passed": false,
+      "actualTitle": "广东第二师范学院普通本科生转专业管理规定(2018年修订)",
+      "actualScore": 56.5,
+      "expectedTitleIncludes": [
+        "关于2025年普通本科生转专业工作的通知"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "teaching-public-elective",
+      "category": "teaching",
+      "query": "我想了解公共选修课的修读和考核规则，以及本学期选课时间和系统入口；请区分手册规定与当学期通知。",
+      "passed": true,
+      "actualTitle": "广东第二师范学院公共选修课管理办法(2025年修订)",
+      "actualScore": 85,
+      "expectedTitleIncludes": [
+        "广东第二师范学院公共选修课管理办法"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "teaching-registration",
+      "category": "teaching",
+      "query": "我遇到未能按期注册的情况，想了解暂缓注册需要咨询哪个部门、准备什么材料；请以学校当前规定为准。",
+      "passed": true,
+      "actualTitle": "广东第二师范学院全日制学生学籍管理规定",
+      "actualScore": 27.5,
+      "expectedTitleIncludes": [
+        "广东第二师范学院全日制学生学籍管理规定"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "exam-retake",
+      "category": "exam",
+      "query": "我想查询本学期课程补考安排或补考成绩录入时间，请提供最新教务通知；如果通知未覆盖我的课程，请建议我向教务部门确认。",
+      "passed": false,
+      "actualTitle": "广东第二师范学院成绩管理办法",
+      "actualScore": 38,
+      "expectedTitleIncludes": [
+        "关于2025-2026学年第二学期补考、成绩录入和毕业审核安排的通知"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "exam-cet-registration",
+      "category": "exam",
+      "query": "我想了解最近一场大学英语（或小语种）四、六级考试的报名时间、资格和校内安排，请以最新通知为准。",
+      "passed": true,
+      "actualTitle": "关于做好2026年上半年全国大学英语（小语种）四、六级考试报名工作的通知",
+      "actualScore": 78,
+      "expectedTitleIncludes": [
+        "关于做好2026年上半年全国大学英语（小语种）四、六级考试报名工作的通知"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "exam-rules",
+      "category": "exam",
+      "query": "我想了解考试入场证件、考场纪律或考试违纪处理规则，请引用学校当前有效制度；如手册制度可能已更新，请标明并提示核验。",
+      "passed": true,
+      "actualTitle": "广东第二师范学院学生考试违规处分规定(修订)",
+      "actualScore": 43.5,
+      "expectedTitleIncludes": [
+        "广东第二师范学院学生考试规则",
+        "广东第二师范学院学生考试违规处分规定"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "scholarship-national-awards",
+      "category": "scholarship",
+      "query": "我想了解本学年国家奖学金、国家励志奖学金或国家助学金的申请条件和材料，请只依据本学年学校通知回答。",
+      "passed": true,
+      "actualTitle": "关于做好2024-2025学年国家奖学金和国家励志奖学金评审工作的通知",
+      "actualScore": 167,
+      "expectedTitleIncludes": [
+        "广东第二师范学院国家奖助学金实施办法",
+        "关于做好2024-2025学年国家奖学金和国家励志奖学金评审工作的通知"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "scholarship-hardship-recognition",
+      "category": "scholarship",
+      "query": "我想申请家庭经济困难学生认定，请说明当前学年的申请通知、材料和班级/学院审核安排；没有当前通知时请提示我向学生资助部门确认。",
+      "passed": true,
+      "actualTitle": "关于做好2025-2026学年家庭经济困难学生认定工作的通知",
+      "actualScore": 110.75,
+      "expectedTitleIncludes": [
+        "广东第二师范学院家庭经济困难学生认定办法",
+        "关于做好2025-2026学年家庭经济困难学生认定工作的通知"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "scholarship-work-study",
+      "category": "scholarship",
+      "query": "我想申请校内勤工助学岗位，请帮我查找当前岗位通知、申请渠道和要求；不要把手册中的旧岗位或酬金信息当成现行信息。",
+      "passed": true,
+      "actualTitle": "广东第二师范学院学生勤工助学管理办法",
+      "actualScore": 67.5,
+      "expectedTitleIncludes": [
+        "广东第二师范学院学生勤工助学管理办法"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "life-facility-repair",
+      "category": "life",
+      "query": "我在花城校区遇到宿舍漏水，请查找总务部门最新报修系统入口和故障反馈渠道；若当前入口无法确认，请不要给旧电话或旧链接。",
+      "passed": true,
+      "actualTitle": "关于更换两校区智能报修系统的通知",
+      "actualScore": 23,
+      "expectedTitleIncludes": [
+        "关于更换两校区智能报修系统的通知"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "life-dorm-adjustment",
+      "category": "life",
+      "query": "我需要办理调宿，请查找当前通知和表单，并确认办理时间；不要沿用往年截止日期。",
+      "passed": false,
+      "actualTitle": "关于办理2025年度个人所得税综合所得汇算清缴的温馨提示",
+      "actualScore": 5,
+      "expectedTitleIncludes": [
+        "关于学生宿舍退宿、调宿办理及复学床位申请的通知"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "life-campus-card-library",
+      "category": "life",
+      "query": "我的校园卡丢失，或我想了解图书馆借还书规则；请依据学校当前说明提供处理方式和服务地点。",
+      "passed": true,
+      "actualTitle": "文献资源借阅管理规定",
+      "actualScore": 32.5,
+      "expectedTitleIncludes": [
+        "文献资源借阅管理规定",
+        "校园卡管理办法"
+      ]
+    }
+  ]
+}
