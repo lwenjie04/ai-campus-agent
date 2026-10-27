@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import test from 'node:test'
 
 process.env.RAG_VECTOR_ENABLED = 'false'
@@ -8,6 +9,15 @@ const { formatPolicyUpdateContext, matchPolicyUpdates, mergePolicySources, polic
   await import('../policy-updates.mjs')
 const { buildRagContext } = await import('../rag.mjs')
 const { formatLightragContext } = await import('../lightrag.mjs')
+
+test('policy data carries a human signoff before launch', () => {
+  const data = JSON.parse(readFileSync('server/data/policy-updates.json', 'utf8'))
+
+  assert.equal(data.status, 'signed-off')
+  assert.equal(data.signedAt, '2026-10-27')
+  assert.match(String(data.signedBy), /用户/)
+  assert.match(String(data.signedNote), /7\.4/)
+})
 
 test('amount question matches the current policy note', () => {
   const matched = matchPolicyUpdates('现在国家奖助学金实施办法标准是多少？')
