@@ -2,7 +2,7 @@
   "version": 2,
   "status": "draft",
   "extends": "campus-service-golden-questions.json",
-  "updatedAt": "2026-10-26",
+  "updatedAt": "2026-10-27",
   "targetTop1Accuracy": 0.9,
   "targetNegativeAccuracy": 1,
   "description": "5.4 Top 50 draft. Extends the locked Top 20 with 30 student-handbook candidates and 10 no-hit candidates. Do not promote to CI until 5.1–5.3 coverage and human source/currentness review are complete.",
@@ -91,7 +91,7 @@
       "id": "exam-late-entry",
       "category": "exam",
       "query": "考试迟到超过半小时还能进入考场吗？",
-      "expectedTitleIncludes": ["广东第二师范学院学生考试规则", "广东第二师范学院学生考试违规处分规定"],
+      "expectedTitleIncludes": ["广东第二师范学院学生考试规则"],
       "validationStatus": "pending-human-review"
     },
     {
