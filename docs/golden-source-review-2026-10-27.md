@@ -110,3 +110,4 @@ AI-2（Codex）额度中断后，由 AI-1（Lead）接手 5.4 的未提交改动
 - Master Quality [run 40473264194](https://github.com/lwenjie04/ai-campus-agent/actions/runs/40473264194) 五个 job 全绿；Deploy [run 40473427797](https://github.com/lwenjie04/ai-campus-agent/actions/runs/40473427797) 成功，线上 release 更新为 `f34b05e86ac30d2b69de926bd099e5537c31d749-40473427797-1`。
 - 公网复核：`/api/health` 200 且 releaseId 匹配；`/services` 与新 JS 资源 200；问“国家奖学金和国家励志奖学金的金额标准”返回 10000/6000 并标注手册 8000/5000 已过时，问“国家助学金的资助标准”返回平均 3700、学校 2500—5000 分档 2—3 档，来源前置 2024 国家通知与学校通知；问“申请国家奖学金对年级和成绩排名有什么要求”（非金额）不注入政策提示。
 - 边界：上线不等于发布签收；5.4 仍保持 🟡，待通知正文、年度限定、逐题核验与 7.4 人工发布签收完成。
+- 后续文档提交 `c468b3d` 再次部署：Deploy #36 attempt 1 因 SSH 上传 20 分钟超时失败并自动保留旧版（线上仍为 `f34b05e` 版本，服务可用），attempt 2 成功；线上 release 更新为 `c468b3d4aaf0cc63f3eaca306714ddb4b1840147-40483956902-2`，公网金额问答与来源复核通过。针对该带宽问题，已在本地把 `deploy.yml` 上传超时从 20m 提高到 40m、job 超时从 50m 提高到 75m，待随下批变更推送验证。

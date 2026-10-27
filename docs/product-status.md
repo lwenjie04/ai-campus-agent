@@ -6,7 +6,7 @@
 | 分支             | `master`                                                 |
 | 版本             | `package.json` 仍为占位版本 `0.0.0`；未创建正式 tag      |
 | 线上地址         | <https://maila.club>                                     |
-| 当前线上 release | `f34b05e86ac30d2b69de926bd099e5537c31d749-40473427797-1`（2026-10-27 Deploy #35；后续文档提交可能触发同内容再次部署，最终以 `/api/health` 为准） |
+| 当前线上 release | `c468b3d4aaf0cc63f3eaca306714ddb4b1840147-40483956902-2`（2026-10-27 Deploy #36 attempt 2；最终以 `/api/health` 为准） |
 | 阶段             | V2 目标环境验证进行中；5.4 政策提示已上线并完成公网复核，7.4 人工发布签收未完成 |
 
 ## 当前结论
@@ -20,7 +20,7 @@
 | 前端单测           | 129/129                                                                                               | `npm run test:unit`；覆盖 5.2/5.3 办事指南与搜索桥接、会话与反馈等前端状态                                                                                                                                                                                                                 |
 | 服务端测试         | 78/78                                                                                                 | `npm run test:server`；包含 5.4 currentness、policy-updates 与长句召回回归；不代替生产验证                                                                                                                                                                                                  |
 | 生产构建与静态检查 | 构建通过；lint 通过；后端语法检查 83 个模块                                                           | `npm run build`、`npm run lint`、`npm run server:check`，此前记录见 `docs/development-baseline-v2.md`                                                                                                                                                                                      |
-| 7.3 CI 与 CD       | Quality 五 job 全绿；Deploy #35 已部署当前线上 release                                                | Quality [run 40473264194](https://github.com/lwenjie04/ai-campus-agent/actions/runs/40473264194)，Deploy [run 40473427797](https://github.com/lwenjie04/ai-campus-agent/actions/runs/40473427797)，线上 release `f34b05e...-40473427797-1`；5.4 Top 50 仍未完成 |
+| 7.3 CI 与 CD       | Quality 五 job 全绿；Deploy #36 attempt 2 已部署当前线上 release                                    | Quality [run 40483742473](https://github.com/lwenjie04/ai-campus-agent/actions/runs/40483742473)，Deploy [run 40483956902](https://github.com/lwenjie04/ai-campus-agent/actions/runs/40483956902)（attempt 1 上传超时、attempt 2 成功），线上 release `c468b3d...-40483956902-2`；5.4 Top 50 仍未完成 |
 | 真实 LLM 与 RAG    | 普通问答 HTTP 200；TTFT/总耗时 6.284/6.287s；RAG 1.254/2.656s、4 条来源；LightRAG health 42ms         | 单次样本，不代表高并发容量；真实 embedding 服务端密钥待用户配置并验证                                                                                                                                                                                                                      |
 | 线上流式取消       | 首段后主动断开，TTFT 2.646s，客户端 reader cancel 2ms；公网返回 Secure 游客 Cookie                    | 真实 `/api/chat/stream`；取消信号传播和额度结算竞态另由服务端测试覆盖，线上模型故障注入未测                                                                                                                                                                                                |
 | 生产 MySQL 与反馈  | MySQL 5.7.44 增量迁移通过；`feedbackEligible:true` 后提交反馈 HTTP 200，数据库读回后清理测试数据      | 备份 `/var/backups/ai-campus-agent/ai_campus_agent_pre_chat_feedback_20261023T034120Z.sql.gz`，SHA-256 `b8aaab1b5ee88a80230ac3e19c9e0a36364babe9e0c25d91e055b2a3d1c545ed`；隔离 schema 恢复 6 张基础表与 6 条社区知识记录后已删除测试 schema。社区知识生产 API 写入/读取仍待管理员登录验证 |
@@ -36,5 +36,6 @@
 - **RAG 与数据**：真实 embedding 服务端密钥待用户配置后验证；Top 50 金标仍等 5.4 人工核对；当前离线 Top 20 使用 hash 索引。5.4 现行政策提示已上线并通过公网复核，但仍缺通知正文、年度限定与逐题人工核验。
 - **7.5 运营与试用**：尚无真实用户试用记录、正式版本/tag、试用时间窗、参与范围和回滚阈值。
 - **容量边界**：游客额度与按 IP 限频状态保存在单 Node 进程内存中；多实例部署或进程重启后不保证计数连续。需要多实例时先接入共享存储并验证。
+- **部署稳定性**：2026-10-27 的发布包约 16.6MB，Deploy #36 attempt 1 因 SSH 上传 20 分钟超时失败并自动保留旧版，attempt 2 成功；建议后续把工作流上传超时从 20 分钟提高（并评估包体裁剪），随下批变更验证。
 
 全部 7.4 检查通过并由人工确认前，不要设置 `RELEASE_LIVE_VALIDATION_CONFIRMED=true`，也不要运行正式 release gate 或创建发布 tag。
