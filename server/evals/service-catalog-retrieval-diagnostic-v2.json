@@ -6,7 +6,7 @@
   "targetNegativeAccuracy": 1,
   "description": "One query per manually approved service-catalog item. This diagnostic checks only whether the first retrieved title matches a catalog reference title. It does not validate source body, answer correctness, source freshness, or current policy. Do not add to CI or treat as signed Golden data.",
   "items": [
-    { "id": "teaching-transfer-major", "category": "teaching", "query": "我想了解本学年转专业的申请条件、时间、材料和考核方式，请按学校最新通知说明；如果当前通知尚未发布，请明确告诉我。", "expectedTitleIncludes": ["关于2025年普通本科生转专业工作的通知"] },
+    { "id": "teaching-transfer-major", "category": "teaching", "query": "我想了解本学年转专业的申请条件、时间、材料和考核方式，请按学校最新通知说明；如果当前通知尚未发布，请明确告诉我。", "expectedTitleIncludes": ["关于2025年普通本科生转专业工作的通知", "广东第二师范学院普通本科生转专业管理规定"], "expectedNote": "本学年通知尚未发布；2018 年手册规定与 2025 年旧通知任一 Top1 均计入，回答必须提示当前学年安排无法确认。用户 2026-10-27 已确认该期望。" },
     { "id": "teaching-public-elective", "category": "teaching", "query": "我想了解公共选修课的修读和考核规则，以及本学期选课时间和系统入口；请区分手册规定与当学期通知。", "expectedTitleIncludes": ["广东第二师范学院公共选修课管理办法"] },
     { "id": "teaching-registration", "category": "teaching", "query": "我遇到未能按期注册的情况，想了解暂缓注册需要咨询哪个部门、准备什么材料；请以学校当前规定为准。", "expectedTitleIncludes": ["广东第二师范学院全日制学生学籍管理规定"] },
     { "id": "exam-retake", "category": "exam", "query": "我想查询本学期课程补考安排或补考成绩录入时间，请提供最新教务通知；如果通知未覆盖我的课程，请建议我向教务部门确认。", "expectedTitleIncludes": ["关于2025-2026学年第二学期补考、成绩录入和毕业审核安排的通知"] },

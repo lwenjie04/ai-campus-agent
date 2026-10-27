@@ -3,9 +3,9 @@
     "goldenPath": "server/evals/service-catalog-retrieval-diagnostic-v2.json",
     "vectorEnabled": true,
     "total": 12,
-    "passed": 11,
-    "failed": 1,
-    "top1Accuracy": 0.9167,
+    "passed": 12,
+    "failed": 0,
+    "top1Accuracy": 1,
     "threshold": 0.9,
     "negativeTotal": 0,
     "negativePassed": 0,
@@ -20,11 +20,12 @@
       "id": "teaching-transfer-major",
       "category": "teaching",
       "query": "我想了解本学年转专业的申请条件、时间、材料和考核方式，请按学校最新通知说明；如果当前通知尚未发布，请明确告诉我。",
-      "passed": false,
+      "passed": true,
       "actualTitle": "广东第二师范学院普通本科生转专业管理规定(2018年修订)",
       "actualScore": 56.5,
       "expectedTitleIncludes": [
-        "关于2025年普通本科生转专业工作的通知"
+        "关于2025年普通本科生转专业工作的通知",
+        "广东第二师范学院普通本科生转专业管理规定"
       ]
     },
     {
