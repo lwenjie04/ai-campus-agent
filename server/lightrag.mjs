@@ -1,5 +1,6 @@
 import './env-loader.mjs'
 import { createClientDisconnectError } from './chat-cancellation.mjs'
+import { formatPolicyUpdateContext } from './policy-updates.mjs'
 
 const trimTrailingSlash = (value) => String(value || '').replace(/\/+$/g, '')
 
@@ -181,8 +182,10 @@ export const lightragContextToSources = (response, references) => {
  * 将 LightRAG response 格式化为注入 LLM 的参考资料块。
  * 风格与 rag.mjs 中的 buildRagContext 保持一致。
  */
-export const formatLightragContext = (response, queryMode) => {
+export const formatLightragContext = (response, queryMode, options = {}) => {
   if (typeof response !== 'string' || !response.trim()) return ''
+
+  const policyContext = formatPolicyUpdateContext(options.query)
 
   const modeLabel =
     queryMode === 'hybrid'
@@ -201,6 +204,7 @@ export const formatLightragContext = (response, queryMode) => {
     '时效与依据规则：回答“本学年/本学期/最新/当前”等问题时，先核对资料的适用时期和发布日期。旧年度通知只能作为历史参考，不得表述为当前安排；未标明适用时期或现行状态未知的制度，不得声称仍然有效。',
     '如果资料只有标题、发布者、日期或附件线索而没有正文，不得据此推断条件、材料、办理时间、系统入口或结论；当前资料缺失时要明确说无法确认，并建议向对应学校部门核实。',
     '不同来源内容冲突时，只有明确适用于问题所问时期且可核验的正式来源才能支持当前结论；无法确认优先级或现行性时，说明冲突和不确定性，不要拼凑答案。',
+    ...(policyContext ? [policyContext] : []),
     '',
     '---- LightRAG 检索上下文 ----',
     response,

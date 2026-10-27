@@ -3,6 +3,7 @@ import { resolve } from 'node:path'
 import { isMySqlConfigured, query } from './mysql.mjs'
 import { searchVectorIndex } from './vector-index.mjs'
 import { getApprovedMockCommunityKnowledge } from './community.mjs'
+import { formatPolicyUpdateContext } from './policy-updates.mjs'
 
 const KB_PATH = resolve(
   process.cwd(),
@@ -746,8 +747,10 @@ export const filterConfidentRagHits = (hits, options = {}) => {
   })
 }
 
-export const buildRagContext = (hits) => {
+export const buildRagContext = (hits, options = {}) => {
   if (!Array.isArray(hits) || hits.length === 0) return ''
+
+  const policyContext = formatPolicyUpdateContext(options.query)
 
   const blocks = hits.map((hit, index) =>
     [
@@ -769,6 +772,7 @@ export const buildRagContext = (hits) => {
     '时效与依据规则：回答“本学年/本学期/最新/当前”等问题时，先核对资料的适用时期和发布日期。旧年度通知只能作为历史参考，不得表述为当前安排；未标明适用时期或现行状态未知的制度，不得声称仍然有效。',
     '如果资料只有标题、发布者、日期或附件线索而没有正文，不得据此推断条件、材料、办理时间、系统入口或结论；当前资料缺失时要明确说无法确认，并建议向对应学校部门核实。',
     '不同来源内容冲突时，只有明确适用于问题所问时期且可核验的正式来源才能支持当前结论；无法确认优先级或现行性时，说明冲突和不确定性，不要拼凑答案。',
+    ...(policyContext ? [policyContext] : []),
     ...blocks,
     '请直接回答，不要写空泛开场白，也不要重复用户问题。',
     '输出格式要求：',
