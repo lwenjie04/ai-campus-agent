@@ -3,7 +3,7 @@ import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from '
 import { extname, relative, resolve } from 'node:path'
 
 const cwd = process.cwd()
-const DEFAULT_INPUT_DIRS = ['_ingest/project-text']
+const DEFAULT_INPUT_DIRS = ['_ingest/local-text']
 const DEFAULT_OUTPUT = 'server/data/knowledge-base.json'
 
 const TEXT_EXTS = new Set(['.txt', '.md', '.markdown', '.json'])
