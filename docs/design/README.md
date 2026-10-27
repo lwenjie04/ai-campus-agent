@@ -1,6 +1,6 @@
 # Figma 设计交付
 
-视觉依据：Figma 文件 `AanmCyrCvXPqzdrzTIlIJu`。下表 P0 PNG 使用 Figma Export 导出，不是画布截图。响应式与控件状态补充稿是 Figma 中可编辑的独立画板，暂未导出 PNG 到仓库。
+视觉依据：Figma 文件 `AanmCyrCvXPqzdrzTIlIJu`。下表 P0 PNG 使用 Figma Export 导出，不是画布截图。响应式与控件状态补充稿共 9 张；本轮已通过 Figma Export 导出 7 张并归档，另有 2 张待补。
 
 ## P0 画板导出
 
@@ -20,19 +20,19 @@
 
 Figma Starter 文件最多保留 3 个页面，因此补充画板放在既有页面 `02 · 银白极简 / 深绿`（`10:34`），没有新增页面。节点均为可编辑的 Figma 画板，沿用现有银白背景、深绿色操作和 Noto Sans SC 字体。
 
-| 节点 | 内容 | 尺寸 | Figma |
-| --- | --- | --- | --- |
-| `33:92` | 1024 首页与回答预览 | 1024 × 860 | [打开画板](https://www.figma.com/design/AanmCyrCvXPqzdrzTIlIJu/Campus-AI?node-id=33-92) |
-| `33:135` | 768 平板首页 | 768 × 900 | [打开画板](https://www.figma.com/design/AanmCyrCvXPqzdrzTIlIJu/Campus-AI?node-id=33-135) |
-| `33:176` | 390 移动首页、常用服务、最近对话 | 390 × 844 | [打开画板](https://www.figma.com/design/AanmCyrCvXPqzdrzTIlIJu/Campus-AI?node-id=33-176) |
-| `33:212` | 1024 问答与来源侧栏 | 1024 × 880 | [打开画板](https://www.figma.com/design/AanmCyrCvXPqzdrzTIlIJu/Campus-AI?node-id=33-212) |
-| `33:259` | 768 问答与右侧来源抽屉 | 768 × 880 | [打开画板](https://www.figma.com/design/AanmCyrCvXPqzdrzTIlIJu/Campus-AI?node-id=33-259) |
-| `33:300` | 390 问答与底部来源抽屉 | 390 × 844 | [打开画板](https://www.figma.com/design/AanmCyrCvXPqzdrzTIlIJu/Campus-AI?node-id=33-300) |
-| `33:332` | 390 登录 / 注册 | 390 × 844 | [打开画板](https://www.figma.com/design/AanmCyrCvXPqzdrzTIlIJu/Campus-AI?node-id=33-332) |
-| `33:355` | 390 办事指南列表 | 390 × 844 | [打开画板](https://www.figma.com/design/AanmCyrCvXPqzdrzTIlIJu/Campus-AI?node-id=33-355) |
-| `35:134` | 按钮、输入框、来源面板状态 | 1440 × 940 | [打开画板](https://www.figma.com/design/AanmCyrCvXPqzdrzTIlIJu/Campus-AI?node-id=35-134) |
+| 节点 | 内容 | 尺寸 | Figma | PNG 导出 |
+| --- | --- | --- | --- | --- |
+| `33:92` | 1024 首页与回答预览 | 1024 × 860 | [打开画板](https://www.figma.com/design/AanmCyrCvXPqzdrzTIlIJu/Campus-AI?node-id=33-92) | [1024-home-answer.png](10-34/1024-home-answer.png) |
+| `33:135` | 768 平板首页 | 768 × 900 | [打开画板](https://www.figma.com/design/AanmCyrCvXPqzdrzTIlIJu/Campus-AI?node-id=33-135) | [768-home.png](10-34/768-home.png) |
+| `33:176` | 390 移动首页、常用服务、最近对话 | 390 × 844 | [打开画板](https://www.figma.com/design/AanmCyrCvXPqzdrzTIlIJu/Campus-AI?node-id=33-176) | 待补：Starter 调用上限 |
+| `33:212` | 1024 问答与来源侧栏 | 1024 × 880 | [打开画板](https://www.figma.com/design/AanmCyrCvXPqzdrzTIlIJu/Campus-AI?node-id=33-212) | 待补：Starter 调用上限 |
+| `33:259` | 768 问答与右侧来源抽屉 | 768 × 880 | [打开画板](https://www.figma.com/design/AanmCyrCvXPqzdrzTIlIJu/Campus-AI?node-id=33-259) | [768-chat-sources.png](10-34/768-chat-sources.png) |
+| `33:300` | 390 问答与底部来源抽屉 | 390 × 844 | [打开画板](https://www.figma.com/design/AanmCyrCvXPqzdrzTIlIJu/Campus-AI?node-id=33-300) | [390-chat-sources.png](10-34/390-chat-sources.png) |
+| `33:332` | 390 登录 / 注册 | 390 × 844 | [打开画板](https://www.figma.com/design/AanmCyrCvXPqzdrzTIlIJu/Campus-AI?node-id=33-332) | [390-login.png](10-34/390-login.png) |
+| `33:355` | 390 办事指南列表 | 390 × 844 | [打开画板](https://www.figma.com/design/AanmCyrCvXPqzdrzTIlIJu/Campus-AI?node-id=33-355) | [390-services.png](10-34/390-services.png) |
+| `35:134` | 按钮、输入框、来源面板状态 | 1440 × 940 | [打开画板](https://www.figma.com/design/AanmCyrCvXPqzdrzTIlIJu/Campus-AI?node-id=35-134) | [controls-states-1440.png](10-34/controls-states-1440.png) |
 
-新增画板已在 Figma 预览检查：390 首页、390 来源抽屉、1440 控件状态均已查看。控件稿的“次要操作”分组标题与状态标签间距仍需微调。补充画板的 PNG 导出与归档尚未完成。
+新增画板已在 Figma 预览检查：390 首页、390 来源抽屉、1440 控件状态均已查看。控件稿中“次要操作”标题由 y=222 调整到 y=204，标题与状态标签已分开；导出图确认标题不再重叠。七张已归档 PNG 的签名和画布尺寸均已核对。
 
 ## 配套材料
 
@@ -44,7 +44,6 @@ Figma Starter 文件最多保留 3 个页面，因此补充画板放在既有页
 ## 仍待补齐
 
 - `22:34` 中有登录、历史/来源/语音、搜索/账号、办事指南及社区/后台状态画板；没有独立的“有来源问答”画板，问答及展开的来源面板以 `10:95` 为准。
-- 响应式和状态画板已经补在 Figma 中，但尚未使用 Figma Export 导出 PNG 并归档到 `docs/design/`。
-- `35:134` 中“次要操作”标题与状态标签的垂直间距仍需微调。
+- `33:176`（390 移动首页）与 `33:212`（1024 问答与来源侧栏）尚未导出；Figma Starter 本轮达到调用上限，待额度恢复后补齐。
 - 现有 SVG 中没有关闭、附件图标，也没有独立的品牌组合字标 SVG；字标由图标和可编辑文字组成。
 
