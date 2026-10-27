@@ -85,7 +85,19 @@ AI-2（Codex）额度中断后，由 AI-1（Lead）接手 5.4 的未提交改动
 
 - 决策：用户 2026-10-27 选择“新增现行政策提示数据”方案，不改手册原文。
 - 数据：`server/data/policy-updates.json`（`status: pending-human-signoff`）。首批 1 条 `national-scholarship-amounts-2024`：2024 年起国家奖学金 10000 元、国家励志奖学金 6000 元，取代 2025 学生手册中的 8000/5000 元旧标准；来源为财政部/教育部 2024 通知和学校 2024—2025 学年评审通知（均已核实），人工签收时确认是否上线。
-- 逻辑：`server/policy-updates.mjs` 只在问题**同时**命中主题词（国家奖学金/国家励志奖学金/奖助学金等）和金额/标准意图词（金额/标准/多少等）时返回提示；`buildRagContext(hits, { query })` 与 `formatLightragContext(response, mode, { query })` 在回答上下文中加入“现行政策提示”块；`index.mjs` 把政策来源（官方链接）排在来源列表前面，并保留原有来源。
+- 逻辑：`server/policy-updates.mjs` 只在问题**同时**命中主题词（国家奖学金/国家励志奖学金/奖助学金等）和金额/标准意图词（金额/标准/多少等）时返回提示；`buildRagContext(hits, { query })` 与 `formatLightragContext(response, mode, { query })` 在回答上下文中加入“现行政策提示”块；`index.mjs` 把政策来源（官方原文链接）排在来源列表前面，并按标题去重同标题的本地来源（`c78b94f`）。
 - 边界：非金额问题、尚未发布年度、其他主题不注入；政策提示不作为新的“金标答案”，只是带来源的核对结论。
-- 测试：`server/tests/policy-updates.test.mjs` 5 条；`npm run test:server` 74/74；`npm run server:check` PASS 83 模块；Top 20 关键词/向量 20/20；Top 50 草案关键词/向量 50/50 + 负例 10/10；诊断 12/12。
+- 测试：`server/tests/policy-updates.test.mjs` 7 条；`npm run test:server` 76/76；`npm run server:check` PASS 83 模块；Top 20 关键词/向量 20/20；Top 50 草案关键词/向量 50/50 + 负例 10/10；诊断 12/12。
 - 未完成：政策提示条目的人工签收、线上是否加载旧手册数据的确认、缺失通知正文与年度限定、逐题核验与独立问题集。
+
+### 上线前确认（2026-10-27，`c78b94f`）
+
+结论：**技术层面可上线**，但内容仍待来源负责人签收，且必须走正常推送、CI、部署与 7.4 发布检查流程，不得用本记录代替签收。
+
+- 部署打包：`git archive HEAD` 生成的发布包包含已跟踪文件 `server/`（含 `server/data/policy-updates.json`）；线上部署脚本会把 `release/server/data/.` 同步到 `shared/data/` 并软链回 release（`.github/deploy-remote.sh`），后续发布自动更新该文件。
+- 安全降级：`POLICY_UPDATES_PATH` 指向不存在文件时，`formatPolicyUpdateContext` 返回空、`policyUpdatesToSources` 返回空数组，功能静默关闭，不影响 RAG/问答（本地已验证）。
+- 单元/回归：`policy-updates.test.mjs` 7 条；`npm run test:server` 76/76；`npm run server:check` PASS 83 模块；Top 20 20/20、Top 50 50/50 + 负例 10/10；定向 ESLint/oxlint 0 error、`git diff --check` 通过。
+- 真实链路（本地，真实 DeepSeek）：问“现在国家奖助学金实施办法标准是多少？”，回答明确“自 2024 年起国家奖学金 10000 元、国家励志奖学金 6000 元，2025 年学生手册的 8000/5000 为旧标准已不适用”，并提示以最新通知为准；来源前两条为 2024 国家通知与学校 2024—2025 学年评审通知。
+- 非金额问题（如“申请国家奖学金对年级和成绩排名有什么要求？”）不注入政策提示，来源里没有政策提示专属的 2024 国家通知；mock 链路与真实链路一致。
+- 去重：`mergePolicySources` 按标题去掉与政策来源重复的本地知识库来源（`c78b94f`），真实链路和 mock 链路均不再重复展示同一条学校通知。
+- 仍需人工：`policy-updates.json` 的 `status: pending-human-signoff` 需来源负责人确认金额与表述；确认线上是否加载学生手册旧数据（7.4）；真实用户试用未做；上线必须按正常发布流程执行，不能用本检查代替人工签收。
