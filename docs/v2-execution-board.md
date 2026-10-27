@@ -180,7 +180,7 @@
 | D-2 | 8-18 前端 WIP 是提交存档还是丢弃 | 0.1、全部后续 diff | ✅ 已决定：提交存档（`61756be`），2.1 时再替换 | 人工 |
 | D-3 | `TTS_AUTH_TOKEN` 共享密钥是否删除 | 4.5、7.4 | ✅ 已决定：移除共享密钥，TTS 统一使用登录会话鉴权 | 人工 |
 | D-4 | `mobile-uniapp/src` 迁移是否单独提交 | 0.1、仓库整洁 | ✅ 已单独提交 `4af3c89` | 人工 |
-| D-5 | 将 `src/project-text/exports/` 261 个 JSON 移出前端源码 | 仓库整洁 | ✅ 已移至 `_ingest/project-text/exports/`，保留文件并更新导入默认路径/来源记录 | AI-2 |
+| D-5 | 将 `src/project-text/exports/` 261 个 JSON 移出前端源码 | 仓库整洁 | ✅ `417a2e8`：移至 `_ingest/project-text/exports/` 并保留文件；浏览器导入默认路径、说明及 262 条现存来源记录已同步 | AI-2 |
 | D-6 | **4.1 依赖已解除**：3.1/3.2/3.5 ✅，3.3 代码就绪（仅差浏览器回归）；4.1 可开工，回归与 4.1 浏览器验证合并做 | 4.1、4.2、4.5 | ✅ 已解除 | AI-1 做 4.1 |
 | D-7 | **4.2 启动条件**：4.1 已 ✅（`0c5a877`），服务端断开取消可开始 | 4.2、4.3 | ✅ 已解除 | AI-2 开始 4.2 |
 | D-8 | **6.4 事务实测环境**：6.4 已用本地 MySQL8 的独立 schema `ai_campus_agent_test_64` 完成真实事务验证并删除，未写默认库 | 6.4、6.5、7.3、7.4 | ✅ 已验证并清理；可复跑测试留 7.3 | AI-1 代跑，Codex 纳入 CI |
@@ -520,6 +520,8 @@
 | 2026-10-22 | 部分 | 准备 production CD：`deploy.yml` 只响应默认分支 push 对应的全绿 `Quality` run；构建同一 commit，通过固定 SSH host key 发布前后端、共享环境/数据/日志、PM2 reload、本机与公网健康检查及失败回滚；补充服务器 bootstrap、Environment secrets/variables 与安全边界文档。默认 `CD_ENABLED` 未开启；尚无目标服务器实测，待人工配置并完成 7.4 | AI-2（Codex） |
 
 | 2026-10-23 | 部分 | 7.4 补记生产验收：线上 release `a6f94f3d9dacae5e5b6630172a6c01cf3b09d18f-39893338172-1` 的真实 LLM 首段后客户端取消 2ms；匿名 TTS 401；响应式矩阵 360–1440 共 10/10；17M dist / 1.2M server；上一版回滚到 `7115da6...` 后恢复并通过公网健康检查；备份恢复验证 6 表/6 条社区知识数据。服务端 56/56。管理员登录一次返回 `AUTH_INVALID` 后停止重试；邮件送达/验证码生命周期、登录态 TTS、社区知识 API、embedding、模型故障注入和用户试用仍待完成。共享邮箱、临时管理员和 DBA 最小权限复核需要人工配合。7.4 保持 🟡，不设置人工发布确认标志 | AI-2（Codex） |
+| 2026-10-27 | 完成 | D-5：261 个校园通知 JSON 已移至 `_ingest/project-text/exports/` 并保留；`node server/scripts/import-browser-export-json.mjs --dry-run` 扫描 261 份、0 新增/0 更新；两个导入脚本 `node --check` 通过，`git diff --check` 通过；提交 `417a2e8` | AI-2（Codex） |
+
 ---
 
 ## 7. 每轮开工前的 30 秒检查
