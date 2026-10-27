@@ -15,6 +15,7 @@ import {
   searchKnowledgeBase,
 } from './rag.mjs'
 import { checkLightRagHealth, formatLightragContext, lightragContextToSources, queryLightRag } from './lightrag.mjs'
+import { mergePolicySources } from './policy-updates.mjs'
 import { handleTtsRoute } from './tts.mjs'
 import { beginChatAccess } from './guest-quota.mjs'
 import { requireAdmin } from './session.mjs'
@@ -509,10 +510,10 @@ const requestOpenAICompatibleChatStream = async (messages, requestId, handlers =
 
 // 把 RAG 命中的资料拼接成额外的 system 上下文，发送给大模型。
 // 这样模型在生成答案时，就能优先参考知识库内容。
-const appendRagContextToMessages = (messages, ragHits) => {
+const appendRagContextToMessages = (messages, ragHits, query) => {
   if (!Array.isArray(ragHits) || ragHits.length === 0) return messages
 
-  const context = buildRagContext(ragHits)
+  const context = buildRagContext(ragHits, { query })
   if (!context) return messages
 
   return [
@@ -523,6 +524,9 @@ const appendRagContextToMessages = (messages, ragHits) => {
     },
   ]
 }
+
+// 5.4：命中现行政策提示时，把政策来源放在来源列表前面，避免只展示被取代的手册旧条文。
+// 合并与去重逻辑在 policy-updates.mjs 中，便于单元测试。
 
 // 知识库附件下载接口。
 // 前端点击来源中的附件链接时，会通过这个接口下载本地知识库文件。
@@ -700,7 +704,9 @@ const handleChatStream = async (req, res) => {
           timeoutMs: CHAT_LIGHTRAG_TIMEOUT_MS,
           signal,
         })
-        ragContext = formatLightragContext(lightragResult?.response, lightragResult?.mode)
+        ragContext = formatLightragContext(lightragResult?.response, lightragResult?.mode, {
+          query: userText,
+        })
         try {
           ragSources = lightragContextToSources(
             lightragResult?.response,
@@ -740,9 +746,10 @@ const handleChatStream = async (req, res) => {
       ragCandidateCount = ragCandidates.length
       ragHits = filterConfidentRagHits(ragCandidates)
       ragSources = ragHitsToSources(ragHits)
-      ragContext = buildRagContext(ragHits)
+      ragContext = buildRagContext(ragHits, { query: userText })
       if (ragHits.length > 0) ragUsed = 'keyword'
     }
+    if (ragContext) ragSources = mergePolicySources(userText, ragSources)
     ensureClientConnected()
     recoverySources = ragSources
     const useLowConfidenceResponse = !ragContext && !isSmallTalk(userText)
@@ -751,7 +758,7 @@ const handleChatStream = async (req, res) => {
     // 把 RAG 上下文注入到消息列表
     const messagesForLlm =
       ragHits.length > 0
-        ? appendRagContextToMessages(messages, ragHits)
+        ? appendRagContextToMessages(messages, ragHits, userText)
         : ragContext
           ? [...messages, { role: 'system', content: ragContext }]
           : messages
@@ -910,7 +917,9 @@ const handleChat = async (req, res) => {
           includeChunkContent: true,
           timeoutMs: CHAT_LIGHTRAG_TIMEOUT_MS,
         })
-        ragContext = formatLightragContext(lightragResult?.response, lightragResult?.mode)
+        ragContext = formatLightragContext(lightragResult?.response, lightragResult?.mode, {
+          query: userText,
+        })
         try {
           ragSources = lightragContextToSources(
             lightragResult?.response,
@@ -932,8 +941,9 @@ const handleChat = async (req, res) => {
       ragCandidateCount = ragCandidates.length
       ragHits = filterConfidentRagHits(ragCandidates)
       ragSources = ragHitsToSources(ragHits)
-      ragContext = buildRagContext(ragHits)
+      ragContext = buildRagContext(ragHits, { query: userText })
     }
+    if (ragContext) ragSources = mergePolicySources(userText, ragSources)
     recoverySources = ragSources
     const useLowConfidenceResponse = !ragContext && !isSmallTalk(userText)
     if (useLowConfidenceResponse) ragUsed = 'low_confidence'
@@ -946,7 +956,7 @@ const handleChat = async (req, res) => {
     // 把知识库上下文附加到消息列表中，让大模型带着资料回答。
     const messagesForLlm =
       ragHits.length > 0
-        ? appendRagContextToMessages(messages, ragHits)
+        ? appendRagContextToMessages(messages, ragHits, userText)
         : ragContext
           ? [...messages, { role: 'system', content: ragContext }]
           : messages

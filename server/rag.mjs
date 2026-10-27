@@ -3,8 +3,12 @@ import { resolve } from 'node:path'
 import { isMySqlConfigured, query } from './mysql.mjs'
 import { searchVectorIndex } from './vector-index.mjs'
 import { getApprovedMockCommunityKnowledge } from './community.mjs'
+import { formatPolicyUpdateContext } from './policy-updates.mjs'
 
-const KB_PATH = resolve(process.cwd(), 'server/data/knowledge-base.json')
+const KB_PATH = resolve(
+  process.cwd(),
+  process.env.RAG_KNOWLEDGE_BASE_PATH || 'server/data/knowledge-base.json',
+)
 const LOG_DIR = resolve(process.cwd(), 'server/logs')
 const LOG_PATH = resolve(LOG_DIR, 'rag-search.log.ndjson')
 
@@ -28,6 +32,9 @@ const RAG_WEIGHTS = {
   categoryTeachingBoost: toNumber(process.env.RAG_WEIGHT_CATEGORY_TEACHING_BOOST, 3),
   categoryExamBoost: toNumber(process.env.RAG_WEIGHT_CATEGORY_EXAM_BOOST, 2),
   routeBoost: toNumber(process.env.RAG_WEIGHT_ROUTE_BOOST, 6),
+  // 2 字领域词（如“调宿”“补考”）不会进入 3 字以上的 n-gram，标题命中时单独加权，
+  // 避免长句查询因只有短领域词可匹配而丢失正确事项。
+  domainTitleBoost: toNumber(process.env.RAG_WEIGHT_DOMAIN_TITLE_BOOST, 7),
 }
 
 const TIME_DECAY = {
@@ -55,7 +62,7 @@ const CATEGORY_RULES = [
   },
   {
     category: 'teaching',
-    patterns: [/转专业/, /补退选/, /课程认定/, /学分认定/, /成绩认定/, /选课/, /课表/, /教务/],
+    patterns: [/学籍/, /转专业/, /补退选/, /课程认定/, /学分认定/, /成绩认定/, /选课/, /课表/, /教务/],
   },
   {
     category: 'exam',
@@ -63,7 +70,7 @@ const CATEGORY_RULES = [
   },
   {
     category: 'life',
-    patterns: [/宿舍/, /图书馆/, /食堂/, /后勤/, /报修/, /交通车/, /校车/],
+    patterns: [/宿舍/, /退宿/, /图书馆/, /食堂/, /后勤/, /报修/, /交通车/, /校车/, /肺结核/, /结核病/, /体检/],
   },
   {
     category: 'research',
@@ -75,7 +82,7 @@ const CATEGORY_RULES = [
   },
   {
     category: 'student_affairs',
-    patterns: [/学籍/, /请假/, /评优/, /评先/, /辅导员/, /学生事务/],
+    patterns: [/请假/, /考勤/, /评优/, /评先/, /辅导员/, /学生事务/],
   },
 ]
 
@@ -97,6 +104,21 @@ const DOMAIN_KEYWORDS = [
   '补考',
   '重修',
   '宿舍',
+  '退宿',
+  '调宿',
+  '复学',
+  '床位',
+  '报修',
+  '挂失',
+  '借阅',
+  '补办',
+  '缴费',
+  '请假',
+  '考勤',
+  '学生证',
+  '校园卡',
+  '缓交',
+  '减免',
   '图书馆',
   '食堂',
   '后勤',
@@ -104,7 +126,68 @@ const DOMAIN_KEYWORDS = [
   '课题',
   '立项',
   '项目申报',
+  '肺结核',
+  '结核病',
+  '体检',
 ]
+
+const DOMAIN_KEYWORD_SET = new Set(DOMAIN_KEYWORDS)
+
+const QUERY_FILLER_PHRASES = [
+  '请问',
+  '帮我',
+  '告诉我',
+  '我想',
+  '我绑定的',
+  '学校附近',
+  '学校的',
+  '校园的',
+  '具体',
+  '分别',
+  '最多',
+  '需要经过',
+  '需要',
+  '怎么办理',
+  '怎么申请',
+  '怎么报名',
+  '怎么处理',
+  '怎么填写',
+  '怎么做',
+  '怎么办',
+  '如何办理',
+  '如何申请',
+  '如何',
+  '怎么',
+  '什么时候',
+  '什么时间',
+  '什么',
+  '哪些',
+  '有哪些',
+  '有什么',
+  '多少',
+  '多少钱',
+  '是多久',
+  '是什么',
+  '怎么办',
+  '吗',
+  '呢',
+  '吧',
+  '一下',
+  '今天',
+  '明天',
+  '现在',
+  '上半年',
+  '下半年',
+  '和',
+  '要',
+  '的',
+  '是',
+]
+
+const QUERY_FILLER_PATTERN = new RegExp(
+  QUERY_FILLER_PHRASES.sort((left, right) => right.length - left.length).join('|'),
+  'g',
+)
 
 const SYNONYM_GROUPS = [
   ['奖学金', '奖助', '资助', '助学金'],
@@ -207,8 +290,9 @@ const loadCommunityKnowledge = async () => {
 const expandBySynonyms = (terms) => {
   const set = new Set(terms)
   for (const term of terms) {
+    if (term.length < 3) continue
     for (const group of SYNONYM_GROUPS) {
-      if (group.some((item) => term.includes(item) || item.includes(term))) {
+      if (group.includes(term)) {
         group.forEach((item) => set.add(item))
       }
     }
@@ -236,22 +320,70 @@ const extractQueryTerms = (query) => {
   const q = normalize(query)
   if (!q) return []
 
-  const terms = new Set([q])
+  const focusedQuery = q.replace(QUERY_FILLER_PATTERN, '')
 
-  q.split(/[\s,，。！？；:：、（）()[\]\-_/]+/g)
+  const terms = new Set(focusedQuery ? [focusedQuery] : [])
+
+  focusedQuery.split(/[\s,，。！？；:：、（）()[\]\-_/]+/g)
     .map((item) => item.trim())
-    .filter((item) => item.length >= 2)
+    .filter((item) => item.length >= 3)
     .forEach((item) => terms.add(item))
 
-  for (const gram of generateChineseNgrams(q)) {
-    if (gram.length >= 2) terms.add(gram)
+  for (const gram of generateChineseNgrams(focusedQuery)) {
+    if (gram.length >= 3) terms.add(gram)
   }
 
   for (const keyword of DOMAIN_KEYWORDS) {
-    if (q.includes(keyword)) terms.add(keyword)
+    if (focusedQuery.includes(keyword)) terms.add(keyword)
   }
 
   return expandBySynonyms(Array.from(terms))
+}
+
+const createQueryTermWeights = (entries, terms) => {
+  const uniqueTerms = new Set(terms.filter((term) => term.length >= 2))
+  const weights = new Map()
+  const searchableEntries = entries.map((entry) =>
+    [entry.title, entry.content, ...(entry.keywords || [])]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase(),
+  )
+
+  for (const term of uniqueTerms) {
+    if (term.length === 2) {
+      weights.set(term, 1)
+      continue
+    }
+    let documentFrequency = 0
+    for (const searchableText of searchableEntries)
+      if (searchableText.includes(term)) documentFrequency += 1
+    const inverseDocumentFrequency = 1 + Math.log((entries.length + 1) / (documentFrequency + 1))
+    weights.set(term, Math.min(2.5, inverseDocumentFrequency))
+  }
+
+  return weights
+}
+
+const isExplicitlyUnsupportedQuery = (query) => {
+  const value = normalize(query)
+  return (
+    /(?:银行卡|账号|密码|验证码).{0,10}(?:是多少|是什么|告诉我|查一下)/.test(value) ||
+    /(?:食堂|餐厅|菜品|饭菜).{0,12}(?:多少钱|价格|售价)/.test(value) ||
+    /(?:代写|写一封).{0,20}(?:邮件|英文|实习)/.test(value)
+  )
+}
+
+const matchesExplicitQueryYear = (entry, query) => {
+  const years = [...String(query || '').matchAll(/\b(20\d{2})\b/g)].map((match) => match[1])
+  if (years.length === 0) return true
+
+  const dateSpecificQuery = /(?:何时|哪天|什么时候|报名|日期|时间|安排|哪一年)/.test(String(query || ''))
+  if (!dateSpecificQuery) return true
+
+  const sourceYears = [entry.title, entry.content].join(' ').match(/\b20\d{2}\b/g)
+  if (!sourceYears?.length) return true
+  return years.some((year) => sourceYears.includes(year))
 }
 
 const inferQueryCategories = (query) => {
@@ -276,7 +408,7 @@ const computeTimeDecayFactor = (updatedAt) => {
   return Math.max(TIME_DECAY.minFactor, factor)
 }
 
-const scoreEntry = (entry, query, terms, preferredCategories = []) => {
+const scoreEntry = (entry, query, terms, preferredCategories = [], termWeights = new Map()) => {
   const q = normalize(query)
   const title = normalize(entry.title)
   const content = normalize(entry.content)
@@ -299,24 +431,30 @@ const scoreEntry = (entry, query, terms, preferredCategories = []) => {
 
   for (const term of terms) {
     if (!term || term.length < 2) continue
+    const termWeight = termWeights.get(term) || 1
 
     if (title.includes(term)) {
-      baseScore += term.length >= 4 ? RAG_WEIGHTS.termTitleLong : RAG_WEIGHTS.termTitleShort
+      baseScore +=
+        (term.length >= 4 ? RAG_WEIGHTS.termTitleLong : RAG_WEIGHTS.termTitleShort) * termWeight
+      if (term.length === 2 && DOMAIN_KEYWORD_SET.has(term)) {
+        baseScore += RAG_WEIGHTS.domainTitleBoost * termWeight
+      }
       matchedTerms.add(term)
     }
 
     if (content.includes(term)) {
-      baseScore += term.length >= 4 ? RAG_WEIGHTS.termContentLong : RAG_WEIGHTS.termContentShort
+      baseScore +=
+        (term.length >= 4 ? RAG_WEIGHTS.termContentLong : RAG_WEIGHTS.termContentShort) * termWeight
       matchedTerms.add(term)
     }
 
-    if (keywords.some((keyword) => keyword.includes(term) || term.includes(keyword))) {
-      baseScore += RAG_WEIGHTS.keywordMatch
+    if (keywords.includes(term)) {
+      baseScore += RAG_WEIGHTS.keywordMatch * termWeight
       matchedTerms.add(term)
     }
 
     if (category && (category.includes(term) || term.includes(category))) {
-      baseScore += RAG_WEIGHTS.categoryMatch
+      baseScore += RAG_WEIGHTS.categoryMatch * termWeight
       matchedTerms.add(term)
     }
   }
@@ -399,7 +537,7 @@ const logSearch = (query, options, hits, meta = {}) => {
   }
 }
 
-const rankEntries = (entries, query, terms, preferredCategories, options) =>
+const rankEntries = (entries, query, terms, preferredCategories, options, termWeights) =>
   entries
     .map((entry) => {
       const { score, baseScore, decayFactor, matchedTerms } = scoreEntry(
@@ -407,6 +545,7 @@ const rankEntries = (entries, query, terms, preferredCategories, options) =>
         query,
         terms,
         preferredCategories,
+        termWeights,
       )
 
       return {
@@ -520,12 +659,15 @@ export const searchKnowledgeBase = async (query, options = {}) => {
   if (options.signal?.aborted) throw options.signal.reason
   const q = normalize(query)
   if (!q) return []
+  if (isExplicitlyUnsupportedQuery(q)) return []
 
   const officialKnowledge = loadKnowledgeBase()
   const communityKnowledge = options.includeCommunity === false ? [] : await loadCommunityKnowledge()
   if (options.signal?.aborted) throw options.signal.reason
-  const allEntries = [...officialKnowledge, ...communityKnowledge]
+  const requestedEntries = [...officialKnowledge, ...communityKnowledge]
+  const allEntries = requestedEntries.filter((entry) => matchesExplicitQueryYear(entry, query))
   const terms = extractQueryTerms(q)
+  const termWeights = createQueryTermWeights(allEntries, terms)
   const preferredCategories = inferQueryCategories(query)
 
   let ranked = []
@@ -536,18 +678,32 @@ export const searchKnowledgeBase = async (query, options = {}) => {
     const routedEntries = allEntries.filter((entry) =>
       preferredCategories.includes(String(entry.category || '')),
     )
-    const routedRanked = rankEntries(routedEntries, q, terms, preferredCategories, { minScore })
+    const routedRanked = rankEntries(
+      routedEntries,
+      q,
+      terms,
+      preferredCategories,
+      { minScore },
+      termWeights,
+    )
 
     if (routedRanked.length >= ROUTE_MIN_HITS) {
       ranked = dedupeRankedHits(routedRanked)
       routeMode = 'category_only'
     } else {
-      const globalRanked = rankEntries(allEntries, q, terms, preferredCategories, { minScore })
+      const globalRanked = rankEntries(
+        allEntries,
+        q,
+        terms,
+        preferredCategories,
+        { minScore },
+        termWeights,
+      )
       ranked = dedupeRankedHits(globalRanked)
       routeMode = routedRanked.length > 0 ? 'category_then_global' : 'global_fallback'
     }
   } else {
-    ranked = dedupeRankedHits(rankEntries(allEntries, q, terms, [], { minScore }))
+    ranked = dedupeRankedHits(rankEntries(allEntries, q, terms, [], { minScore }, termWeights))
   }
 
   const keywordHits = ranked.slice(0, keywordLimit)
@@ -591,8 +747,10 @@ export const filterConfidentRagHits = (hits, options = {}) => {
   })
 }
 
-export const buildRagContext = (hits) => {
+export const buildRagContext = (hits, options = {}) => {
   if (!Array.isArray(hits) || hits.length === 0) return ''
+
+  const policyContext = formatPolicyUpdateContext(options.query)
 
   const blocks = hits.map((hit, index) =>
     [
@@ -600,13 +758,21 @@ export const buildRagContext = (hits) => {
       `标题：${hit.title || '未知'}`,
       `分类：${hit.category || 'unknown'}`,
       `来源类型：${COMMUNITY_SOURCE_TYPES.has(String(hit.sourceType || '')) ? '学生社区经验' : '官方资料'}`,
+      `来源标注：${hit.authority || '未知'}`,
+      `适用时期：${hit.applicablePeriod || '未知'}`,
+      `发布日期：${hit.publishedAt || '未知'}`,
       `更新时间：${hit.updatedAt || '未知'}`,
+      `现行状态：${hit.validity || '未知，需核验'}`,
       `内容摘要：${hit.content || ''}`,
     ].join('\n'),
   )
 
   return [
     '以下是与当前问题相关的校园知识资料。请优先参考官方通知；若使用学生社区经验，请明确它仅作辅助参考，不可替代学校正式通知。',
+    '时效与依据规则：回答“本学年/本学期/最新/当前”等问题时，先核对资料的适用时期和发布日期。旧年度通知只能作为历史参考，不得表述为当前安排；未标明适用时期或现行状态未知的制度，不得声称仍然有效。',
+    '如果资料只有标题、发布者、日期或附件线索而没有正文，不得据此推断条件、材料、办理时间、系统入口或结论；当前资料缺失时要明确说无法确认，并建议向对应学校部门核实。',
+    '不同来源内容冲突时，只有明确适用于问题所问时期且可核验的正式来源才能支持当前结论；无法确认优先级或现行性时，说明冲突和不确定性，不要拼凑答案。',
+    ...(policyContext ? [policyContext] : []),
     ...blocks,
     '请直接回答，不要写空泛开场白，也不要重复用户问题。',
     '输出格式要求：',

@@ -52,17 +52,17 @@
 
 | Sprint | 任务 | ✅ | 🟡 | 🔵 | ⛔ | ⬜ | 当前主攻 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| S0 | 4 | 3 | 1 | 0 | 0 | 0 | **0.2 等 Figma 状态稿** |
+| S0 | 4 | 4 | 0 | 0 | 0 | 0 | — |
 | S1 | 5 | 5 | 0 | 0 | 0 | 0 | — |
 | S2 | 5 | 5 | 0 | 0 | 0 | 0 | — |
 | S3 | 5 | 5 | 0 | 0 | 0 | 0 | — |
 | S4 | 6 | 6 | 0 | 0 | 0 | 0 | — |
-| S5 | 4 | 0 | 0 | 0 | 0 | 4 | 等 5.1 数据 |
+| S5 | 4 | 3 | 1 | 0 | 0 | 0 | 5.4 政策提示已签收（2026-10-27）；待发布验证与 7.4 收口 |
 | S6 | 5 | 5 | 0 | 0 | 0 | 0 | — |
-| S7 | 5 | 2 | 2 | 0 | 0 | 1 | 7.3 等真实 CI run；7.5 等 7.4 收口 |
-| **合计** | **39** | **31** | **3** | **0** | **0** | **5** | — |
+| S7 | 5 | 2 | 3 | 0 | 0 | 0 | 7.4 生产数据库迁移与反馈闭环已验证；测试邮件到达已由用户确认，验证码生命周期、登录态 TTS、社区知识管理 API 与人工签收待验；登录/TTS 当前按用户决定暂缓，真实 Embedding 密钥待用户配置；7.3 等 Top 50；7.5 等 7.4 收口 |
+| **合计** | **39** | **35** | **4** | **0** | **0** | **0** | — |
 
-> 已完成：0.1、0.3、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、2.1、2.2、2.3、2.4、2.5、3.1、3.2、3.3、3.4、3.5、4.1、4.2、4.3、4.4、4.5、4.6、6.1、6.2、6.3、6.4、6.5、7.1、7.2。**S1/S2/S3/S4/S6 已全部完成**；0.2 等 Figma 状态稿，5.x 等人工数据；7.3 的 CI 骨架与本地检查已交付，等待 push/PR 全绿及 5.4 Top 50 数据；7.5 的 7.4 前置文档准备已完成，真实环境验收与试用记录仍待人工环境。实时状态以本表为准。
+> 已完成：0.1、0.2、0.3、0.4（AI-2）、1.1、1.2（AI-2）、1.3、1.4、1.5、2.1、2.2、2.3、2.4、2.5、3.1、3.2、3.3、3.4、3.5、4.1、4.2、4.3、4.4、4.5、4.6、5.1、5.2、5.3、6.1、6.2、6.3、6.4、6.5、7.1、7.2。**S1/S2/S3/S4/S6 已全部完成**；0.2 的补充画板 9/9 张已导出并归档，`35:134` 的标题间距已调整，0.2 完成；5.1 的 12 项清单已获人工确认，年度通知仅作来源参考、无办理入口；5.2 的列表、分类筛选、详情、空态与无效事项已完成并验证；5.3 的标题/关键词搜索与无结果转问已完成；5.4 已由 Lead 接手完成时间语义、时效规则、2 字领域词与检索排序修复，按用户拍板落地转专业双期望与现行政策提示，12 题诊断 12/12、Top 20/Top 50 金标全绿；上线前确认完成（真实链路 10000/6000/3700 回答与来源正确、数据缺失可静默关闭），政策提示文案已由用户签收（`signed-off`），待正常发布并在公网复核，缺失正文/逐题核验未完成，保持 🟡；7.3 的 CI 与生产部署已取得全绿和公网验证证据，仍等 5.4 人工来源复核后接入 Top 50；7.4 已在 MySQL 5.7 生产库安全备份并应用反馈增量迁移，且通过真实流式问答、反馈持久化闭环。用户已确认收到邮箱检测邮件；注册验证码过期/重发、登录会话、登录态 TTS、社区知识管理 API、模型故障注入与人工签收仍待处理。登录/TTS 按用户决定暂缓，真实 Embedding 密钥待用户配置后验证；7.5 等真实用户试用与交接记录。实时状态以本表为准。
 
 ---
 
@@ -73,7 +73,7 @@
 | ID | 任务 | 主责 | 状态 | 依赖 | 完成判定 / 证据 |
 | --- | --- | --- | --- | --- | --- |
 | 0.1 | 固定当前工作基线 | 人工 + AI-1 | ✅ | 无 | 49 项改动已分 5 批提交（`4af3c89`、`61756be`、`364b6b8`、`46d754d`、`73f4d21`）；`docs/development-baseline-v2.md` 记录归属与恢复方式 |
-| 0.2 | 补齐 Figma 页面与状态 | 人工 | 🟡 | 0.1 | 登录/注册、历史、来源、讲解、账号、搜索、事项列表/详情、社区/后台各状态的稿件齐全；交互说明已存在但不可替代稿件 |
+| 0.2 | 补齐 Figma 页面与状态 | 人工 + AI-2（Codex） | ✅ | 0.1 | Figma `10:34` 页的 8 张响应式/控件状态补充画板与 `35:134` 已完成导出并归档到 `docs/design/10-34/`；提交 `42a9bd1` + `5d6b8b7` 归档 `33:176`（390×844），本轮归档 `33:212` 问答与来源侧栏（1024×880）。`docs/design/README.md` 列出全部 9 张；PNG 签名及预期尺寸检查 9/9，`git diff --check` 通过。P1 未绘制的关闭/附件独立 SVG 与组件变体缺项已在设计说明中记录，不阻塞本项。
 | 0.3 | 固定运行与依赖基线 | AI-2 | ✅ | 0.1 | `9898e7b` 更新 `docs/development-baseline-v2.md`；2026-10-21 实测 `npm run test:server` 56/56、`npm run test:unit` 90/90；`npm run service:journey` 10/10（9.6s，isolated mock，证据 `server/evals/latest-service-journey.json`，执行 `5dda2a6`、登记 `8d060c2`）；Node v23.11.0 / npm 10.9.2。目标环境真实服务仍按 7.4 验证。 |
 | 0.4 | 定义状态、API 与开放顺序 | AI-2（起草）+ 人工（签字） | ✅ | 0.1 | `api-contract-v2.md` 经人工签字冻结；提交 `de0f47c`。验证：`git diff --cached --check` 通过；`git show --check --stat HEAD` 未发现空白错误。 |
 
@@ -122,10 +122,10 @@
 
 | ID | 任务 | 主责 | 状态 | 依赖 | 完成判定 / 证据 |
 | --- | --- | --- | --- | --- | --- |
-| 5.1 | 事项清单 | 人工（数据）+ AI-1（落地） | ⬜ | 0.4、4.4 | ≥12 条、四类各 ≥3；稳定 ID/标题/关键词/用途/提问模板/已核对来源/核对日期；无可靠链接不显示办理入口 |
-| 5.2 | 指南列表与详情 | AI-1 | ⬜ | 5.1、2.1 | 分类/关键词/详情/空态/不存在；筛选入 URL；返回保留列表状态；首页四卡与加号到正确分类 |
-| 5.3 | 事项搜索与提问桥接 | AI-1 | ⬜ | 5.2、3.4 | 只搜标题与关键词；无结果保留搜索词并可转问；预填后不自动请求模型；刷新不重复发送 |
-| 5.4 | 目录与金标核对 | AI-2（评估集）+ 人工（核对） | ⬜ | 5.3 | 金标 20→50（教务15/考试10/奖助15/生活10）+ ≥10 负例；每个事项至少一条可回答问题；缺口如实记录 |
+| 5.1 | 事项清单 | AI-2（Codex）+ 人工确认 | ✅ | 0.4、4.4 | `8f0ec93`；`docs/service-catalog-v2.json`、`docs/service-catalog-v2.md`。JSON 检查 12 项、四类各 3、ID 唯一、字段完整、`actionUrl` 全空；`git diff --check` 通过；人工确认年度通知仅作参考、不显示未核实办理入口。5.2/5.3 的页面实现另行登记 |
+| 5.2 | 指南列表与详情 | AI-1（Lead） | ✅ | 5.1、2.1 | `f63f865`；新增 `src/views/ServiceDirectoryView.vue`、`src/views/ServiceDetailView.vue`、`src/data/services.ts`（读取 `docs/service-catalog-v2.json`）、`src/services/service-query.ts`、`src/types/service.ts` 与 `/services/:serviceId` 路由。验证：`npm run type-check` 通过；`npm run build` 通过（1667 模块，产出 services chunk）；`npm run test:unit` **111/111**（新增 21 条：目录不变量/URL 解析/路由/列表筛选与非法分类/详情与 actionUrl 隐藏/无效事项/首页四卡与加号落点）；`oxlint .` 0 error、`eslint src` 0 error；`git diff --check` 通过。全量 `npm run lint` 仍被既有未跟踪 `server/scripts/robot-preview-browser.mjs` 的 `WebSocket` no-undef 阻断（非本任务文件）。分类筛选写入 URL，返回保留列表状态；`actionUrl` 为空不渲染办理入口，旧年度通知只作来源参考 |
+| 5.3 | 事项搜索与提问桥接 | AI-1（Lead） | ✅ | 5.2、3.4 | `78fdb55`；新增 `src/services/service-search.ts`（只匹配标题与关键词）、`src/services/chat-draft.ts`（`/chat/new` 草稿键与转问预填）；`src/views/ServiceDirectoryView.vue` 增加搜索框（`?q=` 入 URL、跨分类搜索、清除后恢复分类列表、无结果保留搜索词并提供“向校答提问”入口）；`src/views/AgentChat.vue` 改用共享草稿服务，挂载时只恢复草稿并聚焦，不自动发送。验证：`npm run type-check` 通过；`npm run build` 通过（1667 模块）；`npm run test:unit` **129/129**（新增 18 条：搜索匹配/用途不匹配、URL 保留、无结果转问、预填不发送、刷新不重发、清除搜索）；`oxlint .` 0 error、`eslint src` 0 error；`git diff --check` 通过。全量 `npm run lint` 仍被既有未跟踪 `server/scripts/robot-preview-browser.mjs` 阻断（非本任务文件）。搜索词只写在办事指南 URL，转问问题正文只进本地草稿、不进 URL |
+| 5.4 | 目录与金标核对 | AI-1（Lead，接手 AI-2 未完成部分；按用户 2026-10-27 A 方案拍板）+ 人工（来源时效复核） | 🟡 | 5.1–5.3 | `e07465d` + `5ecb8c4` + `1b9afbf` + `9f19d6c` + `c78b94f` + `a7109da` + `e9385d1`；接手完成时间语义、时效规则、2 字领域词与检索排序修复（详见 `docs/golden-source-review-2026-10-27.md`）；按用户拍板：① 转专业题接受 2018 手册规定或 2025 通知任一 Top1（`1b9afbf`）；② 新增可审计“现行政策提示”数据 `server/data/policy-updates.json`，金额/标准类问题注入上下文并把政策来源排在来源列表前、按标题去重（`c78b94f`），覆盖国奖/励志 10000/6000 与助学金平均 3700（学校 2500—5000 自主分档，`a7109da`），不改手册原文；**政策文案已由用户签收，状态 `signed-off`**（`e9385d1`，新增签收守卫测试）。**上线前确认完成**：发布包含该数据文件并会同步到 shared/data；文件缺失时静默关闭；真实 DeepSeek 回答“2024 年起 10000/6000、助学金 3700，手册旧标准已过时”且来源正确；非金额问题不注入。12 题目录诊断 **12/12**；回归：Top 20 20/20、Top 50 草案 50/50 + 负例 10/10（关键词/向量）、`test:server` 78/78、`server:check` 83 模块、定向 ESLint/oxlint 0 error。**剩余**：待正常推送/CI/部署并在公网复核；线上是否加载旧手册数据、通知正文缺失与年度限定、逐题核验、独立问题集、人工发布签收。 |
 
 ### Sprint 6：社区与知识运营（3–4 天）
 
@@ -143,9 +143,9 @@
 | --- | --- | --- | --- | --- | --- |
 | 7.1 | 请求凭据与反馈增量表 | AI-2 | ✅ | 4.3、0.4 | `4bd44ac`；`npm run test:server` 41/41；`npm run server:check` 58 模块；定向 ESLint、`git diff --check` 通过；MySQL 8.0.39 隔离测试库实测迁移、凭据读回、反馈 upsert/更新、主体隔离与唯一行数=1 |
 | 7.2 | 反馈接口与操作 | AI-2（接口）+ AI-1（组件） | ✅ | 7.1、3.4 | 服务端 `8840b43`（47/47）。前端 `9335cee`：消费 `meta.feedbackEligible` 并随消息持久化；`MessageActions.vue` 仅在 eligible 时显示，提交 `requestId + helpful/none`；409 不可反馈、401 需登录、429 带 `Retry-After` 秒数可重试、503 可重试；成功后写回 `feedback` 并持久化。证据：新增 8 单测（`feedback.test.ts` + `MessageActions.test.ts`），82 单测/type-check/lint/build 通过；`regression:journey` **9/9** 含真实反馈提交，`server/evals/latest-regression-journey.json`、`docs/design/verify/regression-feedback-1440.png` |
-| 7.3 | CI 与可重复门禁 | AI-2（Codex，实机部署） | 🟡 | 1.5、4.6、5.4、6.5、7.2 | `574359c`：新增 browser-journeys（8 条串行旅程、随机隔离凭据、结果/artifact）、独立 10 轮 service journey、Top 20 offline golden、MySQL 8 隔离 service/审核事务测试；更新 `docs/ci-quality-gates-v2.md`。CI 本地与远端验证通过（远端：[run 39713334922](https://github.com/lwenjie04/ai-campus-agent/actions/runs/39713334922)、[run 39714486081](https://github.com/lwenjie04/ai-campus-agent/actions/runs/39714486081)，五个 job 全绿）。run 39741476125 完成发布包上传，但因 `/var/www/ai-campus-agent` 尚不存在而在磁盘预检失败。服务器核验确认旧后端由 root PM2 管理（`/www/ai-campus-agent`，LightRAG 同属 root PM2），宝塔 Nginx 静态目录为 `/www/wwwroot/ai-campus-agent-web`、`/api/` 代理到 3000。已无停机完成首次迁移准备：新 `current` 暂指向旧后端作为回滚点；现有 `.env` 以 `600` 权限复制到共享目录，6 个数据文件和 2 个日志文件已复制并逐项比对；两个 PM2 服务仍在线，后端 `/health`、副本一致性及 Nginx 配置检查通过。部署 workflow 检查根文件系统、以 sudo 调用现有 root PM2，并在回滚旧程序时允许其缺少 releaseId。run 39744028916 的 Quality 五个 job 全通过；deploy run 39744208752 因上传超时未切换。commit 23d81b4 修复 PM2 沿用旧 CWD 的问题：每次从 current 指向的真实 release 目录重建后端进程。该提交的 Quality run 39887012403 五个 job 全绿；Deploy run 39887175711 attempt 1 因原 TrustAsia 证书过期自动回滚，签发新证书后 attempt 2 全绿。首次成功部署 release 为 23d81b41a8306872e3ca1a3b295c45e87766304d-39887175711-2；后续文档登记提交 7115da6 的 Quality run 39890973878 五个 job 全绿、Deploy run 39891110847 成功。当前 release 为 7115da6ea3113d51442c5bd005c1baddf0906771-39891110847-1；新证书有效至 2027-01-21，certbot.timer active，certbot renew --dry-run 通过。Nginx 静态根已切到 current/dist，配置检查/reload 通过；公网首页与 dist HTML SHA256 一致、JS 资源 200、/api/health 的 releaseId 匹配。CI 仍不设置 RELEASE_LIVE_VALIDATION_CONFIRMED。剩余：5.4 Top 50 金标完成后接入并复验；7.4 的真实模型/MySQL/SMTP/TTS 等目标环境验收仍待完成。 |
-| 7.4 | 目标环境验证与性能 | 共同 | ⬜ | 7.3 | 真模型/MySQL/SMTP/TTS/HTTPS/反代实测并留证；50 条金标；首字/总耗时/取消耗时/资源体积；`RELEASE_LIVE_VALIDATION_CONFIRMED` 不得伪造 |
-| 7.5 | 交付、回滚与试用记录 | 人工 + AI-2 | 🟡 | 7.4 | 前置准备 `4f8dd90`：新建 `docs/releases/v2-handoff.md`、`docs/releases/v2-trial-record.md`，更新 `docs/product-status.md`、`docs/release-checklist.md` 和基线风险项；Prettier、相对链接检查、`git diff --check` 通过。**剩余**：7.4 目标环境验收后补真实版本/tag/commit、部署与回滚演练证据，人工试用后填记录与结论；未验证字段保持空白。 |
+| 7.3 | CI 与可重复门禁 | AI-2（Codex，实机部署） | 🟡 | 1.5、4.6、5.4、6.5、7.2 | `574359c`：新增 browser-journeys（8 条串行旅程、随机隔离凭据、结果/artifact）、独立 10 轮 service journey、Top 20 offline golden、MySQL 8 隔离 service/审核事务测试；更新 `docs/ci-quality-gates-v2.md`。CI 本地与远端验证通过（远端：[run 39713334922](https://github.com/lwenjie04/ai-campus-agent/actions/runs/39713334922)、[run 39714486081](https://github.com/lwenjie04/ai-campus-agent/actions/runs/39714486081)，五个 job 全绿）。run 39741476125 完成发布包上传，但因 `/var/www/ai-campus-agent` 尚不存在而在磁盘预检失败。服务器核验确认旧后端由 root PM2 管理（`/www/ai-campus-agent`，LightRAG 同属 root PM2），宝塔 Nginx 静态目录为 `/www/wwwroot/ai-campus-agent-web`、`/api/` 代理到 3000。已无停机完成首次迁移准备：新 `current` 暂指向旧后端作为回滚点；现有 `.env` 以 `600` 权限复制到共享目录，6 个数据文件和 2 个日志文件已复制并逐项比对；两个 PM2 服务仍在线，后端 `/health`、副本一致性及 Nginx 配置检查通过。部署 workflow 检查根文件系统、以 sudo 调用现有 root PM2，并在回滚旧程序时允许其缺少 releaseId。run 39744028916 的 Quality 五个 job 全通过；deploy run 39744208752 因上传超时未切换。commit 23d81b4 修复 PM2 沿用旧 CWD 的问题：每次从 current 指向的真实 release 目录重建后端进程。该提交的 Quality run 39887012403 五个 job 全绿；Deploy run 39887175711 attempt 1 因原 TrustAsia 证书过期自动回滚，签发新证书后 attempt 2 全绿。首次成功部署 release 为 23d81b41a8306872e3ca1a3b295c45e87766304d-39887175711-2；后续文档登记提交 7115da6 的 Quality run 39890973878 五个 job 全绿、Deploy run 39891110847 成功。该次部署 release 为 7115da6ea3113d51442c5bd005c1baddf0906771-39891110847-1；当前线上 release 已更新为 `a6f94f3d9dacae5e5b6630172a6c01cf3b09d18f-39893338172-1`（[Deploy run 39893338172](https://github.com/lwenjie04/ai-campus-agent/actions/runs/39893338172)）；新证书有效至 2027-01-21，certbot.timer active，certbot renew --dry-run 通过。Nginx 静态根已切到 current/dist，配置检查/reload 通过；公网首页与 dist HTML SHA256 一致、JS 资源 200、/api/health 的 releaseId 匹配。CI 仍不设置 RELEASE_LIVE_VALIDATION_CONFIRMED。剩余：5.4 Top 50 金标完成后接入并复验；7.4 邮件检测已确认到达，验证码生命周期、管理员登录/TTS、社区知识 API、真实 Embedding、模型故障注入与人工签收仍待按 7.4 行推进；登录/TTS 目前按用户决定暂缓。 |
+| 7.4 | 目标环境验证与性能 | 共同（AI-2 / Codex 主导本轮） | 🟡 | 7.3 | 2026-10-23 当前线上 release `a6f94f3d9dacae5e5b6630172a6c01cf3b09d18f-39893338172-1`（`https://maila.club`）：真实 DeepSeek 普通问答 TTFT 6.284s/总 6.287s；RAG TTFT 1.254s/总 2.656s、4 条来源；LightRAG health 42ms、奖学金检索 2.214s；`npm run test:server` 56/56。公网实测首段后断开：HTTP 200、Secure 游客 Cookie、retrieval/generation phase、TTFT 2.646s、客户端 reader cancel 2ms；取消传播与结算边界另有 `chat-cancellation.test.mjs` 覆盖。生产 MySQL 5.7.44 先备份再应用 `20261020-chat-feedback.sql`；备份 `/var/backups/ai-campus-agent/ai_campus_agent_pre_chat_feedback_20261023T034120Z.sql.gz`（SHA-256 `b8aaab1b5ee88a80230ac3e19c9e0a36364babe9e0c25d91e055b2a3d1c545ed`，权限 600）；receipt/feedback 表、唯一键/FK、事务写入与 upsert 通过；公网 chat 返回 `feedbackEligible:true`，`/api/feedback` 200 且数据库读回，测试行已清理。备份在随机隔离 schema 恢复验证通过（6 张基础表、6 条社区知识记录），测试 schema 已删除。回滚演练将 current 切到上一版 `7115da6...` 并通过部署脚本本机健康检查，随后恢复当前 release；恢复后公网 `/api/health` 200 且 releaseId 匹配。`service-smoke.mjs` 4/4；TTS 生产合成曾成功（838ms），匿名 `/api/tts` 返回 401 `AUTH_REQUIRED`；生产环境已移除共享 `TTS_AUTH_TOKEN` 并清理重复 TTS 配置。响应式矩阵 `360/390/768/1024/1440` 首页与问答 10/10、无溢出，截图和 JSON 见 `docs/design/verify/production-7.4-responsive-20261023/`、`server/evals/production-7.4-responsive-full-20261023.json`；生产资源 `dist` 17M、`server` 1.2M，运行时 Node 22.22.2/npm 10.9.7/MySQL 5.7.44。用户已确认收到测试邮件，邮件到达检查通过；验证码注册流程的到达/过期/重发尚未实测。登录与登录态 TTS 按用户决定暂记阻塞；管理员社区知识 API 持久化闭环、真实 Embedding 配置已只读核验（2026-10-26）：后端有效 provider=hash/model=hash-256，VECTOR_EMBEDDING_API_BASE_URL/API_KEY/MODEL 均未设置，RAG_VECTOR_ENABLED 默认 true；独立 LightRAG 配置中的 EMBEDDING_BINDING_HOST/API_KEY、EMBEDDING_MODEL、EMBEDDING_DIM 已设置，文件权限 600、最后修改 2026-07-21；LightRAG 进程 online 且内网 health 可达。未发起 Embedding API 请求，密钥有效性与真实向量检索质量仍待验证；线上模型故障注入及真实用户试用仍未完成。MySQL 应用账号全局权限待 DBA 最小权限复核；5.4 Top 50 仍待人工核对。不得设置 `RELEASE_LIVE_VALIDATION_CONFIRMED`。 |
+| 7.5 | 交付、回滚与试用记录 | 人工 + AI-2 | 🟡 | 7.4 | 前置准备 `4f8dd90`：新建 `docs/releases/v2-handoff.md`、`docs/releases/v2-trial-record.md`，更新 `docs/product-status.md`、`docs/release-checklist.md` 和基线风险项；Prettier、相对链接检查、`git diff --check` 通过。**剩余**：7.4 邮件/登录/TTS/API 等目标环境缺口与人工签收；7.4 回滚演练已有证据。仍需正式版本/tag、试用日期/人数、用户问题与结论；未验证字段保持空白。 |
 
 ---
 
@@ -290,8 +290,8 @@
 **当前现状**
 
 - 2026-10-21 已完成 7.4 前准备，提交 `4f8dd90`：新增 handoff 草案和试用模板，更新产品状态、release checklist 与基线风险。版本/tag 与目标服务器保持待定，未填造试用数据。
-- `docs/releases/v2-handoff.md` 已列构建、迁移、环境变量、部署、回滚步骤；`docs/release-checklist.md` 已对齐现有发布脚本。真实环境与回滚演练证据仍缺。
-- 7.4 的目标环境（真模型/MySQL/SMTP/TTS/HTTPS/反代）未完成，7.5 不得提前标 ✅。
+- `docs/releases/v2-handoff.md` 已列构建、迁移、环境变量、部署、回滚步骤；`docs/release-checklist.md` 已对齐现有发布脚本。7.4 已补生产验证和一次上一版回滚/恢复证据，详见任务行。
+- 7.4 目标环境验收仍未完成：邮件到达与验证码生命周期、登录态、TTS 登录流程、社区知识管理 API、模型故障注入、人工签收待做；7.5 不得提前标 ✅。
 
 **7.4 前置准备已完成（AI-2）**
 
@@ -321,10 +321,32 @@
 
 ## 6. 完成登记与变更日志
 
-### 6.1 已完成任务（按完成时间倒序，**完成即在此登记**）
+### 6.1 任务登记（按时间倒序，完成与部分交付均在此登记）
 
 | 日期 | 任务 ID | 执行者 | 证据（commit / 命令 / 文件） | 备注 |
 | --- | --- | --- | --- | --- |
+| 2026-10-27 | 0.2 响应式与控件状态补充稿（完成） | AI-2（Codex）+ 人工 | `42a9bd1` + `5d6b8b7`；9 张 PNG 签名与预期尺寸检查 9/9；`git diff --check` 通过 | `33:176`（390×844）与 `33:212`（1024×880）均已导出归档；P1 未绘图标等缺项已记录在设计说明，不阻塞本项 |
+| 2026-10-27 | 0.2 手动补充画板导出（部分） | 人工 + AI-2（Codex） | `42a9bd1`；`docs/design/10-34/390-home.png`；390×844；PNG 签名有效；`git diff --check` 通过 | `33:176` 已归档，累计 8/9；`回答区背景.png` 是 684×820 纯色背景层，不作为画板；仅剩完整 `33:212` 问答画板待导出，0.2 保持 🟡 |
+| 2026-10-27 | 5.4 现行政策提示内容签收（完成，Lead） | AI-1（Lead）+ 人工 | `e9385d1`；`server/data/policy-updates.json` 状态 `signed-off`（`signedAt`/`signedBy`/`signedNote`）；新增签收守卫测试；`policy-updates` 9 条、`test:server` 78/78、`server:check` 83 模块、定向 ESLint/oxlint 0 error、`git diff --check` 通过 | 用户 2026-10-27 确认修改后的政策文案可签收；正式上线仍需正常推送/CI/部署与 7.4 流程，部署后需公网复核金额问答与来源；5.4 整体保持 🟡 |
+| 2026-10-27 | 5.4 现行政策提示上线前确认（部分，Lead） | AI-1（Lead） | `c78b94f` + `a7109da`；`policy-updates` 8 条测试；`test:server` 77/77；`server:check` PASS 83 modules；Top 20 20/20、Top 50 50/50 + 负例 10/10；真实 DeepSeek 金额问答回答 10000/6000/3700 并正确标注旧标准过时，来源前置且去重；非金额问题不注入；`git archive HEAD` 含 `server/data/policy-updates.json`；缺失文件时静默关闭；定向 ESLint/oxlint 0 error、`git diff --check` 通过 | 技术层面可上线；`policy-updates.json` 仍待人工签收，且需正常推送/CI/部署与 7.4 流程；5.4 保持 🟡 |
+| 2026-10-27 | 5.4 A 方案落地：双期望与现行政策提示（部分，Lead） | AI-1（Lead） | `1b9afbf` + `9f19d6c`；12 题目录诊断 12/12（关键词/向量一致）；Top 20 20/20、Top 50 50/50 + 负例 10/10（关键词/向量）；`test:server` 74/74；`server:check` PASS 83 modules；新增 `policy-updates` 5 条测试；定向 ESLint/oxlint 0 error、`git diff --check` 通过 | 用户 2026-10-27 拍板：转专业接受双 Top1；新增金额类“现行政策提示”数据（2024 国家通知 + 2025 学校通知），注入 RAG/LightRAG 上下文并前置来源，不改手册原文。政策提示待人工签收；缺正文/逐题核验未完成，5.4 保持 🟡 |
+| 2026-10-27 | 5.4 检索排序与长句召回（部分，Lead） | AI-1（Lead） | `5ecb8c4`；12 题目录诊断 9/12→11/12（关键词/向量一致）；Top 20 关键词/向量 20/20；Top 50 草案 50/50 + 负例 10/10；`test:server` 69/69；`server:check` PASS 81 modules；新增 `rag-long-query-recall` 2 条；定向 ESLint/oxlint 0 error、`git diff --check` 通过 | 补 2 字领域词与标题加权，修复调宿长句召回和补考通知落后于手册的问题；转专业题期望待人工复核；旧金额/缺正文/人工签收未完成，5.4 保持 🟡 |
+| 2026-10-27 | 5.4 时间语义与检索时效（部分，Lead 接手） | AI-1（Lead，接手 AI-2 Codex） | `e07465d`；`docs/golden-source-review-2026-10-27.md` 补充接手记录；`npm run kb:prepare:offline` 通过（660 chunks，33 条手册 `updatedAt` 为空）；`npm run test:server` 67/67；`npm run server:check` PASS 80 modules；Top 20 关键词/向量 20/20；Top 50 草案 50/50 + 负例 10/10；12 题目录诊断关键词/向量各 9/12；定向 ESLint/oxlint 0 error、`git diff --check` 通过 | 修复 DOCX mtime 误作制度更新时间；RAG/LightRAG 上下文补时效/缺正文/冲突规则；新增诊断集与结果（非金标）。旧金额冲突、缺正文、排序/切分和人工签收未完成，5.4 保持 🟡 |
+| 2026-10-27 | 0.2 响应式与控件状态补充稿（部分） | AI-2（Codex） | `162f912`；Figma Export 归档 7 张 PNG；PowerShell 检查 PNG 签名和尺寸 7/7；`git diff --cached --check` 通过；控件画板调整后截图检查通过 | `35:134` 次要操作标题 y=222→204，已无重叠；Figma Starter 调用上限挡住 `33:176`、`33:212` 导出，0.2 保持 🟡 |
+| 2026-10-27 | 5.4 金标来源核对（部分） | AI-2（Codex）+ 人工待确认 | `bb73414`；`docs/golden-source-review-2026-10-27.md`；关键词和向量离线标题评估各 50/50 正例、10/10 负例；`node server/tests/rag-golden-evaluator.test.mjs` 4/4；学校通知 PDF 第 3 页与国家 2024 文件相互印证；`git diff --cached --check` 通过 | 纠正迟到题备选标题；离线库复现旧金额条目进入 Top 3。已有通知正文缺失、旧制度时效、DOCX 日期误标和回代评估等缺口；逐题核验与人工签收未完成，保持 🟡 |
+| 2026-10-26 | 5.4 目录与金标核对（部分） | AI-2（Codex）+ 人工（来源时效复核） | `c8e3979`；`npm run kb:prepare:offline` 通过；Top 50 关键词与向量评估均为 50/50 正例、10/10 负例；`npm run test:server` 64/64；定向 ESLint、`git diff --check` 通过 | 修正手册来源标题/分类/关键词抽取及 RAG 召回/排序；新增四项检索回归测试。部分旧制度、试行制度和年度资助来源仍需人工确认，5.4 保持 🟡；7.3 暂不纳入 Top 50 |
+| 2026-10-26 | 5.3 事项搜索与提问桥接（完成） | AI-1（Lead） | `78fdb55`；`npm run type-check` 通过；`npm run build` 通过（1667 模块）；`npm run test:unit` 129/129（新增 18）；`oxlint .` 0 error；`eslint src` 0 error；`git diff --check` 通过 | 搜索只匹配事项标题与关键词并写入 `?q=`；无结果保留搜索词并提供转问；转问只预填 `/chat/new` 草稿并聚焦，不发送、不发请求；卸载后重挂载验证刷新不重发；问题正文不写入 URL；未认领其他任务 |
+| 2026-10-26 | 5.2 指南列表与详情（完成） | AI-1（Lead） | `f63f865`；`npm run type-check` 通过；`npm run build` 通过（1667 模块）；`npm run test:unit` 111/111（新增 21）；`oxlint .` 0 error；`eslint src` 0 error；`git diff --check` 通过 | 分类筛选来自 URL，返回保留列表状态；详情按 serviceId 从已确认目录取数；`actionUrl` 为空不渲染办理入口，旧年度通知只作来源参考；首页四卡与加号落点已单测；5.3 未认领 |
+| 2026-10-26 | 5.1 事项清单（完成确认） | AI-2（Codex）+ 人工 | `8f0ec93`；12 项/四类各 3/ID 唯一/必需字段完整/`actionUrl` 全空；人工确认记录在本轮 | 年度通知按来源参考展示，不能当作当前办理规则；5.1 验收完成，5.2/5.3 可开始 |
+| 2026-10-26 | 5.1 事项清单（部分） | AI-2（Codex，来源草案） | `docs/service-catalog-v2.json`、`docs/service-catalog-v2.md`；结构检查：12 项、四类各 3、ID 唯一、必需字段完整、`actionUrl` 全空；`git diff --check` 通过 | 基于 2025 年学生手册和仓库已导入的学校通知；部分制度旧、年度通知过期，官网实时可访问性与 2026–2027 办理流程未核验。草案不显示办理入口，5.1 保持 🟡 等人工核对 |
+| 2026-10-26 | 7.4 Embedding 配置只读核验（部分） | AI-2（Codex） | `https://maila.club/api/health` HTTP 200；只读 SSH（`ubuntu`→sudo）；后端运行配置 provider=`hash` / model=`hash-256`，向量 API 地址/密钥/模型未设置；LightRAG 独立配置的 embedding 字段非空但未读取其值；PM2 两服务 online，LightRAG 内网 health 可达 | 后端真实向量 Embedding 未生效；LightRAG 文件权限 600、修改时间 2026-07-21。未调用 Embedding API，密钥有效性与检索质量仍待验证；7.4 保持 🟡 |
+| 2026-10-23 | 0.2 响应式与状态补稿（部分） | 人工确认 + AI-2（Codex） | Figma `10:34` 的节点 `33:92`、`33:135`、`33:176`、`33:212`、`33:259`、`33:300`、`33:332`、`33:355`、`35:134`；预览检查 390 首页、390 来源抽屉、控件状态；设计说明见 `docs/design/` | 1024/768/390 首页与问答、移动登录/办事指南、按钮/输入框/来源面板状态已补；仍需导出 PNG 归档和微调次要按钮区标题间距，保持 🟡 |
+| 2026-10-23 | 0.2 补齐 Figma 页面与状态（完成） | 人工确认 + AI-2 归档 | `71dcb6b`；9 个导出画板文件均存在；`docs/design/README.md`、`copy.md`、`tokens.md`、`interaction.md` | P0 页面/状态稿和准确文案齐备；明确记录未提供的移动/响应式画板。P1 组件变体与补充图标缺项保留在设计文档，不影响本项完成 |
+| 2026-10-23 | 5.4 目录与金标核对（部分） | AI-2（Codex）+ 人工待核对 | `dcca658`；`npm run kb:prepare:offline`：手册 33 条 + 通知 396 条，生成 660 个 chunk/hash vectors；`npm run test:server` 60/60；Top 20：20/20；草案：50 正例结构配额 15/10/15/10、10 负例；合并来源库与向量评估 31/50（62%）、3/10 负例（30%），未达阈值；改动文件定向 ESLint、`oxlint .`、目标文件 Prettier 与 `git diff --check` 通过 | 新增 Top 50 草案与结构测试；手册 DOCX 可重建，导入分类在目录标题纠正后重新推断。全量 `npm run lint` 被既有未跟踪 `server/scripts/robot-preview-browser.mjs` 的 `WebSocket` no-undef 阻断；该文件未改动。来源有效性与 5.1–5.3 覆盖未人工核对，检索/负例结果不合格，维持 🟡 |
+| 2026-10-23 | 7.4 生产邮件到达确认（部分） | AI-2（Codex） | 用户确认已收到生产邮箱检测邮件；本次仅记录人工确认，未读取/记录收件地址或验证码 | 邮件到达检查由用户确认通过；真实注册验证码全流程的到达、过期与重发仍未验证。登录和登录态 TTS 按用户决定暂缓，真实 Embedding 密钥待用户在服务器配置；7.4 继续保持 🟡 |
+| 2026-10-23 | 7.4 目标环境验证（部分） | AI-2（Codex） | 生产 release `a6f94f3d9dacae5e5b6630172a6c01cf3b09d18f-39893338172-1`；公网 `/api/health`、匿名 TTS 401、真实 LLM 首段后取消、响应式 10/10；部署脚本回滚到 `7115da6...` 后恢复，健康检查通过；备份恢复检查通过 | 完整证据与未完成项见 §3 的 7.4 行；响应式结果 `server/evals/production-7.4-responsive-full-20261023.json` 和 10 张截图；7.4 继续保持 🟡，尚无用户试用或人工签收 |
+| 2026-10-23 | 7.4 生产 MySQL 与反馈闭环（部分） | AI-2（Codex） | `npm run test:server` 56/56；生产 MySQL 5.7.44 增量迁移成功，表/唯一键/FK 检查通过；事务验证写入、幂等 upsert 与 rollback 清理；公网 `/api/chat/stream` 200 且 `feedbackEligible:true`，`/api/feedback` 200，数据库持久化读回后清除测试行；备份 SHA-256 `b8aaab1b5ee88a80230ac3e19c9e0a36364babe9e0c25d91e055b2a3d1c545ed` | 迁移 collation 调整为 MySQL 5.7/8.0 兼容；生产备份路径 `/var/backups/ai-campus-agent/ai_campus_agent_pre_chat_feedback_20261023T034120Z.sql.gz`（600）。7.4 仍待邮件实投、登录/TTS 边界、取消/资源、回滚演练、Embedding 凭据；7.3 等 5.4 Top 50 |
+| 2026-10-23 | 7.4 目标环境验证（部分） | AI-2（Codex） | 生产 `service-smoke.mjs` 4/4；真实 DeepSeek、LightRAG、SMTP verify、腾讯 TTS；`npm run responsive:matrix`（`RESPONSIVE_BASE_URL=https://maila.club`、宽度 390/1440）4/4；公网 `/api/chat/stream` POST HTTP 200，事件 `start,phase,phase,delta×2,meta,done`；`server/evals/production-7.4-responsive-20261023.json` 与 4 张首页/问答截图 | Nginx 备份后修复 SPA 回退与 SSE 无缓冲代理，`nginx -t`、reload 和页面路由 HTTP 200 通过。记录当时 MySQL 增量表尚未应用；后续迁移与反馈闭环证据见本节新登记行。真实 Embedding 与 5.4 Top 50 未完成，7.4 保持 🟡 |
 | 2026-10-23 | 7.3 最新生产发布核验（部分） | AI-2（Codex） | `7115da6`；Quality [run 39890973878](https://github.com/lwenjie04/ai-campus-agent/actions/runs/39890973878) 5/5 jobs；Deploy [run 39891110847](https://github.com/lwenjie04/ai-campus-agent/actions/runs/39891110847) success；线上 release `7115da6ea3113d51442c5bd005c1baddf0906771-39891110847-1`；公网 `/api/health` releaseId 匹配，首页 HTML SHA256 与 release `dist/index.html` 一致，JS 资源 HTTP 200；Certbot timer active，`certbot renew --dry-run` 通过，证书有效至 2027-01-21 | 最新提交已实际部署并通过公网校验；7.3 保持 🟡，等待 5.4 Top 50 和 7.4 真实目标环境验证 |
 | 2026-10-23 | 7.3 自动部署实机与证书续期（部分） | AI-2（Codex） | 23d81b4；Quality run 39887012403 5/5 jobs；Deploy run 39887175711 attempt 2 success；Git Bash bash -n .github/deploy-remote.sh、node --check ecosystem.config.cjs、npx prettier --check docs/cicd-deployment-setup.md、git diff --check；服务器 certbot renew --dry-run、Nginx -t、首页 SHA256、JS 200、API releaseId 检查均通过 | PM2 从新 release 目录启动，Let's Encrypt 证书与自动续期生效，公网已提供该 release。7.3 仍等 5.4 Top 50，7.4 真实环境项未完成 |
 | 2026-10-22 | 7.3 自动部署配置（部分） | AI-2（Codex） | `.github/workflows/deploy.yml`、`.github/deploy-remote.sh`、`ecosystem.config.cjs`、`server/index.mjs`、`server/tests/api-aliases.test.mjs`、`docs/api-contract-v2.md`；`npm run test:server` 56/56、`npm run lint`、`npm run server:check` 75 模块、`bash -n .github/deploy-remote.sh`、`node --check ecosystem.config.cjs`、部署配置/文档 Prettier 与 `git diff --check` 通过 | CI 成功后可对默认分支部署同一 commit；run 39733796352 卡在文件上传并于 25 分钟上限取消；run 39737153891 的 SSH 回滚命令成功，但 SCP 上传在 3 分钟后超时，未激活新版本。本次改为通过 SSH 标准输入流式写入发布包，并为传输和远端 SSH 增加连接/运行超时、keepalive 与阶段日志；首次实机部署与 7.4 验收待通过，7.3 Top 50 仍待 5.4 |
@@ -379,6 +401,42 @@
 
 | 日期 | 类型 | 内容 | 执行者 |
 | --- | --- | --- | --- |
+| 2026-10-27 | 完成 | 0.2：9 张响应式与控件状态补充画板全部导出并归档，包括 390 首页和 1024 问答/来源；PNG 签名和尺寸检查 9/9。S0 为 4/4，整体 35✅/4🟡；P1 未绘独立关闭/附件 SVG 等已在设计说明记录，不影响本任务 | AI-2（Codex）+ 人工 |
+| 2026-10-27 | 部分 | 0.2 提交 `42a9bd1`：人工导出并归档 `33:176` 移动首页（390×844，`390-home.png`）；`回答区背景.png` 是 684×820 纯色背景，不计为完整画板。累计 8/9，仍缺 `33:212` 问答与来源整屏，状态保持 🟡 | AI-2（Codex）+ 人工 |
+| 2026-10-27 | 完成 | 现行政策提示内容签收（`e9385d1`）：用户确认修改后文案，数据状态改为 `signed-off` 并记录签收信息，新增 CI 守卫测试；政策提示可进入发布流程，5.4 整体仍待发布验证与人工发布签收 | 人工 + AI-1（Lead） |
+| 2026-10-27 | 验证 | 现行政策提示补全国助学金标准（`a7109da`）：按财教〔2024〕181 号补入 2024 年秋季起平均 3700 元、学校 2500—5000 元自主分档；真实 DeepSeek 回答正确且说明无法确认具体档次；`test:server` 77/77、`policy-updates` 8 条。技术可上线，内容待签收 | AI-1（Lead） |
+| 2026-10-27 | 验证 | 5.4 现行政策提示上线前确认（`c78b94f`）：真实 DeepSeek 金额问答返回 10000/6000 且标注手册旧标准过时，来源前置去重；非金额问题不注入；数据缺失静默关闭；服务端 76/76、金标与诊断无回归。技术可上线，内容待人工签收 | AI-1（Lead） |
+| 2026-10-27 | 部分 | 5.4 A 方案落地：`1b9afbf` 转专业题双期望（诊断 12/12）；`9f19d6c` 现行政策提示数据与注入（金额类 10000/6000 覆盖旧手册 8000/5000，政策来源前置）。服务端 74/74、金标与诊断无回归；政策提示与缺失正文、逐题核验、人工签收仍未完成，5.4 保持 🟡 | AI-1（Lead） |
+| 2026-10-27 | 决策 | 用户对 5.4 两项拍板：转专业题接受 2018 手册规定与 2025 通知任一 Top1，并注明本学年通知缺失；旧金额冲突采用“现行政策提示”数据方案（基于 2024 国家通知 + 2025 学校评审通知，注入上下文并展示来源，不改手册原文），人工签收时确认。由 Lead 落地 | 人工 + AI-1（Lead） |
+| 2026-10-27 | 部分 | 5.4 第二轮检索调整 `5ecb8c4`：新增 2 字领域词与标题加权，12 题诊断 9/12→11/12，Top 20/Top 50 金标无回归；唯一剩余失败为转专业题（期望 2025 年旧通知 vs 2018 年手册规定，待人工复核）。5.4 保持 🟡 | AI-1（Lead） |
+| 2026-10-27 | 占用 | 继续领取 5.4（AI-1/Lead）：补中文查询切分与领域词、收紧时效排序，目标是提升 12 题目录诊断且不回归 Top 20/Top 50 金标；完成后按部分交付登记 | AI-1（Lead） |
+| 2026-10-27 | 部分 | 接手 5.4 未完成改动并收口：`e07465d` 修复手册时间语义、RAG/LightRAG 时效规则，新增 `rag-currentness` 测试与 12 题目录诊断集；服务端 67/67、Top 20/Top 50 金标无回归；诊断 9/12 暴露旧制度压制、排序与查询切分问题。剩余见 5.4 行，保持 🟡 | AI-1（Lead） |
+| 2026-10-27 | 接管 | AI-2 额度中断后由 Lead 接手 5.4：接手其未提交的 DOCX 时间语义修复、RAG/LightRAG 时效规则、`rag-currentness` 测试与 12 题诊断集，负责验证、收口与登记 | AI-1（Lead） |
+| 2026-10-27 | 占用 | 重新领取 5.4：继续核验金标题目来源和时效，修复可由仓库语料证明的错误，更新独立问题评估；保留需要人工确认的政策项 | AI-2（Codex） |
+| 2026-10-27 | 部分 | 0.2：微调 Figma 控件稿标题间距；7/9 张响应式/状态板已导出并归档，剩余 `33:176`、`33:212` 因 Figma Starter 调用上限未导出；`162f912` | AI-2（Codex） |
+| 2026-10-27 | 占用 | 领取 0.2：导出 Figma `10:34` 页面 9 张响应式/状态补充画板并归档；微调 `35:134` 次要操作标题与状态标签间距 | AI-2（Codex） |
+| 2026-10-27 | 部分 | 5.4 来源核对提交 `bb73414`：记录学校通知与国家政策、纠正迟到题错误备选标题；确认旧金额冲突及通知正文缺失，离线检索可返回旧金额。标题评估仍为正例 50/50、负例 10/10，但不证明回答正确或制度现行；剩余逐题核实、时效修复和人工签收 | AI-2（Codex） |
+| 2026-10-27 | 占用 | 重新领取 5.4：核查金标题目与手册、学校官方通知的来源及制度时效，记录可证实和待人工确认的项目 | AI-2（Codex） |
+| 2026-10-26 | 部分 | 5.4 代码提交 `c8e3979`：修正手册导入器误分类/误提关键词与检索泛化误召回；Top 50 关键词、向量评估各 50/50 正例、10/10 负例，`npm run test:server` 64/64。人工来源时效复核未完成，5.4 保持 🟡，Top 50 暂不接入 7.3 | AI-2（Codex） |
+| 2026-10-26 | 占用 | 领取 5.4 Top 50 金标核对与检索质量修复；5.1–5.3 已完成，先检查现有 50 正例/10 负例、来源证据和检索流水线，再决定最小修复范围 | AI-2（Codex） |
+| 2026-10-26 | 完成 | 5.3 交付：办事指南搜索只匹配事项标题与关键词，搜索词写入 `?q=`；无结果保留搜索词并提供“向校答提问”；转问只预填并聚焦输入框，不自动请求模型，刷新只恢复草稿不重发；补齐搜索/转问/预填/刷新单测。证据见 §6.1；本轮只做 5.3，未认领其他任务 | AI-1（Lead） |
+| 2026-10-26 | 占用 | 领取 5.3 事项搜索与提问桥接：在办事指南列表实现标题/关键词搜索并写入 URL，无结果转问只预填草稿并聚焦，不自动请求模型；补单测；本轮不认领其他任务 | AI-1（Lead） |
+| 2026-10-26 | 完成 | 5.2 交付：列表按 `teaching`/`exam`/`scholarship`/`life` 四类筛选并写入 URL，返回保留列表与滚动；详情展示事项说明、关键词与来源参考；`actionUrl` 为空隐藏办理入口，不展示旧年度办理时间与步骤；无效事项显示空态。证据见 §6.1；仅改 `src/**`，未认领 5.3 | AI-1（Lead） |
+| 2026-10-26 | 占用 | 领取 5.2 指南列表与详情：按已确认的 12 项目录实现分类筛选、列表、详情、空态和无效事项；筛选写入 URL，返回列表保留状态，联调首页四卡与加号落点；只改 `src/**`，本轮不认领 5.3 | AI-1（Lead） |
+| 2026-10-26 | 完成 | 用户确认 5.1 的 12 项范围可用，旧年度通知仅作来源参考，未核实的办理入口不展示。事项目录状态改为 `approved-topic-directory` / `publishable: true`，只供主题列表和提问模板使用；动态年度流程仍须回答时查最新学校通知。5.1 ✅，5.2/5.3 可据此开工。 | AI-2（Codex）+ 人工 |
+| 2026-10-26 | 部分 | 认领并整理 5.1 来源草案：新增 12 个办事事项，教务/考试/奖助/生活各 3 项；数据含稳定 ID、关键词、用途、问题模板、来源定位和检查日期。年级/学期通知时效、手册中旧版制度及线上办理入口仍需人工核对；未核实的办理链接保留为空，5.1 维持 🟡。 | AI-2（Codex） |
+| 2026-10-26 | 部分 | 只读核验生产配置：公网 `/api/health` 200，当前 release 仍为 `a6f94f3…`；SSH 连接到 VM-24-7-ubuntu 后仅查看配置项是否非空、权限/修改时间、PM2 状态和本机 LightRAG health，未输出密钥或改动/重启服务。后端有效向量 provider 仍是 `hash-256`，真实 Embedding API 地址/密钥/模型缺失；独立 LightRAG 配置有 embedding 项且服务健康，但配置文件最后修改于 2026-07-21，未发起真实 Embedding 请求。7.4 继续 🟡 | AI-2（Codex） |
+| 2026-10-23 | 占用 | 重新领取 0.2：检查原有 P0 设计包，补齐 1024/768/390 响应式画板、390 来源抽屉及按钮/输入框/来源面板状态 | AI-2（Codex） |
+| 2026-10-23 | 校正 | 更正此前将 0.2 标为完成的记录：`71dcb6b` 只归档 9 个 P0 导出画板，未覆盖本任务要求的响应式和控件状态稿；本轮重新打开 0.2，状态按当前明细改为 🟡 | AI-2（Codex） |
+| 2026-10-23 | 部分 | 在 Figma `10:34` 页面新增 1024/768/390 首页与问答、390 来源抽屉/登录/办事指南及按钮/输入框/来源面板状态；预览检查 390 首页、390 来源抽屉和控件状态；同步 `docs/design/README.md`、`copy.md`、`tokens.md`、`interaction.md`。Figma Starter MCP 达到调用上限，尚未导出新增画板 PNG，且控件稿一个分组标题间距待微调；0.2 保持 🟡。总览为 31✅/5🟡/0🔵/3⬜ | AI-2（Codex） |
+| 2026-10-23 | 完成 | 0.2 视觉交付按 P0 验收完成：归档 9 个 Figma 导出画板及文案、token、交互材料；移动稿缺项明确标注，P1 控件状态和响应式稿缺项保留记录。总览更新为 32✅/4🟡/3⬜ | AI-2（Codex） |
+| 2026-10-23 | 校正 | 按任务明细同步总览统计：5.4 已为 🟡，因此 S5 调整为 0✅/1🟡/3⬜，全表调整为 31✅/5🟡/3⬜；其余任务状态未变 | AI-2（Codex） |
+| 2026-10-23 | 占用 | 5.4 修改 `package.json` 的离线知识库准备脚本，并调整 `.github/workflows/quality.yml` 继续使用同一可重复入口；保留既有 Top 20 门禁，待 5.1–5.3 目录和人工核对完成后再升级 Top 50 | AI-2（Codex） |
+| 2026-10-23 | 部分 | `dcca658`：5.4 从跟踪的学生手册 DOCX 重建来源并纳入离线 chunks/hash index；新增 30 条 Top 50 候选题和 10 条无命中负例，结构满足四类配额。修正 DOCX 导入器在目录标题回填后仍保留旧分类的问题；Golden evaluator 支持额外来源库路径，并分别报告正例 Top1 与负例拒答指标。原 Top 20 仍 20/20；合并来源评估 31/50、3/10，未达门槛。Top 50 不进入 CI，等待 5.1–5.3 事项目录、人工核对与检索质量修复 | AI-2（Codex） |
+| 2026-10-23 | 部分 | 用户确认收到生产邮箱检测邮件，记录 SMTP 邮件到达检查通过；不代表注册验证码过期/重发流程已验证。按用户决定，管理员登录与登录态 TTS 实测暂记阻塞；真实 Embedding API 密钥由用户在服务器配置后再验。7.4 维持 🟡，不设置人工发布确认标志 | AI-2（Codex） |
+| 2026-10-23 | 部分 | 7.4 生产 MySQL 与反馈闭环通过：先以受限权限创建并校验 gzip 数据库备份，再对 MySQL 5.7.44 应用仅增量迁移；为兼容 5.7 将新表 collation 从 `utf8mb4_0900_ai_ci` 调整为 `utf8mb4_unicode_ci`。唯一键、外键、事务写入、幂等 upsert 及测试数据回滚均通过；公网流式问答返回 `feedbackEligible:true`，反馈接口 HTTP 200 且数据库读回成功，之后清理测试行。`npm run test:server` 56/56。7.4 仍保持 🟡，未完成项与备份校验值登记在 7.4 行及 §6.1 | AI-2（Codex） |
+| 2026-10-23 | 部分 | 7.4 已完成生产服务与前端路由部分验收；发现原 Nginx 将 `/chat`、`/community` 整段转发到后端且缺少 SPA fallback，导致问答/社区/审核页面 404。备份 `/www/server/panel/vhost/nginx/html_maila.club.conf` 后改为前端路由回退、保留精确 `/chat/stream` 兼容，并为 `/api/chat/stream` 增加无缓冲代理；回滚备份为同目录 `*.codex-20261023-7.4-pre-spa.bak` 和 `*.codex-20261023-7.4-pre-sse.bak`。`nginx -t`/reload、公网 6 条路由、真实 SSE、390/1440 响应式矩阵均通过。MySQL 的 `chat_request_receipts` 与 `chat_feedback` 仍缺，未在未备份前改生产数据库；真实 Embedding 与 5.4 Top 50 仍待完成 | AI-2（Codex） |
+| 2026-10-23 | 占用 | `000135e` 领取 7.4 目标环境验证与性能；先检查生产环境依赖是否配置、只核验变量名和服务健康，再按安全边界验证真实集成与性能；50 条金标等待 5.4 | AI-2（Codex） |
 | 2026-10-23 | 部分 | 补记 7.3 最新发布证据：`7115da6` 的 Quality run 39890973878 五个 job 全绿，Deploy run 39891110847 success；线上 current release 为 `7115da6ea3113d51442c5bd005c1baddf0906771-39891110847-1`；公网首页 HTML SHA256 与 release 一致、JS 资源 200、`/api/health` releaseId 匹配。7.3 维持 🟡，仍待 5.4 Top 50 与 7.4 真实目标环境验收 | AI-2（Codex） |
 | 2026-10-23 | 阶段验证 | 7.3 实机部署完成：push 23d81b4 后 Quality 5/5 通过；首次 Deploy attempt 1 因 maila.club 原 TrustAsia 证书过期而回滚。安装 Certbot、配置独立 HTTP-01 目录与 Nginx renew hook，签发 Let's Encrypt 证书（至 2027-01-21）；certbot renew --dry-run 通过。重跑 Deploy attempt 2 全绿，公网首页 HTML SHA256 与 current/dist/index.html 一致、JS 资源 200、API releaseId 精确匹配。Nginx 当前静态根为 /var/www/ai-campus-agent/current/dist。剩余仅 5.4 Top 50 与 7.4 目标环境验证 | AI-2（Codex） |
 | 2026-10-23 | 部分 | 两次首次部署均已成功上传；run 39745301735 与 39746496435 在本机健康检查失败后自动回滚。服务器只读核验发现 PM2 后端仍以 `/www/ai-campus-agent` 为 cwd，健康请求因此落到旧进程。修正 `.github/deploy-remote.sh`：按 `current` 的真实 release 目录删除并重建后端 PM2 进程，回滚复用同一启动路径；文档注明短暂 API 重启。已跑 Git Bash `bash -n .github/deploy-remote.sh`、`node --check ecosystem.config.cjs`、`npx prettier --check docs/cicd-deployment-setup.md`、`git diff --check`；待新 CI/CD、本机与公网健康验证及 Nginx 静态根切换 | AI-2（Codex） |
@@ -461,6 +519,7 @@
 | 2026-10-21 | 完成 | 6.4 前端：保留结构化社区 API 错误；拒绝二次确认、行级 loading、通过+生成部分失败独立面板与只重试生成（不重复 approve）；admin:journey 11/11；专用 MySQL 事务实测仍待 D-8 | AI-1 |
 | 2026-10-22 | 部分 | 准备 production CD：`deploy.yml` 只响应默认分支 push 对应的全绿 `Quality` run；构建同一 commit，通过固定 SSH host key 发布前后端、共享环境/数据/日志、PM2 reload、本机与公网健康检查及失败回滚；补充服务器 bootstrap、Environment secrets/variables 与安全边界文档。默认 `CD_ENABLED` 未开启；尚无目标服务器实测，待人工配置并完成 7.4 | AI-2（Codex） |
 
+| 2026-10-23 | 部分 | 7.4 补记生产验收：线上 release `a6f94f3d9dacae5e5b6630172a6c01cf3b09d18f-39893338172-1` 的真实 LLM 首段后客户端取消 2ms；匿名 TTS 401；响应式矩阵 360–1440 共 10/10；17M dist / 1.2M server；上一版回滚到 `7115da6...` 后恢复并通过公网健康检查；备份恢复验证 6 表/6 条社区知识数据。服务端 56/56。管理员登录一次返回 `AUTH_INVALID` 后停止重试；邮件送达/验证码生命周期、登录态 TTS、社区知识 API、embedding、模型故障注入和用户试用仍待完成。共享邮箱、临时管理员和 DBA 最小权限复核需要人工配合。7.4 保持 🟡，不设置人工发布确认标志 | AI-2（Codex） |
 ---
 
 ## 7. 每轮开工前的 30 秒检查

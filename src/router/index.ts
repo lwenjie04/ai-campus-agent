@@ -44,6 +44,13 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('@/views/ServiceDirectoryView.vue'),
   },
   {
+    // 5.2：事项详情独立路由，刷新/分享后仍可直接打开；无效 ID 由页面展示空态。
+    path: '/services/:serviceId',
+    name: 'service-detail',
+    component: () => import('@/views/ServiceDetailView.vue'),
+    props: true,
+  },
+  {
     path: '/community',
     name: 'community',
     component: () => import('@/views/CommunityView.vue'),

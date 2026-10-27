@@ -1,0 +1,123 @@
+{
+  "version": 1,
+  "completedAt": "2026-10-23T03:30:05.054Z",
+  "baseUrl": "https://maila.club",
+  "widths": [390, 1440],
+  "ok": true,
+  "results": [
+    {
+      "target": "home",
+      "selector": ".hero__cta",
+      "version": 1,
+      "completedAt": "2026-10-23T03:30:01.847Z",
+      "targetUrl": "https://maila.club/",
+      "widths": [390, 1440],
+      "ok": true,
+      "results": [
+        {
+          "width": 390,
+          "clientWidth": 390,
+          "scrollWidth": 390,
+          "bodyScrollWidth": 390,
+          "overflowPixels": 0,
+          "elements": [],
+          "checks": [
+            {
+              "selector": ".hero__cta",
+              "found": true,
+              "visible": true,
+              "inViewport": true,
+              "rect": {
+                "top": 306.1,
+                "bottom": 352.5
+              }
+            }
+          ],
+          "loginDialogVisible": false,
+          "screenshot": "D:\\VUE3-GDES-Agent\\ai-campus-agent\\docs\\design\\verify\\production-7.4\\home-390.png",
+          "ok": true
+        },
+        {
+          "width": 1440,
+          "clientWidth": 1425,
+          "scrollWidth": 1425,
+          "bodyScrollWidth": 1425,
+          "overflowPixels": 0,
+          "elements": [],
+          "checks": [
+            {
+              "selector": ".hero__cta",
+              "found": true,
+              "visible": true,
+              "inViewport": true,
+              "rect": {
+                "top": 346,
+                "bottom": 392.4
+              }
+            }
+          ],
+          "loginDialogVisible": false,
+          "screenshot": "D:\\VUE3-GDES-Agent\\ai-campus-agent\\docs\\design\\verify\\production-7.4\\home-1440.png",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "target": "chat",
+      "selector": ".composer .send-btn",
+      "version": 1,
+      "completedAt": "2026-10-23T03:30:04.862Z",
+      "targetUrl": "https://maila.club/chat/new",
+      "widths": [390, 1440],
+      "ok": true,
+      "results": [
+        {
+          "width": 390,
+          "clientWidth": 390,
+          "scrollWidth": 390,
+          "bodyScrollWidth": 390,
+          "overflowPixels": 0,
+          "elements": [],
+          "checks": [
+            {
+              "selector": ".composer .send-btn",
+              "found": true,
+              "visible": true,
+              "inViewport": true,
+              "rect": {
+                "top": 813.6,
+                "bottom": 864
+              }
+            }
+          ],
+          "loginDialogVisible": false,
+          "screenshot": "D:\\VUE3-GDES-Agent\\ai-campus-agent\\docs\\design\\verify\\production-7.4\\chat-390.png",
+          "ok": true
+        },
+        {
+          "width": 1440,
+          "clientWidth": 1440,
+          "scrollWidth": 1440,
+          "bodyScrollWidth": 1440,
+          "overflowPixels": 0,
+          "elements": [],
+          "checks": [
+            {
+              "selector": ".composer .send-btn",
+              "found": true,
+              "visible": true,
+              "inViewport": true,
+              "rect": {
+                "top": 808.8,
+                "bottom": 859.2
+              }
+            }
+          ],
+          "loginDialogVisible": false,
+          "screenshot": "D:\\VUE3-GDES-Agent\\ai-campus-agent\\docs\\design\\verify\\production-7.4\\chat-1440.png",
+          "ok": true
+        }
+      ]
+    }
+  ]
+}

@@ -1,42 +1,40 @@
 # 产品状态
 
-| 项目     | 当前值                                                    |
-| -------- | --------------------------------------------------------- |
-| 更新日期 | 2026-10-21                                                |
-| 分支     | `codex/campus-service-platform`                           |
-| 版本     | 仓库 `package.json` 仍为 `0.0.0`；发布版本与 tag 尚未确定 |
-| 阶段     | V2 功能回归与发布准备；尚未完成目标环境验收               |
+| 项目             | 当前值                                                   |
+| ---------------- | -------------------------------------------------------- |
+| 更新日期         | 2026-10-23                                               |
+| 分支             | `master`                                                 |
+| 版本             | `package.json` 仍为占位版本 `0.0.0`；未创建正式 tag      |
+| 线上地址         | <https://maila.club>                                     |
+| 当前线上 release | `a6f94f3d9dacae5e5b6630172a6c01cf3b09d18f-39893338172-1` |
+| 阶段             | V2 目标环境验证进行中；7.4 部分通过，尚未完成发布签收    |
 
 ## 当前结论
 
-主要页面、问答流、社区投稿与审核、反馈操作和服务端状态契约已完成本地自动化验证。模拟服务和隔离数据库中的结果不能代表校内目标环境已可发布。7.3 CI workflow 已实现，但尚未取得 push/PR 全绿的 GitHub Actions 记录；7.4 的真实服务验证与 7.5 的试用记录仍待完成。
+7.3 的 CI 与自动部署已有 GitHub Actions 成功记录，线上服务可用。7.4 已完成生产 MySQL 反馈迁移、反馈持久化、备份恢复检查、真实 LLM/RAG 样本、SSE 断开取消、响应式矩阵和一次回滚恢复演练。用户已确认收到邮箱检测邮件；这只确认测试邮件到达，注册验证码的过期/重发流程仍未验证。**7.4 仍未完成**：管理员登录与登录态 TTS 按用户决定暂缓，社区知识管理 API 的生产持久化闭环、真实 Embedding 配置/验证、模型异常注入和真实用户试用尚未完成。不得把当前状态描述为发布已验收，也不得设置 `RELEASE_LIVE_VALIDATION_CONFIRMED=true`。
 
 ## 已有验证证据
 
-| 范围               | 结果                                                     | 证据与边界                                                                                                                                              |
-| ------------------ | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 前端单测           | 90/90；18 个测试文件                                     | `npm run test:unit`，2026-10-21                                                                                                                         |
-| 服务端测试         | 56/56                                                    | `npm run test:server`，使用隔离 Mock/内存配置                                                                                                           |
-| 生产构建与静态检查 | 构建通过，1662 个模块；lint 通过；后端语法检查 75 个模块 | `npm run build`、`npm run lint`、`npm run server:check`，2026-10-21                                                                                     |
-| RAG 金标           | Top 20：20/20，Top 1 命中率 100%，目标阈值 90%           | `docs/development-baseline-v2.md` §3 记录的 `npm run rag:test:service` 结果；使用本地 hash 向量索引。7.3 新增的离线 Golden CI job 尚未取得远端 run 证据 |
-| 隔离服务旅程       | 10/10                                                    | `server/evals/latest-service-journey.json`；含待恢复问题确认和社区知识来源闭环，使用 isolated mock                                                      |
-| 管理后台旅程       | 11/11                                                    | `server/evals/latest-admin-journey.json`；隔离内存后端                                                                                                  |
-| 社区旅程           | 13/13                                                    | `server/evals/latest-community-journey.json`；隔离内存后端                                                                                              |
-| 社区审核闭环       | 9/9                                                      | `server/evals/latest-closed-loop-journey.json`；失败重试、来源回链、越权拒绝与降级                                                                      |
-| 回归旅程           | 9/9                                                      | `server/evals/latest-regression-journey.json`；隔离 Mock 后端                                                                                           |
-| 响应式检查         | 10/10                                                    | `server/evals/latest-responsive-matrix.json`；首页与问答五个宽度                                                                                        |
-| MySQL 审核事务     | 9/9                                                      | `server/evals/latest-mysql-review-validation.json`；本地 MySQL 8 独立 schema，测试后已清理。它不代表目标环境数据库已验收                                |
+| 范围               | 结果                                                                                                  | 证据与边界                                                                                                                                                                                                                                                                                 |
+| ------------------ | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 前端单测           | 90/90                                                                                                 | `npm run test:unit`；此前通过记录见基线与计划表                                                                                                                                                                                                                                            |
+| 服务端测试         | 56/56                                                                                                 | `npm run test:server`；使用隔离 Mock/内存配置，不代替生产验证                                                                                                                                                                                                                              |
+| 生产构建与静态检查 | 构建通过，1662 个模块；lint 通过；后端语法检查 75 个模块                                              | `npm run build`、`npm run lint`、`npm run server:check`，此前记录见 `docs/development-baseline-v2.md`                                                                                                                                                                                      |
+| 7.3 CI 与 CD       | Quality 五个 job 全绿；Deploy 已部署当前线上 release                                                  | Quality [run 39890973878](https://github.com/lwenjie04/ai-campus-agent/actions/runs/39890973878)，Deploy [run 39893338172](https://github.com/lwenjie04/ai-campus-agent/actions/runs/39893338172)；5.4 Top 50 仍未完成                                                                     |
+| 真实 LLM 与 RAG    | 普通问答 HTTP 200；TTFT/总耗时 6.284/6.287s；RAG 1.254/2.656s、4 条来源；LightRAG health 42ms         | 单次样本，不代表高并发容量；真实 embedding 服务端密钥待用户配置并验证                                                                                                                                                                                                                      |
+| 线上流式取消       | 首段后主动断开，TTFT 2.646s，客户端 reader cancel 2ms；公网返回 Secure 游客 Cookie                    | 真实 `/api/chat/stream`；取消信号传播和额度结算竞态另由服务端测试覆盖，线上模型故障注入未测                                                                                                                                                                                                |
+| 生产 MySQL 与反馈  | MySQL 5.7.44 增量迁移通过；`feedbackEligible:true` 后提交反馈 HTTP 200，数据库读回后清理测试数据      | 备份 `/var/backups/ai-campus-agent/ai_campus_agent_pre_chat_feedback_20261023T034120Z.sql.gz`，SHA-256 `b8aaab1b5ee88a80230ac3e19c9e0a36364babe9e0c25d91e055b2a3d1c545ed`；隔离 schema 恢复 6 张基础表与 6 条社区知识记录后已删除测试 schema。社区知识生产 API 写入/读取仍待管理员登录验证 |
+| TTS 与邮件         | 真实腾讯 TTS 直连合成曾用时 838ms；匿名 `/api/tts` 为 401 `AUTH_REQUIRED`；用户确认收到邮箱检测邮件   | `TTS_AUTH_TOKEN` 已从生产配置移除；登录态 TTS 按用户决定暂缓。邮件到达检查通过，但注册验证码的实际流程、过期与重发未测                                                                                                                                                                     |
+| HTTPS 与响应式     | 公网健康检查 HTTP 200 且 releaseId 匹配；首页/问答 360、390、768、1024、1440 共 10/10，无横向溢出     | `server/evals/production-7.4-responsive-full-20261023.json` 与 `docs/design/verify/production-7.4-responsive-20261023/`                                                                                                                                                                    |
+| 回滚与资源         | 回滚到上一版 `7115da6...` 并通过部署脚本本机健康检查，随后恢复当前 release；`dist` 17M、`server` 1.2M | 恢复后公网 `/api/health` 200、releaseId 匹配。生产运行时 Node 22.22.2、npm 10.9.7、MySQL 5.7.44                                                                                                                                                                                            |
 
 ## 发布前仍需完成
 
-- **7.3 CI**：提交后由 push/PR workflow 实际运行并全绿；保存 workflow run URL、job 耗时与失败 artifacts。Top 50 数据仍等 5.4 人工核对。
-- **7.4 目标环境**：验证真实 LLM、部署 MySQL、SMTP、腾讯云 TTS、HTTPS/Nginx 代理、SSE 首字与取消时延，并记录构建体积和主要问答来源。当前没有这些目标环境的验证证据。
-- **RAG**：当前离线验证使用 hash 向量；真实 embedding 配置与索引质量尚未在目标环境验证。Top 50 金标尚未准备。
-- **运营与试用**：发布版本、tag、试用时间窗、参与人数、问题记录和回滚阈值尚未确认。
-- **容量边界**：游客额度与按 IP 限频状态保存在单 Node 进程内存中；多实例部署或进程重启后不能保证连续计数。若试用需要多实例，需先接共享存储并验证。
+- **7.4 登录和邮件**：测试邮件到达已由用户确认；注册验证码到达/过期/重发仍待安全验证。管理员登录与登录态 TTS 实测按用户决定暂记阻塞，后续需先准备临时管理员并避免触发账号锁定。
+- **7.4 管理与故障边界**：用管理员会话验证社区知识生成和读取持久化；在安全可控条件下验证真实模型异常的错误呈现与清理。
+- **7.4 安全复核**：当前生产 MySQL 应用账号拥有全局权限；需要 DBA 确认最小权限并安排变更，避免直接在未验证前修改权限。
+- **RAG 与数据**：真实 embedding 服务端密钥待用户配置后验证；Top 50 金标仍等 5.4 人工核对；当前离线 Top 20 使用 hash 索引。
+- **7.5 运营与试用**：尚无真实用户试用记录、正式版本/tag、试用时间窗、参与范围和回滚阈值。
+- **容量边界**：游客额度与按 IP 限频状态保存在单 Node 进程内存中；多实例部署或进程重启后不保证计数连续。需要多实例时先接入共享存储并验证。
 
-只有在 7.4 的目标环境检查实际通过后，人工才能设置 `RELEASE_LIVE_VALIDATION_CONFIRMED=true` 并运行 `npm run release:gate`。CI 不设置此变量；变量本身不替代验证记录。
-
-## 下一步
-
-完成 7.3 远端 CI 记录和 5.4 Top 50 数据核对；随后由人工提供 7.4 目标环境与真实服务凭据，按 [`release-checklist.md`](release-checklist.md) 验收。7.5 的版本交接与试用结论在验收后填写，当前模板见 [`releases/v2-handoff.md`](releases/v2-handoff.md) 和 [`releases/v2-trial-record.md`](releases/v2-trial-record.md)。
+全部 7.4 检查通过并由人工确认前，不要设置 `RELEASE_LIVE_VALIDATION_CONFIRMED=true`，也不要运行正式 release gate 或创建发布 tag。

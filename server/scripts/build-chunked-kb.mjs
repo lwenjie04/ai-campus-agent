@@ -8,20 +8,24 @@ const parseArgs = (argv) => {
   const args = {
     input: 'server/data/knowledge-base.json',
     output: 'server/data/chunked-knowledge-base.json',
+    sourcesOutput: '',
     minChunkLength: 300,
     maxChunkLength: 600,
     overlapLength: 80,
     includeCommunity: true,
+    includeStudentHandbook: false,
   }
 
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i]
     if (arg === '--input' || arg === '-i') args.input = argv[++i] || args.input
     else if (arg === '--output' || arg === '-o') args.output = argv[++i] || args.output
+    else if (arg === '--sources-output') args.sourcesOutput = argv[++i] || args.sourcesOutput
     else if (arg === '--min' || arg === '--min-chunk-length') args.minChunkLength = Number(argv[++i] || args.minChunkLength)
     else if (arg === '--max' || arg === '--max-chunk-length') args.maxChunkLength = Number(argv[++i] || args.maxChunkLength)
     else if (arg === '--overlap' || arg === '--overlap-length') args.overlapLength = Number(argv[++i] || args.overlapLength)
     else if (arg === '--official-only') args.includeCommunity = false
+    else if (arg === '--include-student-handbook') args.includeStudentHandbook = true
   }
 
   args.minChunkLength = Number.isFinite(args.minChunkLength) ? Math.max(80, args.minChunkLength) : 300
@@ -315,22 +319,53 @@ const main = async () => {
   const inputPath = resolve(cwd, args.input)
   const outputPath = resolve(cwd, args.output)
   const officialEntries = readJsonArray(inputPath)
+  const handbookEntries = args.includeStudentHandbook
+    ? readJsonArray(resolve(cwd, 'server/data/student-handbook.json'))
+    : []
+  if (args.includeStudentHandbook && handbookEntries.length === 0) {
+    throw new Error('STUDENT_HANDBOOK_MISSING: run npm run kb:handbook:import first')
+  }
+  const combinedOfficialEntries = [...officialEntries, ...handbookEntries]
+  const seenIds = new Set()
+  for (const entry of combinedOfficialEntries) {
+    const id = String(entry.id || '')
+    if (!id) throw new Error('OFFICIAL_KB_ENTRY_ID_REQUIRED')
+    if (seenIds.has(id)) throw new Error(`DUPLICATE_OFFICIAL_KB_ENTRY_ID:${id}`)
+    seenIds.add(id)
+  }
   const communityEntries = args.includeCommunity ? await loadCommunityKnowledge() : []
 
-  const officialChunks = officialEntries.flatMap((entry) => mapOfficialEntryToChunks(entry, args))
-  const communityChunks = communityEntries.flatMap((entry) => mapCommunityEntryToChunks(entry, args))
+  const officialChunks = combinedOfficialEntries.flatMap((entry) =>
+    mapOfficialEntryToChunks(entry, args),
+  )
+  const communityChunks = communityEntries.flatMap((entry) =>
+    mapCommunityEntryToChunks(entry, args),
+  )
   const allChunks = [...officialChunks, ...communityChunks]
 
   const outputDir = resolve(outputPath, '..')
   if (!existsSync(outputDir)) mkdirSync(outputDir, { recursive: true })
   writeFileSync(outputPath, `${JSON.stringify(allChunks, null, 2)}\n`, 'utf8')
 
+  if (args.sourcesOutput) {
+    const sourcesOutputPath = resolve(cwd, args.sourcesOutput)
+    const sourcesOutputDir = resolve(sourcesOutputPath, '..')
+    if (!existsSync(sourcesOutputDir)) mkdirSync(sourcesOutputDir, { recursive: true })
+    writeFileSync(
+      sourcesOutputPath,
+      `${JSON.stringify(combinedOfficialEntries, null, 2)}\n`,
+      'utf8',
+    )
+  }
+
   console.log(
     JSON.stringify(
       {
         input: args.input,
         output: args.output,
+        sourcesOutput: args.sourcesOutput || undefined,
         officialDocs: officialEntries.length,
+        handbookDocs: handbookEntries.length,
         communityDocs: communityEntries.length,
         officialChunks: officialChunks.length,
         communityChunks: communityChunks.length,

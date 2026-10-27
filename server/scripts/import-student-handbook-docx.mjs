@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
 
@@ -25,6 +25,7 @@ const TITLE_REPLACEMENTS = new Map([
   ['处理办法(试行)', '广东第二师范学院学生违规违纪处理办法(试行)'],
   ['认定办法(试行)', '广东第二师范学院家庭经济困难学生认定办法(试行)'],
   ['奖学金管理办法(试行)', '广东第二师范学院优秀学生海外研学奖学金管理办法(试行)'],
+  ['一 、文献资源借阅管理规定1. 校园卡管理办法', '文献资源借阅管理规定'],
 ])
 
 const parseArgs = (argv) => {
@@ -213,6 +214,21 @@ const compactTitle = (title) =>
     .replace(/）/g, ')')
     .trim()
 
+const inferCategory = (title) => {
+  const compact = compactTitle(title)
+  const lower = compact.toLowerCase()
+
+  if (/奖学金|助学金|资助|困难补助|勤工助学/.test(compact)) return 'scholarship'
+  if (/考试|考核|补考|重修/.test(compact)) return 'exam'
+  if (/违规|违纪|处分|申诉|行为准则|考勤|请假/.test(compact)) return 'student_affairs'
+  if (/学籍|转专业|成绩|学分|选修课|学位|学业预警/.test(compact)) {
+    return 'teaching'
+  }
+  if (/宿舍|医疗保险|就医|传染病|结核病|图书馆|文献资源|借阅/.test(compact)) return 'life'
+  if (lower.includes('就业')) return 'career'
+  return 'general'
+}
+
 const finalizeEntry = (entries, current, fileMeta) => {
   if (!current?.title) return
 
@@ -227,15 +243,8 @@ const finalizeEntry = (entries, current, fileMeta) => {
   const title = normalizeLine(current.title)
   const compact = compactTitle(title)
   const hash = createHash('md5').update(`${compact}|${current.part}`).digest('hex').slice(0, 8)
-  const lower = compact.toLowerCase()
 
-  let category = 'general'
-  if (/奖学金|助学金|资助|困难补助|勤工助学/.test(compact)) category = 'scholarship'
-  else if (/学籍|转专业|成绩|学分|选修课|学位|考试|考勤|请假|学业预警/.test(compact)) category = 'teaching'
-  else if (/违规|违纪|处分|申诉/.test(compact)) category = 'student_affairs'
-  else if (/宿舍|医疗保险|就医|传染病|结核病|图书馆/.test(compact)) category = 'life'
-  else if (/行为准则/.test(compact)) category = 'student_affairs'
-  else if (lower.includes('就业')) category = 'career'
+  const category = inferCategory(title)
 
   const keywordSeeds = [
     '学籍',
@@ -256,7 +265,7 @@ const finalizeEntry = (entries, current, fileMeta) => {
     '就业',
   ]
   const keywords = Array.from(
-    new Set(keywordSeeds.filter((item) => content.includes(item) || compact.includes(item))),
+    new Set(keywordSeeds.filter((item) => compact.includes(item))),
   ).slice(0, 12)
 
   entries.push({
@@ -350,6 +359,7 @@ const buildEntries = (paragraphs, fileMeta) => {
     if (TITLE_REPLACEMENTS.has(entry.title)) {
       entry.title = TITLE_REPLACEMENTS.get(entry.title)
     }
+    entry.category = inferCategory(entry.title)
   }
 
   return cleanedEntries
@@ -364,10 +374,10 @@ const main = () => {
   const args = parseArgs(process.argv.slice(2))
   const docxPath = findDocxFile(args.input, args.docx)
   const outputPath = resolve(cwd, args.output)
-  const stats = statSync(docxPath)
   const paragraphs = extractParagraphs(docxPath)
   const fileMeta = {
-    updatedAt: new Date(stats.mtimeMs).toISOString().slice(0, 10),
+    // Local file mtime records copying/importing, not when the handbook or its rules changed.
+    updatedAt: '',
     importedFrom: docxPath.replace(/\\/g, '/'),
     downloadPath: docxPath.replace(/\\/g, '/').replace(`${cwd.replace(/\\/g, '/')}/`, ''),
     downloadName: docxPath.split(/[/\\]/).pop() || '',

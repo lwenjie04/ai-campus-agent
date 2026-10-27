@@ -275,6 +275,7 @@ import { useConversationsStore, resolveOwnerScope } from '@/store/conversations'
 import { useAuthIntentStore } from '@/store/auth-intent'
 import { applyMessagesToConversation, conversationToMessages } from '@/services/conversation-session'
 import { clearPendingQuestion, readPendingQuestion, writePendingQuestion } from '@/services/pending-question'
+import { clearNewChatDraft, readNewChatDraft, writeNewChatDraft } from '@/services/chat-draft'
 import { sourceValidityNote } from '@/services/source-display'
 import type { MessageSource } from '@/types/agent'
 import type { FeedbackValue } from '@/api/feedback'
@@ -295,7 +296,6 @@ const pendingDraftRestored = ref(false)
 const pendingDraftVisible = ref(false)
 const resumeAfterLoginRequested = ref(false)
 const GUEST_TRIAL_STORAGE_KEY = 'ai-campus-agent.guest-trial.used.v1'
-const NEW_CHAT_DRAFT_KEY = 'ai-campus-agent.chat-new-draft.v1'
 const guestTrialUsed = ref(false)
 
 const getLocalStorage = () => {
@@ -303,23 +303,6 @@ const getLocalStorage = () => {
     return typeof window !== 'undefined' ? window.localStorage : null
   } catch {
     return null
-  }
-}
-
-// /chat/new 还没有历史会话时，草稿先写这个键，刷新后仍能恢复。
-const readNewChatDraft = () => {
-  try {
-    return getLocalStorage()?.getItem(NEW_CHAT_DRAFT_KEY) || ''
-  } catch {
-    return ''
-  }
-}
-
-const clearNewChatDraft = () => {
-  try {
-    getLocalStorage()?.removeItem(NEW_CHAT_DRAFT_KEY)
-  } catch {
-    // 无痕或禁用存储时忽略。
   }
 }
 
@@ -565,7 +548,7 @@ const sendPendingDraft = async () => {
   consumeQuestionIntent()
   const result = await store.sendMessage(draft, runOptions())
   if (result.ok) {
-    clearNewChatDraft()
+    clearNewChatDraft(getLocalStorage())
     clearPendingDraft()
     syncRouteAfterSend()
     return
@@ -620,15 +603,7 @@ watch(draftText, (value) => {
   }
 
   // /chat/new 还没有历史会话时单独落一个草稿键，刷新后仍能恢复。
-  try {
-    const storage = getLocalStorage()
-    if (route.name === 'chat-new') {
-      if (value.trim()) storage?.setItem(NEW_CHAT_DRAFT_KEY, value)
-      else storage?.removeItem(NEW_CHAT_DRAFT_KEY)
-    }
-  } catch {
-    // 无痕或禁用存储时忽略。
-  }
+  if (route.name === 'chat-new') writeNewChatDraft(value, getLocalStorage())
 })
 
 // 校徽是否加载失败。
@@ -948,7 +923,7 @@ onMounted(() => {
   } else if (route.name === 'chat-new') {
     activeConversationId.value = conversations.createDraft().conversationId
     // /chat/new 刷新后恢复未发送草稿，再聚焦输入框；只恢复，不自动发送。
-    if (!draftText.value) draftText.value = readNewChatDraft()
+    if (!draftText.value) draftText.value = readNewChatDraft(getLocalStorage())
     void nextTick(() => inputBoxRef.value?.focus())
   }
 })
