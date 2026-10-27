@@ -66,7 +66,7 @@
     "mysql2": "^3.20.0",
     "nodemailer": "^8.0.4",
     "pinia": "^3.0.4",
-    "tencentcloud-sdk-nodejs-tts": "^4.1.182",
+    "tencentcloud-sdk-nodejs-tts": "^4.1.237",
     "vue": "^3.5.28",
     "vue-router": "^4.6.4"
   },
