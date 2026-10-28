@@ -325,7 +325,7 @@
 
 | 日期 | 任务 ID | 执行者 | 证据（commit / 命令 / 文件） | 备注 |
 | --- | --- | --- | --- | --- |
-| 2026-10-28 | 5.4 检索评估技术复核（部分） | AI-2（Codex） | 本轮提交待补 hash；六条 `node server/scripts/evaluate-rag-golden.mjs` 命令见 `docs/golden-source-review-2026-10-28.md`，均 exit 0；50 题 50/50 + 10/10（关键词/向量），目录诊断 12/12，10 题独立留出集 8/10；JSON 结果位于 `server/evals/*20261028*` 与 `server/evals/campus-service-golden-holdout-v2-*` | 离线技术核验完成，5.4 保持 🟡；仍需人工逐题来源时效确认、审读至少 20 条完整回答、确认生产是否加载旧手册并完成 7.4 发布签收 |
+| 2026-10-28 | 5.4 检索评估技术复核（部分） | AI-2（Codex） | `9123885`；六条 `node server/scripts/evaluate-rag-golden.mjs` 命令见 `docs/golden-source-review-2026-10-28.md`，均 exit 0；50 题 50/50 + 10/10（关键词/向量），目录诊断 12/12，10 题独立留出集 8/10；JSON 结果位于 `server/evals/*20261028*` 与 `server/evals/campus-service-golden-holdout-v2-*` | 离线技术核验完成，5.4 保持 🟡；仍需人工逐题来源时效确认、审读至少 20 条完整回答、确认生产是否加载旧手册并完成 7.4 发布签收 |
 | 2026-10-27 | 5.4/7.3 文档提交部署与公网复核（部分，Lead） | AI-1（Lead） | `c468b3d`；master Quality [run 40483742473](https://github.com/lwenjie04/ai-campus-agent/actions/runs/40483742473) 五 job 全绿；Deploy [run 40483956902](https://github.com/lwenjie04/ai-campus-agent/actions/runs/40483956902) attempt 1 因上传 20 分钟超时失败并自动保留旧版、attempt 2 成功；线上 release `c468b3d4aaf0cc63f3eaca306714ddb4b1840147-40483956902-2`；公网 health 200、金额问答复核正确 | 首次上传超时源于发布包约 16.6MB 与链路慢，重试成功；建议后续把上传超时从 20 分钟提高并随下批变更验证；5.4 仍保持 🟡 |
 | 2026-10-27 | 5.4/7.3 生产发布与公网复核（部分，Lead） | AI-1（Lead） | PR #15 合并 `f34b05e`；master Quality [run 40473264194](https://github.com/lwenjie04/ai-campus-agent/actions/runs/40473264194) 五 job 全绿；Deploy [run 40473427797](https://github.com/lwenjie04/ai-campus-agent/actions/runs/40473427797) success；线上 release `f34b05e86ac30d2b69de926bd099e5537c31d749-40473427797-1`；公网 `/api/health` 200、`/services` 与新 JS 200；真实问答“奖学金 10000/6000、助学金 3700、手册旧标准过时”与来源正确，非金额问题不注入 | 5.4 政策提示已上线并复核，但 5.4 仍保持 🟡（旧手册数据/缺正文/逐题核验/7.4 人工签收未完成）；7.3 仍等 Top 50 接入 |
 | 2026-10-27 | 0.2 响应式与控件状态补充稿（完成） | AI-2（Codex）+ 人工 | `42a9bd1` + `5d6b8b7`；9 张 PNG 签名与预期尺寸检查 9/9；`git diff --check` 通过 | `33:176`（390×844）与 `33:212`（1024×880）均已导出归档；P1 未绘图标等缺项已记录在设计说明，不阻塞本项 |
@@ -404,7 +404,7 @@
 
 | 日期 | 类型 | 内容 | 执行者 |
 | --- | --- | --- | --- |
-| 2026-10-28 | 部分 | 5.4 技术核验：主 50 题正例 50/50、负例 10/10（关键词/向量），目录诊断 12/12；新增不调参的 10 题留出集，关键词/向量均为 8/10，暴露两道竞赛办法 Top1 错位。留出结果和失败标题写入 `docs/golden-source-review-2026-10-28.md` 与 `server/evals/`。5.4 保持 🟡，待人工核验 20 条完整回答、来源时效与生产语料 | AI-2（Codex） |
+| 2026-10-28 | 部分 | `9123885`：5.4 技术核验，主 50 题正例 50/50、负例 10/10（关键词/向量），目录诊断 12/12；新增不调参的 10 题留出集，关键词/向量均为 8/10，暴露两道竞赛办法 Top1 错位。留出结果和失败标题写入 `docs/golden-source-review-2026-10-28.md` 与 `server/evals/`。5.4 保持 🟡，待人工核验 20 条完整回答、来源时效与生产语料 | AI-2（Codex） |
 | 2026-10-27 | 上线 | 文档提交 `c468b3d` 触发部署：Quality run 40483742473 全绿；Deploy #36 attempt 1 因 20 分钟上传超时失败并自动保留旧版，attempt 2 成功，线上 release 更新为 `c468b3d...-40483956902-2`，公网金额问答复核通过。本地上调上传超时 20m→40m、job 超时 50m→75m（待随下批推送验证） | AI-1（Lead） |
 | 2026-10-27 | 上线 | PR #15（`release/policy-notes-20261027` → master）合并为 `f34b05e`，42 个提交随 Deploy #35 上线；线上 release 与公网金额/助学金问答、来源、非金额问题均已复核。5.4 保持 🟡 等 7.4 人工签收 | AI-1（Lead） |
 | 2026-10-27 | 完成 | 0.2：9 张响应式与控件状态补充画板全部导出并归档，包括 390 首页和 1024 问答/来源；PNG 签名和尺寸检查 9/9。S0 为 4/4，整体 35✅/4🟡；P1 未绘独立关闭/附件 SVG 等已在设计说明记录，不影响本任务 | AI-2（Codex）+ 人工 |
