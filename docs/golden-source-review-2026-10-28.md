@@ -40,10 +40,16 @@ All six commands exited 0. The evaluator reports title matching only; a passing 
 
 ## Remaining acceptance work
 
-- The 20 complete live answers were reviewed by the user on 2026-10-28, who confirmed no issue. Individual dimensions were not scored separately; currentness of the underlying school policies still needs confirmation from the relevant offices.
-- The current status of old handbook policies and annual notices still needs confirmation from the relevant university offices. The local archive includes notice records whose body text is missing; title matches cannot fill that gap.
+- The 20 complete live answers were reviewed by the user on 2026-10-28, who confirmed no issue; they do not need to be reviewed again. This does not certify every underlying policy as current. The user decided to treat the 2016 leave rule and 2018 overseas camp scholarship rule as historical.
+- Some annual notices still have only a title or attachment clue in the local archive. Those entries must be supplied with source text or kept historical/unanswerable; title matches cannot fill in missing details.
 - Production presence is confirmed for at least the LightRAG student handbook records; still unresolved: which exact index snapshot is active, whether stale records should be reindexed/retired, and how to correct their displayed update-date semantics.
-- Keep the 50-question set marked `pending-human-review`; do not promote it into the CI golden gate until the human source and answer review is complete. The existing signed-off scholarship amount notice covers that policy copy only, not the rest of the catalog.
+- Keep the Top 50 set out of the CI golden gate until the user reviews the 10 new positive cases and 10 negative cases in [`golden-review-checklist-2026-10-28.md`](golden-review-checklist-2026-10-28.md). The 20 existing production answer samples have already been accepted.
 - 7.4's production release signoff remains a separate gate.
 
-Therefore task 5.4 remains 🟡. The technical retrieval evidence is current; human review and currentness confirmation remain open.
+Therefore task 5.4 remains in progress. The technical retrieval evidence is current; the remaining user review is limited to the 10 new positive and 10 negative cases, while AI-2 handles the production LightRAG index and date semantics. 7.4 is a separate release gate.
+
+## 人工决策更新（2026-10-28）
+
+用户确认将 2016 年《学生考勤、请假规定》和 2018 年《优秀学生海外研学奖学金管理办法》按历史规则处理。对应金标题目已改成明确的历史问法；这项决定不代表旧条文仍然有效，也不要求用户提供新版文件。其余未评阅的新增题目见 [`golden-review-checklist-2026-10-28.md`](golden-review-checklist-2026-10-28.md)。
+
+调整后的问法已重新评估：关键词与向量模式均为正例 50/50、负例 10/10。结果分别保存于 `server/evals/campus-service-golden-v2-20261028-history-keyword-results.json` 和 `server/evals/campus-service-golden-v2-20261028-history-vector-results.json`。`node --test server/tests/rag-golden-evaluator.test.mjs` 4/4；`npm run test:server` 79/79。
