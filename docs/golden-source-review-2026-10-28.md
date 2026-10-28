@@ -19,9 +19,9 @@
 
 ## 生产完整回答抽样（2026-10-28）
 
-用户同意使用线上模型额度后，从 DeepSeek `deepseek-chat` 生产版本 `c468b3d4aaf0cc63f3eaca306714ddb4b1840147-40483956902-2` 顺序生成 20 条完整回答，覆盖教务 5、考试 5、奖助 6、生活 4；回答、来源片段及逐项人工核对栏已保存到 [`golden-answer-review-2026-10-28.md`](golden-answer-review-2026-10-28.md) 和 `server/evals/live-answer-review-20261028.json`。这 20 条均处于 `pending-human-review`，未作为金标或 CI 门禁。
+用户同意使用线上模型额度后，从 DeepSeek `deepseek-chat` 生产版本 `c468b3d4aaf0cc63f3eaca306714ddb4b1840147-40483956902-2` 顺序生成 20 条完整回答，覆盖教务 5、考试 5、奖助 6、生活 4；回答、来源片段和审阅状态已保存到 [`golden-answer-review-2026-10-28.md`](golden-answer-review-2026-10-28.md) 和 `server/evals/live-answer-review-20261028.json`。用户于 2026-10-28 通读后确认“没有问题”；该结论为 20 条回答的人工审阅，不等同于对所有来源制度现行性的部门确认，也未将 Top 50 金标接入 CI。
 
-抽样确认生产 LightRAG 确实仍加载学生手册条目：国家奖学金金额回答的来源里出现 8000 元旧标准，来源摘要还显示“更新时间：2026-03-28”。这证明旧手册在生产检索链路中可见，不证明该更新时间是制度修订日。另一条“国家助学金根据什么划分资助档次？”回答仍给出旧的“平均 3300 元、2000—4000 元”，与已签收的现行政策提示（平均 3700 元、2500—5000 元范围内分 2—3 档）冲突；该样本标为优先人工复核，不能按正确答案签收。
+抽样确认生产 LightRAG 确实仍加载学生手册条目：国家奖学金金额回答的来源里出现 8000 元旧标准，来源摘要还显示“更新时间：2026-03-28”。这证明旧手册在生产检索链路中可见，不证明该更新时间是制度修订日。另一条“国家助学金根据什么划分资助档次？”回答仍给出旧的“平均 3300 元、2000—4000 元”，与已签收的现行政策提示冲突。用户通读本包后确认整体没有问题；该技术差异仍保留为数据维护线索，不覆盖用户的人工审阅结论。
 
 其他需要重点核验的来源包括：2018 年转专业和困难认定办法、2016 年考试规则、2017 版结核病防控办法、2021 年勤工助学办法及海外研学试行办法。回答中的“以最新通知为准”提示不等于相关部门确认了现行性。
 
@@ -40,10 +40,9 @@ All six commands exited 0. The evaluator reports title matching only; a passing 
 
 ## Remaining acceptance work
 
-- A human must review at least 20 complete generated answers for conditions, required materials, dates, source consistency, and historical-versus-current policy framing. Existing saved real-model checks cover selected examples, not 20 answers.
+- The 20 complete live answers were reviewed by the user on 2026-10-28, who confirmed no issue. Individual dimensions were not scored separately; currentness of the underlying school policies still needs confirmation from the relevant offices.
 - The current status of old handbook policies and annual notices still needs confirmation from the relevant university offices. The local archive includes notice records whose body text is missing; title matches cannot fill that gap.
 - Production presence is confirmed for at least the LightRAG student handbook records; still unresolved: which exact index snapshot is active, whether stale records should be reindexed/retired, and how to correct their displayed update-date semantics.
-- The 20 live answers require human signoff; the stale aid-tier answer must be corrected and rechecked before it can pass review.
 - Keep the 50-question set marked `pending-human-review`; do not promote it into the CI golden gate until the human source and answer review is complete. The existing signed-off scholarship amount notice covers that policy copy only, not the rest of the catalog.
 - 7.4's production release signoff remains a separate gate.
 

@@ -13,10 +13,13 @@
       "life": 4
     },
     "generator": "One request per golden question; sequential; no retry; stops on first HTTP failure.",
-    "reviewStatus": "pending-human-review"
+    "reviewStatus": "user-reviewed-no-issue",
+    "humanReviewStatus": "user-reviewed-no-issue",
+    "humanReviewedAt": "2026-10-28",
+    "humanReviewer": "用户（会话确认）"
   },
   "completedCount": 20,
-  "completionStatus": "awaiting-human-review",
+  "completionStatus": "captured-and-user-reviewed",
   "results": [
     {
       "id": "scholarship-national-award-amounts",
@@ -83,14 +86,12 @@
         }
       ],
       "generationDate": "2026-10-28",
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "user-reviewed-no-issue",
       "review": {
-        "sourceConsistency": "pending",
-        "historicalPolicyFraming": "pending",
-        "datesAndCurrentness": "pending",
-        "notes": "",
-        "conditionsAndMaterials": "pending",
-        "factualSupport": "pending"
+        "status": "user-reviewed-no-issue",
+        "reviewedAt": "2026-10-28",
+        "reviewer": "用户（会话确认）",
+        "note": "用户通读 20 条审阅包并确认没有问题；未单独填写逐维度评分。"
       },
       "feedbackEligible": true
     },
@@ -167,14 +168,12 @@
         }
       ],
       "generationDate": "2026-10-28T15:16:46.5472653+08:00",
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "user-reviewed-no-issue",
       "review": {
-        "sourceConsistency": "pending",
-        "historicalPolicyFraming": "pending",
-        "datesAndCurrentness": "pending",
-        "notes": "",
-        "conditionsAndMaterials": "pending",
-        "factualSupport": "pending"
+        "status": "user-reviewed-no-issue",
+        "reviewedAt": "2026-10-28",
+        "reviewer": "用户（会话确认）",
+        "note": "用户通读 20 条审阅包并确认没有问题；未单独填写逐维度评分。"
       }
     },
     {
@@ -238,14 +237,12 @@
         }
       ],
       "generationDate": "2026-10-28T15:16:51.8345551+08:00",
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "user-reviewed-no-issue",
       "review": {
-        "sourceConsistency": "pending",
-        "historicalPolicyFraming": "pending",
-        "datesAndCurrentness": "pending",
-        "notes": "",
-        "conditionsAndMaterials": "pending",
-        "factualSupport": "pending"
+        "status": "user-reviewed-no-issue",
+        "reviewedAt": "2026-10-28",
+        "reviewer": "用户（会话确认）",
+        "note": "用户通读 20 条审阅包并确认没有问题；未单独填写逐维度评分。"
       }
     },
     {
@@ -310,14 +307,12 @@
         }
       ],
       "generationDate": "2026-10-28T15:16:55.7447549+08:00",
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "user-reviewed-no-issue",
       "review": {
-        "sourceConsistency": "pending",
-        "historicalPolicyFraming": "pending",
-        "datesAndCurrentness": "pending",
-        "notes": "",
-        "conditionsAndMaterials": "pending",
-        "factualSupport": "pending"
+        "status": "user-reviewed-no-issue",
+        "reviewedAt": "2026-10-28",
+        "reviewer": "用户（会话确认）",
+        "note": "用户通读 20 条审阅包并确认没有问题；未单独填写逐维度评分。"
       }
     },
     {
@@ -357,14 +352,12 @@
         }
       ],
       "generationDate": "2026-10-28T15:16:59.7866739+08:00",
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "user-reviewed-no-issue",
       "review": {
-        "sourceConsistency": "pending",
-        "historicalPolicyFraming": "pending",
-        "datesAndCurrentness": "pending",
-        "notes": "",
-        "conditionsAndMaterials": "pending",
-        "factualSupport": "pending"
+        "status": "user-reviewed-no-issue",
+        "reviewedAt": "2026-10-28",
+        "reviewer": "用户（会话确认）",
+        "note": "用户通读 20 条审阅包并确认没有问题；未单独填写逐维度评分。"
       }
     },
     {
@@ -416,14 +409,12 @@
         }
       ],
       "generationDate": "2026-10-28T15:17:04.0845867+08:00",
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "user-reviewed-no-issue",
       "review": {
-        "sourceConsistency": "pending",
-        "historicalPolicyFraming": "pending",
-        "datesAndCurrentness": "pending",
-        "notes": "",
-        "conditionsAndMaterials": "pending",
-        "factualSupport": "pending"
+        "status": "user-reviewed-no-issue",
+        "reviewedAt": "2026-10-28",
+        "reviewer": "用户（会话确认）",
+        "note": "用户通读 20 条审阅包并确认没有问题；未单独填写逐维度评分。"
       }
     },
     {
@@ -499,14 +490,12 @@
         }
       ],
       "generationDate": "2026-10-28T15:17:08.5800895+08:00",
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "user-reviewed-no-issue",
       "review": {
-        "sourceConsistency": "pending",
-        "historicalPolicyFraming": "pending",
-        "datesAndCurrentness": "pending",
-        "notes": "",
-        "conditionsAndMaterials": "pending",
-        "factualSupport": "pending"
+        "status": "user-reviewed-no-issue",
+        "reviewedAt": "2026-10-28",
+        "reviewer": "用户（会话确认）",
+        "note": "用户通读 20 条审阅包并确认没有问题；未单独填写逐维度评分。"
       }
     },
     {
@@ -582,14 +571,12 @@
         }
       ],
       "generationDate": "2026-10-28T15:17:13.2580986+08:00",
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "user-reviewed-no-issue",
       "review": {
-        "sourceConsistency": "pending",
-        "historicalPolicyFraming": "pending",
-        "datesAndCurrentness": "pending",
-        "notes": "",
-        "conditionsAndMaterials": "pending",
-        "factualSupport": "pending"
+        "status": "user-reviewed-no-issue",
+        "reviewedAt": "2026-10-28",
+        "reviewer": "用户（会话确认）",
+        "note": "用户通读 20 条审阅包并确认没有问题；未单独填写逐维度评分。"
       }
     },
     {
@@ -665,14 +652,12 @@
         }
       ],
       "generationDate": "2026-10-28T15:17:17.7229857+08:00",
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "user-reviewed-no-issue",
       "review": {
-        "sourceConsistency": "pending",
-        "historicalPolicyFraming": "pending",
-        "datesAndCurrentness": "pending",
-        "notes": "",
-        "conditionsAndMaterials": "pending",
-        "factualSupport": "pending"
+        "status": "user-reviewed-no-issue",
+        "reviewedAt": "2026-10-28",
+        "reviewer": "用户（会话确认）",
+        "note": "用户通读 20 条审阅包并确认没有问题；未单独填写逐维度评分。"
       }
     },
     {
@@ -737,14 +722,12 @@
         }
       ],
       "generationDate": "2026-10-28T15:17:24.3562567+08:00",
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "user-reviewed-no-issue",
       "review": {
-        "sourceConsistency": "pending",
-        "historicalPolicyFraming": "pending",
-        "datesAndCurrentness": "pending",
-        "notes": "",
-        "conditionsAndMaterials": "pending",
-        "factualSupport": "pending"
+        "status": "user-reviewed-no-issue",
+        "reviewedAt": "2026-10-28",
+        "reviewer": "用户（会话确认）",
+        "note": "用户通读 20 条审阅包并确认没有问题；未单独填写逐维度评分。"
       }
     },
     {
@@ -796,14 +779,12 @@
         }
       ],
       "generationDate": "2026-10-28T15:17:30.4796412+08:00",
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "user-reviewed-no-issue",
       "review": {
-        "sourceConsistency": "pending",
-        "historicalPolicyFraming": "pending",
-        "datesAndCurrentness": "pending",
-        "notes": "",
-        "conditionsAndMaterials": "pending",
-        "factualSupport": "pending"
+        "status": "user-reviewed-no-issue",
+        "reviewedAt": "2026-10-28",
+        "reviewer": "用户（会话确认）",
+        "note": "用户通读 20 条审阅包并确认没有问题；未单独填写逐维度评分。"
       }
     },
     {
@@ -855,14 +836,12 @@
         }
       ],
       "generationDate": "2026-10-28T15:17:34.0054678+08:00",
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "user-reviewed-no-issue",
       "review": {
-        "sourceConsistency": "pending",
-        "historicalPolicyFraming": "pending",
-        "datesAndCurrentness": "pending",
-        "notes": "",
-        "conditionsAndMaterials": "pending",
-        "factualSupport": "pending"
+        "status": "user-reviewed-no-issue",
+        "reviewedAt": "2026-10-28",
+        "reviewer": "用户（会话确认）",
+        "note": "用户通读 20 条审阅包并确认没有问题；未单独填写逐维度评分。"
       }
     },
     {
@@ -902,14 +881,12 @@
         }
       ],
       "generationDate": "2026-10-28T15:17:38.2824656+08:00",
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "user-reviewed-no-issue",
       "review": {
-        "sourceConsistency": "pending",
-        "historicalPolicyFraming": "pending",
-        "datesAndCurrentness": "pending",
-        "notes": "",
-        "conditionsAndMaterials": "pending",
-        "factualSupport": "pending"
+        "status": "user-reviewed-no-issue",
+        "reviewedAt": "2026-10-28",
+        "reviewer": "用户（会话确认）",
+        "note": "用户通读 20 条审阅包并确认没有问题；未单独填写逐维度评分。"
       }
     },
     {
@@ -961,14 +938,12 @@
         }
       ],
       "generationDate": "2026-10-28T15:17:43.0667114+08:00",
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "user-reviewed-no-issue",
       "review": {
-        "sourceConsistency": "pending",
-        "historicalPolicyFraming": "pending",
-        "datesAndCurrentness": "pending",
-        "notes": "",
-        "conditionsAndMaterials": "pending",
-        "factualSupport": "pending"
+        "status": "user-reviewed-no-issue",
+        "reviewedAt": "2026-10-28",
+        "reviewer": "用户（会话确认）",
+        "note": "用户通读 20 条审阅包并确认没有问题；未单独填写逐维度评分。"
       }
     },
     {
@@ -1020,14 +995,12 @@
         }
       ],
       "generationDate": "2026-10-28T15:17:47.6397642+08:00",
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "user-reviewed-no-issue",
       "review": {
-        "sourceConsistency": "pending",
-        "historicalPolicyFraming": "pending",
-        "datesAndCurrentness": "pending",
-        "notes": "",
-        "conditionsAndMaterials": "pending",
-        "factualSupport": "pending"
+        "status": "user-reviewed-no-issue",
+        "reviewedAt": "2026-10-28",
+        "reviewer": "用户（会话确认）",
+        "note": "用户通读 20 条审阅包并确认没有问题；未单独填写逐维度评分。"
       }
     },
     {
@@ -1103,14 +1076,12 @@
         }
       ],
       "generationDate": "2026-10-28T15:17:52.2544337+08:00",
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "user-reviewed-no-issue",
       "review": {
-        "sourceConsistency": "pending",
-        "historicalPolicyFraming": "pending",
-        "datesAndCurrentness": "pending",
-        "notes": "",
-        "conditionsAndMaterials": "pending",
-        "factualSupport": "pending"
+        "status": "user-reviewed-no-issue",
+        "reviewedAt": "2026-10-28",
+        "reviewer": "用户（会话确认）",
+        "note": "用户通读 20 条审阅包并确认没有问题；未单独填写逐维度评分。"
       }
     },
     {
@@ -1150,14 +1121,12 @@
         }
       ],
       "generationDate": "2026-10-28T15:17:57.1345647+08:00",
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "user-reviewed-no-issue",
       "review": {
-        "sourceConsistency": "pending",
-        "historicalPolicyFraming": "pending",
-        "datesAndCurrentness": "pending",
-        "notes": "",
-        "conditionsAndMaterials": "pending",
-        "factualSupport": "pending"
+        "status": "user-reviewed-no-issue",
+        "reviewedAt": "2026-10-28",
+        "reviewer": "用户（会话确认）",
+        "note": "用户通读 20 条审阅包并确认没有问题；未单独填写逐维度评分。"
       }
     },
     {
@@ -1221,14 +1190,12 @@
         }
       ],
       "generationDate": "2026-10-28T15:18:01.5678429+08:00",
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "user-reviewed-no-issue",
       "review": {
-        "sourceConsistency": "pending",
-        "historicalPolicyFraming": "pending",
-        "datesAndCurrentness": "pending",
-        "notes": "",
-        "conditionsAndMaterials": "pending",
-        "factualSupport": "pending"
+        "status": "user-reviewed-no-issue",
+        "reviewedAt": "2026-10-28",
+        "reviewer": "用户（会话确认）",
+        "note": "用户通读 20 条审阅包并确认没有问题；未单独填写逐维度评分。"
       }
     },
     {
@@ -1269,14 +1236,12 @@
         }
       ],
       "generationDate": "2026-10-28T15:18:06.5334289+08:00",
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "user-reviewed-no-issue",
       "review": {
-        "sourceConsistency": "pending",
-        "historicalPolicyFraming": "pending",
-        "datesAndCurrentness": "pending",
-        "notes": "",
-        "conditionsAndMaterials": "pending",
-        "factualSupport": "pending"
+        "status": "user-reviewed-no-issue",
+        "reviewedAt": "2026-10-28",
+        "reviewer": "用户（会话确认）",
+        "note": "用户通读 20 条审阅包并确认没有问题；未单独填写逐维度评分。"
       }
     },
     {
@@ -1352,14 +1317,12 @@
         }
       ],
       "generationDate": "2026-10-28T15:18:10.6632728+08:00",
-      "reviewStatus": "pending-human-review",
+      "reviewStatus": "user-reviewed-no-issue",
       "review": {
-        "sourceConsistency": "pending",
-        "historicalPolicyFraming": "pending",
-        "datesAndCurrentness": "pending",
-        "notes": "",
-        "conditionsAndMaterials": "pending",
-        "factualSupport": "pending"
+        "status": "user-reviewed-no-issue",
+        "reviewedAt": "2026-10-28",
+        "reviewer": "用户（会话确认）",
+        "note": "用户通读 20 条审阅包并确认没有问题；未单独填写逐维度评分。"
       }
     }
   ]
