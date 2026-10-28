@@ -1,0 +1,139 @@
+{
+  "summary": {
+    "goldenPath": "server/evals/campus-service-golden-holdout-v2.json",
+    "vectorEnabled": true,
+    "total": 10,
+    "passed": 8,
+    "failed": 2,
+    "top1Accuracy": 0.8,
+    "threshold": 0.8,
+    "negativeTotal": 0,
+    "negativePassed": 0,
+    "negativeFailed": 0,
+    "negativeAccuracy": 1,
+    "negativeThreshold": 1,
+    "status": "pass"
+  },
+  "results": [
+    {
+      "kind": "positive",
+      "id": "holdout-entrance-review-window",
+      "category": "teaching",
+      "query": "按学校新生入学资格复查办法，复查应在新生报到后多长时间内完成？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院普通高考新生入学资格复查工作实施办法",
+      "actualScore": 160.9119,
+      "expectedTitleIncludes": [
+        "广东第二师范学院普通高考新生入学资格复查工作实施办法"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "holdout-entrance-review-art-program",
+      "category": "teaching",
+      "query": "按手册所载新生复查办法，艺术、体育类新生是否需要进行专业水平复测？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院普通高考新生入学资格复查工作实施办法",
+      "actualScore": 27.5,
+      "expectedTitleIncludes": [
+        "广东第二师范学院普通高考新生入学资格复查工作实施办法"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "holdout-second-class-graduation-credit",
+      "category": "teaching",
+      "query": "按手册所载第二课堂成绩单办法，四年制本科毕业至少需要获得多少第二课堂学分？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院“第二课堂成绩单”制度实施办法",
+      "actualScore": 166.1247,
+      "expectedTitleIncludes": [
+        "广东第二师范学院“第二课堂成绩单”制度实施办法"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "holdout-second-class-credit-split",
+      "category": "teaching",
+      "query": "按手册所载第二课堂办法，必修学分和选修学分各是多少？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院“第二课堂成绩单”制度实施办法",
+      "actualScore": 55,
+      "expectedTitleIncludes": [
+        "广东第二师范学院“第二课堂成绩单”制度实施办法"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "holdout-competition-preregistration",
+      "category": "scholarship",
+      "query": "按手册所载学生竞赛奖励办法，参赛前要办理什么手续，未报备会怎样？",
+      "passed": false,
+      "actualTitle": "管理规定(修订)",
+      "actualScore": 3.3641,
+      "expectedTitleIncludes": [
+        "广东第二师范学院学生竞赛奖励实施办法(试行)"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "holdout-competition-award-window",
+      "category": "scholarship",
+      "query": "按手册所载办法，学生竞赛奖学金申报通知通常何时下发、材料通常何时提交？",
+      "passed": false,
+      "actualTitle": "关于开展2025年学生竞赛奖学金申请和评审工作的通知",
+      "actualScore": 97,
+      "expectedTitleIncludes": [
+        "广东第二师范学院学生竞赛奖励实施办法(试行)"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "holdout-infection-reporting",
+      "category": "life",
+      "query": "按手册所载传染病防控办法，学生确诊或疑似传染病后要报告谁，能否带病返校？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院传染病防控管理办法",
+      "actualScore": 115.7828,
+      "expectedTitleIncludes": [
+        "广东第二师范学院传染病防控管理办法"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "holdout-infection-referral",
+      "category": "life",
+      "query": "按手册所载传染病防控办法，发现疑似病例后由谁安排转诊并跟进检查结果？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院传染病防控管理办法",
+      "actualScore": 103.4023,
+      "expectedTitleIncludes": [
+        "广东第二师范学院传染病防控管理办法"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "holdout-tuberculosis-referral",
+      "category": "life",
+      "query": "按手册所载结核病防控办法，海珠和花都校区发现疑似肺结核时分别转诊到哪里？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院结核病防控管理办法",
+      "actualScore": 129.4697,
+      "expectedTitleIncludes": [
+        "广东第二师范学院结核病防控管理办法"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "holdout-tuberculosis-contact-screening",
+      "category": "life",
+      "query": "按手册所载结核病防控办法，密切接触者筛查无异常后可以继续上课吗？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院结核病防控管理办法",
+      "actualScore": 129.1978,
+      "expectedTitleIncludes": [
+        "广东第二师范学院结核病防控管理办法"
+      ]
+    }
+  ]
+}

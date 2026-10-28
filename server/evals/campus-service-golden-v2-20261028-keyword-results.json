@@ -1,0 +1,736 @@
+{
+  "summary": {
+    "goldenPath": "server/evals/campus-service-golden-questions-v2-draft.json",
+    "vectorEnabled": false,
+    "total": 50,
+    "passed": 50,
+    "failed": 0,
+    "top1Accuracy": 1,
+    "threshold": 0.9,
+    "negativeTotal": 10,
+    "negativePassed": 10,
+    "negativeFailed": 0,
+    "negativeAccuracy": 1,
+    "negativeThreshold": 1,
+    "status": "pass"
+  },
+  "results": [
+    {
+      "kind": "positive",
+      "id": "teaching-makeup-registration",
+      "category": "teaching",
+      "query": "依据全日制学生学籍管理规定，课程不及格后多久能补考、最多几次？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院全日制学生学籍管理规定",
+      "actualScore": 199,
+      "expectedTitleIncludes": [
+        "广东第二师范学院全日制学生学籍管理规定"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "teaching-transfer-requirements",
+      "category": "teaching",
+      "query": "普通本科生申请转专业需要什么条件？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院普通本科生转专业管理规定(2018年修订)",
+      "actualScore": 99,
+      "expectedTitleIncludes": [
+        "普通本科生转专业工作的通知",
+        "广东第二师范学院普通本科生转专业管理规定"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "teaching-elective-registration",
+      "category": "teaching",
+      "query": "第二学期选修课怎么网上选课？",
+      "passed": true,
+      "actualTitle": "关于2025-2026学年第2学期选修课网上选课的通知",
+      "actualScore": 99.5,
+      "expectedTitleIncludes": [
+        "第2学期选修课网上选课"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "teaching-public-elective-guide",
+      "category": "teaching",
+      "query": "公共任选课目录和选课指南在哪里看？",
+      "passed": true,
+      "actualTitle": "关于公布2025-2026学年第2学期公共任选课可供选课课程目录和选课指南的通知",
+      "actualScore": 63.25,
+      "expectedTitleIncludes": [
+        "公共任选课可供选课课程目录和选课指南"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "teaching-academic-warning",
+      "category": "teaching",
+      "query": "收到学业预警后要怎么处理？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院本科学生学业预警管理办法",
+      "actualScore": 37.5,
+      "expectedTitleIncludes": [
+        "本科学生学业预警工作的通知",
+        "广东第二师范学院本科学生学业预警管理办法"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "exam-cet-registration",
+      "category": "exam",
+      "query": "2026年上半年英语四六级什么时候报名？",
+      "passed": true,
+      "actualTitle": "关于做好2026年上半年全国大学英语（小语种）四、六级考试报名工作的通知",
+      "actualScore": 6.25,
+      "expectedTitleIncludes": [
+        "2026年上半年全国大学英语（小语种）四、六级考试报名"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "exam-cet-arrangements",
+      "category": "exam",
+      "query": "2025年12月全国英语四、六级考试考生要注意哪些事项？",
+      "passed": true,
+      "actualTitle": "关于做好2025年12月全国大学英语四、六级考试有关事项的通知",
+      "actualScore": 45.25,
+      "expectedTitleIncludes": [
+        "全国大学英语四、六级考试有关事项"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "exam-discipline",
+      "category": "exam",
+      "query": "学校期末考试纪律有什么要求？",
+      "passed": true,
+      "actualTitle": "关于加强2025年秋季学期期末考试纪律教育工作的通知",
+      "actualScore": 57.75,
+      "expectedTitleIncludes": [
+        "期末考试纪律教育工作的通知"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "exam-makeup-results",
+      "category": "exam",
+      "query": "第二学期补考成绩什么时候录入？",
+      "passed": true,
+      "actualTitle": "关于2025-2026学年第二学期补考、成绩录入和毕业审核安排的通知",
+      "actualScore": 81.5,
+      "expectedTitleIncludes": [
+        "第二学期补考、成绩录入和毕业审核安排"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "exam-final-inspection",
+      "category": "exam",
+      "query": "学校期末考试巡考怎么安排？",
+      "passed": true,
+      "actualTitle": "关于开展2025-2026学年第一学期期末考试巡考工作的通知",
+      "actualScore": 67.75,
+      "expectedTitleIncludes": [
+        "第一学期期末考试巡考工作的通知"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "scholarship-national-inspirational",
+      "category": "scholarship",
+      "query": "国家励志奖学金什么时候申请？",
+      "passed": true,
+      "actualTitle": "关于做好2024-2025学年国家奖学金和国家励志奖学金评审工作的通知",
+      "actualScore": 93.25,
+      "expectedTitleIncludes": [
+        "国家奖学金和国家励志奖学金评审工作的通知"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "scholarship-national-materials",
+      "category": "scholarship",
+      "query": "国家奖学金申请审批表的填写和报送有什么要求？",
+      "passed": true,
+      "actualTitle": "国家奖学金申请审批表填写与报送要求（材料规范）",
+      "actualScore": 134.5,
+      "expectedTitleIncludes": [
+        "国家奖学金申请审批表填写与报送要求"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "scholarship-grant-review",
+      "category": "scholarship",
+      "query": "国家助学金评审怎么申请？",
+      "passed": true,
+      "actualTitle": "关于做好2025-2026学年国家助学金评审工作的通知",
+      "actualScore": 78.25,
+      "expectedTitleIncludes": [
+        "国家助学金评审工作的通知"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "scholarship-financial-difficulty",
+      "category": "scholarship",
+      "query": "家庭经济困难学生认定怎么办理？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院家庭经济困难学生认定办法(试行)",
+      "actualScore": 220,
+      "expectedTitleIncludes": [
+        "家庭经济困难学生认定工作的通知",
+        "广东第二师范学院家庭经济困难学生认定办法"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "scholarship-competition",
+      "category": "scholarship",
+      "query": "学生竞赛奖学金怎么申请？",
+      "passed": true,
+      "actualTitle": "关于开展2025年学生竞赛奖学金申请和评审工作的通知",
+      "actualScore": 92,
+      "expectedTitleIncludes": [
+        "学生竞赛奖学金申请和评审工作的通知"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "life-repair",
+      "category": "life",
+      "query": "两校区智能报修遇到操作问题时，应该联系谁？",
+      "passed": true,
+      "actualTitle": "关于更换两校区智能报修系统的通知",
+      "actualScore": 75.5,
+      "expectedTitleIncludes": [
+        "更换两校区智能报修系统的通知"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "life-dorm-change",
+      "category": "life",
+      "query": "学生退宿调宿和复学床位怎么办理？",
+      "passed": true,
+      "actualTitle": "关于学生宿舍退宿、调宿办理及复学床位申请的通知",
+      "actualScore": 43.75,
+      "expectedTitleIncludes": [
+        "学生宿舍退宿、调宿办理及复学床位申请"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "life-winter-dorm",
+      "category": "life",
+      "query": "2026年寒假宿舍什么时候封闭？",
+      "passed": true,
+      "actualTitle": "关于2026年寒假学生宿舍区封闭管理的通知",
+      "actualScore": 15.5,
+      "expectedTitleIncludes": [
+        "2026年寒假学生宿舍区封闭管理"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "life-shuttle",
+      "category": "life",
+      "query": "第二学期两校区交通车怎么安排？",
+      "passed": true,
+      "actualTitle": "关于2025-2026学年第二学期两校区交通车运行时间安排的通知",
+      "actualScore": 119.25,
+      "expectedTitleIncludes": [
+        "第二学期两校区交通车运行时间安排"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "life-qingming",
+      "category": "life",
+      "query": "2026年清明节放假和调课怎么安排？",
+      "passed": true,
+      "actualTitle": "关于2026年清明节放假期间调停课的通知",
+      "actualScore": 46.25,
+      "expectedTitleIncludes": [
+        "2026年清明节放假期间调停课"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "teaching-semester-registration",
+      "category": "teaching",
+      "query": "每学期开学学生没能按时注册，要办理什么手续？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院全日制学生学籍管理规定",
+      "actualScore": 42.5,
+      "expectedTitleIncludes": [
+        "广东第二师范学院全日制学生学籍管理规定"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "teaching-transfer-conditions-handbook",
+      "category": "teaching",
+      "query": "普通本科生申请转专业要符合什么基本条件？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院普通本科生转专业管理规定(2018年修订)",
+      "actualScore": 84,
+      "expectedTitleIncludes": [
+        "广东第二师范学院普通本科生转专业管理规定"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "teaching-grade-point-average",
+      "category": "teaching",
+      "query": "平均学分绩点按什么公式计算？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院学分制实施办法",
+      "actualScore": 42.5,
+      "expectedTitleIncludes": [
+        "广东第二师范学院成绩管理办法",
+        "广东第二师范学院学分制实施办法"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "teaching-retake-score-record",
+      "category": "teaching",
+      "query": "受到考试处分后，通过补考或重修取得的成绩如何记入成绩单？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院学生考试违规处分规定(修订)",
+      "actualScore": 45,
+      "expectedTitleIncludes": [
+        "广东第二师范学院学生考试违规处分规定",
+        "广东第二师范学院成绩管理办法"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "teaching-study-period",
+      "category": "teaching",
+      "query": "《学分制实施办法》规定的本科标准学制和最长学习年限分别是多久？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院学分制实施办法",
+      "actualScore": 115,
+      "expectedTitleIncludes": [
+        "广东第二师范学院学分制实施办法"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "teaching-elective-modules",
+      "category": "teaching",
+      "query": "公共选修课按学科性质分为哪些模块？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院公共选修课管理办法(2025年修订)",
+      "actualScore": 90,
+      "expectedTitleIncludes": [
+        "广东第二师范学院公共选修课管理办法"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "teaching-academic-warning-levels",
+      "category": "teaching",
+      "query": "本科生学业预警分为哪几个等级？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院本科学生学业预警管理办法",
+      "actualScore": 82.5,
+      "expectedTitleIncludes": [
+        "广东第二师范学院本科学生学业预警管理办法"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "teaching-leave-approval-duration",
+      "category": "teaching",
+      "query": "《学生考勤、请假规定》中，请假十天以上由谁批准？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院学生考勤、请假规定",
+      "actualScore": 124.5,
+      "expectedTitleIncludes": [
+        "广东第二师范学院学生考勤、请假规定"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "teaching-degree-basic-conditions",
+      "category": "teaching",
+      "query": "普通本科毕业生申请学士学位需要满足哪些基本条件？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院学士学位授予管理办法(修订)",
+      "actualScore": 85,
+      "expectedTitleIncludes": [
+        "广东第二师范学院学士学位授予管理办法"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "teaching-new-student-late-registration",
+      "category": "teaching",
+      "query": "新生因故不能按期入学，应该怎么处理？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院全日制学生学籍管理规定",
+      "actualScore": 42.5,
+      "expectedTitleIncludes": [
+        "广东第二师范学院全日制学生学籍管理规定"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "exam-arrival-time",
+      "category": "exam",
+      "query": "参加考试要提前多久到考场？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院学生考试规则",
+      "actualScore": 33,
+      "expectedTitleIncludes": [
+        "广东第二师范学院学生考试规则"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "exam-late-entry",
+      "category": "exam",
+      "query": "考试迟到超过半小时还能进入考场吗？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院学生考试规则",
+      "actualScore": 55.5,
+      "expectedTitleIncludes": [
+        "广东第二师范学院学生考试规则"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "exam-identification",
+      "category": "exam",
+      "query": "考试入场时需要出示哪些证件？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院学生考试规则",
+      "actualScore": 23,
+      "expectedTitleIncludes": [
+        "广东第二师范学院学生考试规则"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "exam-forbidden-devices",
+      "category": "exam",
+      "query": "参加考试时哪些电子设备不能带到座位上？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院学生考试违规处分规定(修订)",
+      "actualScore": 43,
+      "expectedTitleIncludes": [
+        "广东第二师范学院学生考试规则",
+        "广东第二师范学院学生考试违规处分规定"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "exam-violation-types",
+      "category": "exam",
+      "query": "学校规定的考试违纪和考试作弊包括哪些情况？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院学生考试违规处分规定(修订)",
+      "actualScore": 60.5,
+      "expectedTitleIncludes": [
+        "广东第二师范学院学生考试违规处分规定"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "scholarship-hardship-recognition-process",
+      "category": "scholarship",
+      "query": "家庭经济困难学生认定要经过哪些评议和审核环节？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院家庭经济困难学生认定办法(试行)",
+      "actualScore": 202.5,
+      "expectedTitleIncludes": [
+        "广东第二师范学院家庭经济困难学生认定办法"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "scholarship-national-award-amounts",
+      "category": "scholarship",
+      "query": "2024-2025学年国家奖学金和国家励志奖学金的奖励标准分别是多少？",
+      "passed": true,
+      "actualTitle": "关于做好2024-2025学年国家奖学金和国家励志奖学金评审工作的通知",
+      "actualScore": 170.75,
+      "expectedTitleIncludes": [
+        "关于做好2024-2025学年国家奖学金和国家励志奖学金评审工作的通知"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "scholarship-national-grade-rank",
+      "category": "scholarship",
+      "query": "申请国家奖学金对年级和成绩排名有什么要求？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院国家奖助学金实施办法",
+      "actualScore": 89,
+      "expectedTitleIncludes": [
+        "广东第二师范学院国家奖助学金实施办法"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "scholarship-grant-tiering",
+      "category": "scholarship",
+      "query": "国家助学金根据什么划分资助档次？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院国家奖助学金实施办法",
+      "actualScore": 51.5,
+      "expectedTitleIncludes": [
+        "广东第二师范学院国家奖助学金实施办法"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "scholarship-work-study-scope",
+      "category": "scholarship",
+      "query": "学校规定的勤工助学活动是什么？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院学生勤工助学管理办法",
+      "actualScore": 60,
+      "expectedTitleIncludes": [
+        "广东第二师范学院学生勤工助学管理办法"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "scholarship-work-study-management",
+      "category": "scholarship",
+      "query": "校内勤工助学岗位由哪个部门负责具体实施？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院学生勤工助学管理办法",
+      "actualScore": 70,
+      "expectedTitleIncludes": [
+        "广东第二师范学院学生勤工助学管理办法"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "scholarship-work-study-principles",
+      "category": "scholarship",
+      "query": "学校组织勤工助学时遵循哪些基本原则？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院学生勤工助学管理办法",
+      "actualScore": 55,
+      "expectedTitleIncludes": [
+        "广东第二师范学院学生勤工助学管理办法"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "scholarship-overseas-exchange-support",
+      "category": "scholarship",
+      "query": "参加国际交换生项目的奖学金通常承担哪些费用，比例是多少？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院优秀学生海外研学奖学金管理办法(试行)",
+      "actualScore": 65,
+      "expectedTitleIncludes": [
+        "广东第二师范学院优秀学生海外研学奖学金管理办法"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "scholarship-overseas-camp-support",
+      "category": "scholarship",
+      "query": "参加海外专项训练营项目可以获得什么奖学金支持？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院优秀学生海外研学奖学金管理办法(试行)",
+      "actualScore": 95,
+      "expectedTitleIncludes": [
+        "广东第二师范学院优秀学生海外研学奖学金管理办法"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "scholarship-funding-review-flow",
+      "category": "scholarship",
+      "query": "学校资助资金从申请到发放经过什么流程？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院学生资助工作实施办法",
+      "actualScore": 29,
+      "expectedTitleIncludes": [
+        "广东第二师范学院学生资助工作实施办法"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "life-dorm-residency-eligibility",
+      "category": "life",
+      "query": "哪些学生可以在学校学生宿舍住宿？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院学生宿舍管理条例",
+      "actualScore": 101,
+      "expectedTitleIncludes": [
+        "广东第二师范学院学生宿舍管理条例"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "life-dorm-change-process",
+      "category": "life",
+      "query": "因教学需要申请调整宿舍，要经过什么流程？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院学生宿舍管理条例",
+      "actualScore": 33.5,
+      "expectedTitleIncludes": [
+        "广东第二师范学院学生宿舍管理条例"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "life-dorm-checkout-process",
+      "category": "life",
+      "query": "因休学或退学需要退出学生宿舍时，应到哪个部门办理退宿？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院学生宿舍管理条例",
+      "actualScore": 72,
+      "expectedTitleIncludes": [
+        "广东第二师范学院学生宿舍管理条例"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "life-tuberculosis-screening",
+      "category": "life",
+      "query": "学校体检会对新生和在校生开展哪些肺结核筛查？",
+      "passed": true,
+      "actualTitle": "广东第二师范学院传染病防控管理办法",
+      "actualScore": 14.5,
+      "expectedTitleIncludes": [
+        "广东第二师范学院结核病防控管理办法",
+        "广东第二师范学院传染病防控管理办法"
+      ]
+    },
+    {
+      "kind": "positive",
+      "id": "life-library-borrowing-limit",
+      "category": "life",
+      "query": "学生在图书馆最多可以借几本书，借阅期限是多久？",
+      "passed": true,
+      "actualTitle": "文献资源借阅管理规定",
+      "actualScore": 19.5,
+      "expectedTitleIncludes": [
+        "文献资源借阅管理规定"
+      ]
+    },
+    {
+      "kind": "negative",
+      "id": "negative-weather",
+      "category": "out-of-scope",
+      "query": "广州明天会不会下雨？",
+      "passed": true,
+      "actualTitle": "",
+      "actualScore": 0,
+      "expectedNoHit": true,
+      "rationale": "天气信息不在校园知识库。"
+    },
+    {
+      "kind": "negative",
+      "id": "negative-food-price",
+      "category": "out-of-scope",
+      "query": "今天花都校区食堂二楼红烧排骨多少钱？",
+      "passed": true,
+      "actualTitle": "",
+      "actualScore": 0,
+      "expectedNoHit": true,
+      "rationale": "知识库没有实时食堂菜单和价格。"
+    },
+    {
+      "kind": "negative",
+      "id": "negative-rental",
+      "category": "out-of-scope",
+      "query": "学校附近哪个小区租房最便宜？",
+      "passed": true,
+      "actualTitle": "",
+      "actualScore": 0,
+      "expectedNoHit": true,
+      "rationale": "知识库不提供周边租房信息。"
+    },
+    {
+      "kind": "negative",
+      "id": "negative-astrology",
+      "category": "out-of-scope",
+      "query": "帮我看看这周的星座运势和幸运颜色。",
+      "passed": true,
+      "actualTitle": "",
+      "actualScore": 0,
+      "expectedNoHit": true,
+      "rationale": "与学校办事和校内规定无关。"
+    },
+    {
+      "kind": "negative",
+      "id": "negative-financial-password",
+      "category": "out-of-scope",
+      "query": "我绑定的银行卡密码是多少？",
+      "passed": true,
+      "actualTitle": "",
+      "actualScore": 0,
+      "expectedNoHit": true,
+      "rationale": "个人账户隐私不在知识库，也不可推断。"
+    },
+    {
+      "kind": "negative",
+      "id": "negative-job-email",
+      "category": "out-of-scope",
+      "query": "请帮我代写一封申请外企实习的英文邮件。",
+      "passed": true,
+      "actualTitle": "",
+      "actualScore": 0,
+      "expectedNoHit": true,
+      "rationale": "这是通用写作请求，不属于校内事项来源检索。"
+    },
+    {
+      "kind": "negative",
+      "id": "negative-sports-schedule",
+      "category": "out-of-scope",
+      "query": "学校篮球队下一场比赛具体在什么时候？",
+      "passed": true,
+      "actualTitle": "",
+      "actualScore": 0,
+      "expectedNoHit": true,
+      "rationale": "知识库没有校队赛事日程。"
+    },
+    {
+      "kind": "negative",
+      "id": "negative-shopping",
+      "category": "out-of-scope",
+      "query": "珠江新城周末有哪些适合逛街的商场？",
+      "passed": true,
+      "actualTitle": "",
+      "actualScore": 0,
+      "expectedNoHit": true,
+      "rationale": "与学校办事和校内规定无关。"
+    },
+    {
+      "kind": "negative",
+      "id": "negative-future-cet",
+      "category": "unsupported-date",
+      "query": "2027年上半年英语四六级报名的具体日期是哪天？",
+      "passed": true,
+      "actualTitle": "",
+      "actualScore": 0,
+      "expectedNoHit": true,
+      "rationale": "当前知识库没有该年度已发布的报名日期。"
+    },
+    {
+      "kind": "negative",
+      "id": "negative-ambiguous-dorm",
+      "category": "ambiguous",
+      "query": "我想搬一下，学校怎么办？",
+      "passed": true,
+      "actualTitle": "",
+      "actualScore": 0,
+      "expectedNoHit": true,
+      "rationale": "没有说明搬宿舍、转校区或其他事项，应先澄清。"
+    }
+  ]
+}
