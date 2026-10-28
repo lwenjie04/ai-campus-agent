@@ -72,6 +72,16 @@ test('national grant standard and school-defined tier range are included', () =>
   assert.equal(matchPolicyUpdates('国家助学金金额是多少？').length, 1)
 })
 
+test('grant tiering questions include the signed-off current policy', () => {
+  const query = '国家助学金根据什么划分资助档次？'
+  const context = formatPolicyUpdateContext(query)
+
+  assert.equal(matchPolicyUpdates(query).length, 1)
+  assert.match(context, /平均资助标准.*3700 元/)
+  assert.match(context, /2500—5000 元/)
+  assert.match(context, /2—3 档/)
+})
+
 test('policy sources replace duplicate knowledge-base sources with the same title', () => {
   const duplicate = {
     title: '关于做好2024-2025学年国家奖学金和国家励志奖学金评审工作的通知',
