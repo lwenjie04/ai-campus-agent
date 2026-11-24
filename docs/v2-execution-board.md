@@ -537,6 +537,7 @@
 
 | 2026-10-28 | 占用 | 领取 5.4 技术收口：逐题核对来源与正文、补齐 Top 50/负例/独立留出集证据；AI-2 负责服务端与评估数据，人工现行性签收仍按证据处理 | AI-2（Codex） |
 | 2026-11-24 | 部分 | 7.4 目标环境验收（生产主机）：**管理员账号真实登录通过（200、role=admin）并在该会话下复验管理接口/TTS/知识闭环**；社区知识「生成→待审读取→审核发布→已发布读取」生产 MySQL 闭环 + 幂等 + 测试数据回滚；注册验证码发送/冷却/重发/过期/错误码与「注册→真实密码登录」，收件人已确认收到验证码邮件；登录态生产 TTS（管理员会话 94,732B / 真实管理员登录 70,788B / 真实用户 157,856B `audio/wav`，匿名 401）；生产主机隔离影子实例模型异常注入（`LLM_UPSTREAM_ERROR`/`LLM_TIMEOUT`、恢复来源、不扣额度、进程存活）；真实 bge-m3 embedding 隔离对照（纯向量 Top-1 hash 2/20→真实 17/20）与**混合权重调优**（推荐 `RAG_VECTOR_MIN_COSINE=0.60` + 权重 14 + `RAG_ANSWER_MIN_SCORE=9–12`，Top20 19/20、留出 9/10、草稿 48/50 + 负例 9/10；只提权重会使负例掉到 3/10）；公网流式/取消与 HTTPS/证书复核；**MySQL 应用账号由 root 全域权限切换为受限账号 `ai_campus_app`（仅 `ai_campus_agent.*` DML+CREATE），影子验证后重启 1 次并通过健康/社区/认证复核，env 已备份可回滚**。测试数据与 `/tmp` 全部清理，`shared/data` mtime、releaseId 未变。仍待：真实 embedding 生产切换（下批发版）、7.5 试用；**管理员口令已轮换（旧口令失效，新会话复核通过）**。保持 🟡，未设置 `RELEASE_LIVE_VALIDATION_CONFIRMED`。证据：[`releases/v2-7.4-acceptance-20261124.md`](releases/v2-7.4-acceptance-20261124.md) | 本次执行（Agent） |
+| 2026-11-24 | 完成 | 下批发版准备（RAG 语义门槛）：`server/rag.mjs` 新增 `RAG_VECTOR_MIN_COSINE`（默认 0 保持 hash 现状，真实 embedding 推荐 0.60）与 `filterVectorHitsByMinCosine` 在混合合并前过滤弱语义命中；新增测试 `server/tests/rag-vector-cosine-gate.test.mjs`（门槛开/关各一组，含子进程夹具）；`server/.env.example` 记录参数与推荐组合；分支 `feat/rag-vector-cosine-gate`。门禁：test:server 82/82、test:unit 129/129、type-check、build、oxlint 0 error、release:check READY WITH WARNINGS。注：Windows 本机偶发 `EACCES` 端口占用（`chat-fallback.test.mjs` 随机端口，预存在问题；CI 的 Linux runner 不受影响） | 本次执行（Agent） |
 ---
 
 ## 7. 每轮开工前的 30 秒检查

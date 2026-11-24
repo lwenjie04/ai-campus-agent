@@ -54,7 +54,7 @@ CI workflow 的一次真实 push run 已全绿。该结果不代表真实模型�
 
 - [x] 真实 LLM 普通问答和 RAG 均成功；样本 TTFT/总耗时分别为普通问答 6.284/6.287s、RAG 1.254/2.656s（4 条来源）。公网 `/api/chat/stream` 在首段后断开，TTFT 2.646s、客户端 reader cancel 2ms；代码级上游取消与额度竞态由服务端测试覆盖。
 - [x] 2026-11-24 公网复核：游客 Cookie `Secure/HttpOnly/SameSite=Lax`，事件 `start→phase→delta…→done` 共 179 个，首 delta 6722ms、完成 7901ms、来源 5 条，取消 2ms。
-- [ ] 配置并验证真实 Embedding 服务端凭据与语义检索结果；2026-11-24 已在生产主机隔离验证 bge-m3 凭据与索引构建，纯向量 Top-1 命中 2/20（hash）→ 17/20（真实），并完成混合权重调优（推荐 `RAG_VECTOR_MIN_COSINE=0.60` + `RAG_WEIGHT_VECTOR_SCORE=14` + `RAG_ANSWER_MIN_SCORE=9–12`，Top20 19/20、留出 9/10、草稿 48/50 + 负例 9/10）；但生产 `server.env` 仍未配置、线上仍为 hash-256，切换需随下批发版并重跑金标。证据见 [7.4 验收记录](releases/v2-7.4-acceptance-20261124.md) §2.6、§2.9。
+- [ ] 配置并验证真实 Embedding 服务端凭据与语义检索结果；2026-11-24 已在生产主机隔离验证 bge-m3 凭据与索引构建，纯向量 Top-1 命中 2/20（hash）→ 17/20（真实），并完成混合权重调优（推荐 `RAG_VECTOR_MIN_COSINE=0.60` + `RAG_WEIGHT_VECTOR_SCORE=14` + `RAG_ANSWER_MIN_SCORE=9–12`，Top20 19/20、留出 9/10、草稿 48/50 + 负例 9/10）；代码门槛已在分支 `feat/rag-vector-cosine-gate` 落地并通过本地门禁；生产 `server.env` 仍未配置、线上仍为 hash-256，切换需合并发布并重跑金标。证据见 [7.4 验收记录](releases/v2-7.4-acceptance-20261124.md) §2.6、§2.9、§3.3。
 - [x] 2026-11-24 在真实目标环境（生产主机、线上 release 代码）用隔离影子实例注入模型异常：上游 500 → `LLM_UPSTREAM_ERROR`（1.2s、保留 3 条恢复来源、不扣额度、进程存活、非流式 502）；上游挂起 → `LLM_TIMEOUT`（3.08s）；影子进程与端口已清理，线上未受影响。详见 [7.4 验收记录](releases/v2-7.4-acceptance-20261124.md) §2.5。
 - [x] 目标 MySQL 5.7.44 连接、增量迁移、反馈写入与幂等读回通过；备份已在隔离 schema 恢复验证（6 张基础表、6 条社区知识记录），临时 schema 已删除。
 - [x] 2026-11-24 通过管理员会话在生产 MySQL 完成社区知识生成（200，pending）、重复生成幂等、待审列表读取、审核通过（approved）、已发布列表读取与品牌字段校验；测试知识、审核日志与帖子字段全部回滚，复核 knowledge 6→6、日志 58→58。证据见 [7.4 验收记录](releases/v2-7.4-acceptance-20261124.md) §2.2。

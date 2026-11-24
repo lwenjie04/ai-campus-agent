@@ -51,6 +51,10 @@ const VECTOR_SEARCH_ENABLED = (process.env.RAG_VECTOR_ENABLED ?? 'true') === 'tr
 const VECTOR_SEARCH_LIMIT = toNumber(process.env.RAG_VECTOR_TOPK, 8)
 const KEYWORD_SEARCH_MULTIPLIER = toNumber(process.env.RAG_KEYWORD_LIMIT_MULTIPLIER, 3)
 const FINAL_VECTOR_WEIGHT = toNumber(process.env.RAG_WEIGHT_VECTOR_SCORE, 6)
+// 真实语义索引启用后，用余弦相似度门槛过滤弱语义命中，避免「无答案问题」被
+// 语义相近的切片误命中。默认 0（关闭），不改变 hash 索引/未启用向量时的行为；
+// 语义索引场景推荐 0.60（依据见 7.4 验收记录的向量调优）。
+const RAG_VECTOR_MIN_COSINE = Math.max(0, toNumber(process.env.RAG_VECTOR_MIN_COSINE, 0))
 
 const COMMUNITY_SOURCE_TYPES = new Set(['community_post', 'community_summary'])
 const COMMUNITY_SOURCE_NOTE = '以下内容来自学生社区经验总结，仅供参考，请以学校最新官方通知为准。'
@@ -653,6 +657,15 @@ export const getKnowledgeBaseEntryById = (id) => {
   return kb.find((item) => String(item.id) === String(id)) || null
 }
 
+// 语义命中准入过滤：只保留余弦相似度达到门槛的向量命中。
+// 默认门槛为 0（不过滤）；设置 RAG_VECTOR_MIN_COSINE 后生效。
+export const filterVectorHitsByMinCosine = (hits, options = {}) => {
+  if (!Array.isArray(hits) || hits.length === 0) return []
+  const threshold = Math.max(0, toNumber(options.minCosine, RAG_VECTOR_MIN_COSINE))
+  if (threshold <= 0) return hits
+  return hits.filter((hit) => Number(hit?.vectorScore) >= threshold)
+}
+
 export const searchKnowledgeBase = async (query, options = {}) => {
   const limit = options.limit ?? 3
   const minScore = options.minScore ?? RAG_ROUTE_MIN_SCORE
@@ -723,6 +736,7 @@ export const searchKnowledgeBase = async (query, options = {}) => {
 
   if (options.signal?.aborted) throw options.signal.reason
 
+  vectorHits = filterVectorHitsByMinCosine(vectorHits)
   const finalHits = rerankHybridHits(mergeHybridHits(keywordHits, vectorHits))
     .filter((hit) => hit.score >= minScore)
     .slice(0, limit)
