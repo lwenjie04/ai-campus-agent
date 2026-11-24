@@ -2,40 +2,41 @@
 
 | 项目             | 当前值                                                   |
 | ---------------- | -------------------------------------------------------- |
-| 更新日期         | 2026-10-27                                               |
+| 更新日期         | 2026-11-24                                               |
 | 分支             | `master`                                                 |
 | 版本             | `package.json` 仍为占位版本 `0.0.0`；未创建正式 tag      |
 | 线上地址         | <https://maila.club>                                     |
-| 当前线上 release | `c468b3d4aaf0cc63f3eaca306714ddb4b1840147-40483956902-2`（2026-10-27 Deploy #36 attempt 2；最终以 `/api/health` 为准） |
-| 阶段             | V2 目标环境验证进行中；5.4 政策提示已上线并完成公网复核，7.4 人工发布签收未完成 |
+| 当前线上 release | `c468b3d4aaf0cc63f3eaca306714ddb4b1840147-40483956902-2`（2026-10-27 Deploy #36 attempt 2；2026-11-24 复核 `/api/health` 200 且 releaseId 匹配） |
+| 阶段             | V2 目标环境验证进行中；2026-11-24 完成 7.4 多项生产验证（含 MySQL 最小权限切换与验证码邮件到达确认）并留存证据（[7.4 验收记录](releases/v2-7.4-acceptance-20261124.md)），管理员真实密码登录、真实 Embedding 生产切换（已决定随下批发版并先调权重）待处理，7.4 人工发布签收未完成 |
 
 ## 当前结论
 
-2026-10-27 已将 42 个提交（5.2/5.3 前端、5.4 RAG 时效与现行政策提示、0.2 设计归档等）合并部署到生产并完成公网复核；政策提示内容已人工签收（`policy-updates.json` 为 `signed-off`），金额/标准类问题在公网可返回 2024 年起的正确标准并前置官方来源。7.3 的 CI 与自动部署已有 GitHub Actions 成功记录，线上服务可用。7.4 已完成生产 MySQL 反馈迁移、反馈持久化、备份恢复检查、真实 LLM/RAG 样本、SSE 断开取消、响应式矩阵和一次回滚恢复演练。用户已确认收到邮箱检测邮件；这只确认测试邮件到达，注册验证码的过期/重发流程仍未验证。**7.4 仍未完成**：管理员登录与登录态 TTS 按用户决定暂缓，社区知识管理 API 的生产持久化闭环、真实 Embedding 配置/验证、模型异常注入和真实用户试用尚未完成。不得把当前状态描述为发布已验收，也不得设置 `RELEASE_LIVE_VALIDATION_CONFIRMED=true`。
+2026-11-24 在生产目标环境完成一轮 7.4 验证：管理员会话鉴权与权限边界、社区知识「生成→待审读取→审核发布→已发布读取」生产 MySQL 闭环（含幂等与回滚）、注册验证码发送/冷却/重发/错误码/过期与「注册→真实密码登录」链路（邮件到达已由收件人确认）、登录态生产 TTS、模型异常注入（隔离影子实例：`LLM_UPSTREAM_ERROR`/`LLM_TIMEOUT`、保留恢复来源、不扣额度、进程存活）、真实 bge-m3 Embedding 凭据与语义检索隔离对照（纯向量 Top-1 命中 hash 2/20 → 真实 17/20）、公网流式与取消样本、HTTPS/证书复核，并把生产 MySQL 应用账号从 `root` 全域权限切换为仅 `ai_campus_agent.*` 的 `SELECT/INSERT/UPDATE/DELETE/CREATE` 受限账号（重启 1 次后复核通过，保留 env 备份与回滚命令）。测试数据与临时文件全部清理，`shared/data` mtime 与线上 release 未变。**7.4 仍未完成**：管理员真实密码登录（`server.env` 默认口令返回 `AUTH_INVALID`，已停止重试）、真实 Embedding 生产切换（影子验证通过但线上仍为 hash-256，已决定先调混合权重并随下批发版）；另真实用户试用（7.5）与人工签收未完成。不得把当前状态描述为发布已验收，也不得设置 `RELEASE_LIVE_VALIDATION_CONFIRMED=true`。
 
 ## 已有验证证据
 
 | 范围               | 结果                                                                                                  | 证据与边界                                                                                                                                                                                                                                                                                 |
 | ------------------ | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 前端单测           | 129/129                                                                                               | `npm run test:unit`；覆盖 5.2/5.3 办事指南与搜索桥接、会话与反馈等前端状态                                                                                                                                                                                                                 |
-| 服务端测试         | 78/78                                                                                                 | `npm run test:server`；包含 5.4 currentness、policy-updates 与长句召回回归；不代替生产验证                                                                                                                                                                                                  |
-| 生产构建与静态检查 | 构建通过；lint 通过；后端语法检查 83 个模块                                                           | `npm run build`、`npm run lint`、`npm run server:check`，此前记录见 `docs/development-baseline-v2.md`                                                                                                                                                                                      |
+| 服务端测试         | 80/80                                                                                                 | `npm run test:server`（2026-11-24 复跑）；包含 5.4 currentness、policy-updates 与长句召回回归；不代替生产验证                                                                                                                                                                                 |
+| 生产构建与静态检查 | 构建通过（1669 模块）；oxlint 189 文件 0 警告/0 错误；后端语法检查 83 个模块；`release:check` READY WITH WARNINGS（4 条均为本地配置/索引告警） | 2026-11-24 本机复跑 `npm run build`、`npm run lint`、`npm run server:check`、`npm run release:check`；`lint` 仅因未跟踪脚本 `server/scripts/robot-preview-browser.mjs` 报 1 error，排除该文件后通过                                                                                          |
 | 7.3 CI 与 CD       | Quality 五 job 全绿；Deploy #36 attempt 2 已部署当前线上 release                                    | Quality [run 40483742473](https://github.com/lwenjie04/ai-campus-agent/actions/runs/40483742473)，Deploy [run 40483956902](https://github.com/lwenjie04/ai-campus-agent/actions/runs/40483956902)（attempt 1 上传超时、attempt 2 成功），线上 release `c468b3d...-40483956902-2`；5.4 Top 50 仍未完成 |
-| 真实 LLM 与 RAG    | 普通问答 HTTP 200；TTFT/总耗时 6.284/6.287s；RAG 1.254/2.656s、4 条来源；LightRAG health 42ms         | 单次样本，不代表高并发容量；真实 embedding 服务端密钥待用户配置并验证                                                                                                                                                                                                                      |
-| 线上流式取消       | 首段后主动断开，TTFT 2.646s，客户端 reader cancel 2ms；公网返回 Secure 游客 Cookie                    | 真实 `/api/chat/stream`；取消信号传播和额度结算竞态另由服务端测试覆盖，线上模型故障注入未测                                                                                                                                                                                                |
-| 生产 MySQL 与反馈  | MySQL 5.7.44 增量迁移通过；`feedbackEligible:true` 后提交反馈 HTTP 200，数据库读回后清理测试数据      | 备份 `/var/backups/ai-campus-agent/ai_campus_agent_pre_chat_feedback_20261023T034120Z.sql.gz`，SHA-256 `b8aaab1b5ee88a80230ac3e19c9e0a36364babe9e0c25d91e055b2a3d1c545ed`；隔离 schema 恢复 6 张基础表与 6 条社区知识记录后已删除测试 schema。社区知识生产 API 写入/读取仍待管理员登录验证 |
-| TTS 与邮件         | 真实腾讯 TTS 直连合成曾用时 838ms；匿名 `/api/tts` 为 401 `AUTH_REQUIRED`；用户确认收到邮箱检测邮件   | `TTS_AUTH_TOKEN` 已从生产配置移除；登录态 TTS 按用户决定暂缓。邮件到达检查通过，但注册验证码的实际流程、过期与重发未测                                                                                                                                                                     |
+| 7.4 目标环境验证（2026-11-24） | 管理员会话鉴权与 403 边界、社区知识「生成→待审读取→审核发布→已发布读取」生产 MySQL 闭环、注册验证码发送/冷却/重发/过期/错误码与「注册→真实密码登录」、登录态生产 TTS、模型异常注入（隔离影子实例）、真实 bge-m3 语义检索隔离对照（纯向量 Top-1 2/20→17/20）、公网流式/取消样本、MySQL 最小权限切换均通过 | 详见 [v2-7.4-acceptance-20261124.md](releases/v2-7.4-acceptance-20261124.md)；测试数据与临时文件已清理并复核，`shared/data` 文件 mtime 与线上 releaseId 未变；MySQL 应用账号已从 `root` 切换为受限账号（env 备份 `server.env.bak-20261124153835`，重启 1 次）；管理员真实密码登录与真实 Embedding 生产切换仍待处理 |
+| 真实 LLM 与 RAG    | 2026-11-24 公网样本：首事件 191ms、首个 delta 6722ms、完成 7901ms、来源 5 条、终态 `done`         | 单次样本，不代表高并发容量；线上仍为自述 hash-256 索引，真实 embedding 仅在目标机隔离目录验证，未切换生产                                                                                                                                                                                   |
+| 线上流式取消       | 2026-11-24 复核：客户端 reader cancel 2ms，进程正常；事件序列 `start→phase→delta…→done` 共 179 个 | 真实 `/api/chat/stream`；线上模型故障注入已由生产主机隔离影子实例覆盖（不扰动生产进程）                                                                                                                                                                                                     |
+| 生产 MySQL 与反馈  | MySQL 5.7.44 增量迁移通过；`feedbackEligible:true` 后提交反馈 HTTP 200，数据库读回后清理测试数据；2026-11-24 社区知识 API 生成/读取/审核/回滚闭环通过 | 备份 `/var/backups/ai-campus-agent/ai_campus_agent_pre_chat_feedback_20261023T034120Z.sql.gz`，SHA-256 `b8aaab1b5ee88a80230ac3e19c9e0a36364babe9e0c25d91e055b2a3d1c545ed`；隔离 schema 恢复 6 张基础表与 6 条社区知识记录后已删除测试 schema。社区知识生产 API 已由管理员会话验证并清理测试数据 |
+| TTS 与邮件         | 2026-11-24 登录态 TTS 200 `audio/wav`（管理员会话 94,732B、真实用户会话 157,856B，`tencentcloud-short`）；匿名 `/api/tts` 401 `AUTH_REQUIRED`；注册验证码已发送 2 封且收件人确认收到（含垃圾箱） | `TTS_AUTH_TOKEN` 已从生产配置移除；线上 TTS 限频未压测（单测覆盖）。验证码发送/冷却/重发/过期/注册/登录已在生产验证，邮件到达已确认 |
 | HTTPS 与响应式     | 公网健康检查 HTTP 200 且 releaseId 匹配；首页/问答 360、390、768、1024、1440 共 10/10，无横向溢出     | `server/evals/production-7.4-responsive-full-20261023.json` 与 `docs/design/verify/production-7.4-responsive-20261023/`                                                                                                                                                                    |
 | 回滚与资源         | 回滚到上一版 `7115da6...` 并通过部署脚本本机健康检查，随后恢复当前 release；`dist` 17M、`server` 1.2M | 恢复后公网 `/api/health` 200、releaseId 匹配。生产运行时 Node 22.22.2、npm 10.9.7、MySQL 5.7.44                                                                                                                                                                                            |
 
 ## 发布前仍需完成
 
-- **7.4 登录和邮件**：测试邮件到达已由用户确认；注册验证码到达/过期/重发仍待安全验证。管理员登录与登录态 TTS 实测按用户决定暂记阻塞，后续需先准备临时管理员并避免触发账号锁定。
-- **7.4 管理与故障边界**：用管理员会话验证社区知识生成和读取持久化；在安全可控条件下验证真实模型异常的错误呈现与清理。
-- **7.4 安全复核**：当前生产 MySQL 应用账号拥有全局权限；需要 DBA 确认最小权限并安排变更，避免直接在未验证前修改权限。
-- **RAG 与数据**：真实 embedding 服务端密钥待用户配置后验证；Top 50 金标仍等 5.4 人工核对；当前离线 Top 20 使用 hash 索引。5.4 现行政策提示已上线并通过公网复核，但仍缺通知正文、年度限定与逐题人工核验。
+- **7.4 登录和邮件**：普通用户「注册→真实密码登录」已通过；管理员账号用 `server.env` 默认口令仍返回 `AUTH_INVALID`（仅尝试 1 次即停止），需正确密码或临时管理员后再验。注册验证码「发送/冷却/重发/过期/错误码/注册/登录」已在生产通过并清理测试数据；收件人已确认收到测试邮件（含垃圾箱）。
+- **7.4 管理与故障边界**：已完成。管理员会话在生产 MySQL 完成社区知识「生成→待审读取→审核发布→已发布读取」闭环并回滚测试数据；在生产主机隔离影子实例完成模型异常注入（`LLM_UPSTREAM_ERROR`/`LLM_TIMEOUT`、保留恢复来源、不扣额度、进程存活）。见 [7.4 验收记录](releases/v2-7.4-acceptance-20261124.md)。
+- **7.4 安全复核**：已完成。生产 MySQL 应用账号由 `root@localhost`（全域权限）切换为 `ai_campus_app`，仅授予 `ai_campus_agent.*` 的 `SELECT/INSERT/UPDATE/DELETE/CREATE`；切换前用隔离影子实例验证、切换后复核 `/health`、社区列表与认证路由，`cross-db` 访问返回 1142 拒绝；`server.env` 已备份并保留回滚命令。`root` 账号保留给 DBA/迁移使用。
+- **RAG 与数据**：真实 bge-m3 embedding 已在目标机隔离验证（凭据可用、660 切片 1024 维、纯向量 Top-1 命中 2/20→17/20），但生产仍未配置 `VECTOR_EMBEDDING_*`、线上仍为 hash-256；切换需调 `RAG_WEIGHT_VECTOR_SCORE` 等混合权重、重跑 Top 20 金标并随下批发版。Top 50 金标仍等 5.4 人工核对；5.4 现行政策提示已上线并通过公网复核，但仍缺通知正文、年度限定与逐题人工核验。
 - **7.5 运营与试用**：尚无真实用户试用记录、正式版本/tag、试用时间窗、参与范围和回滚阈值。
 - **容量边界**：游客额度与按 IP 限频状态保存在单 Node 进程内存中；多实例部署或进程重启后不保证计数连续。需要多实例时先接入共享存储并验证。
-- **部署稳定性**：2026-10-27 的发布包约 16.6MB，Deploy #36 attempt 1 因 SSH 上传 20 分钟超时失败并自动保留旧版，attempt 2 成功；建议后续把工作流上传超时从 20 分钟提高（并评估包体裁剪），随下批变更验证。
+- **部署稳定性**：SSH 上传超时已从 20 分钟提高到 40 分钟（`fe950ac`）；2026-10-27 发布包约 16.6MB，建议后续评估包体裁剪并随下批变更验证。
 
 全部 7.4 检查通过并由人工确认前，不要设置 `RELEASE_LIVE_VALIDATION_CONFIRMED=true`，也不要运行正式 release gate 或创建发布 tag。

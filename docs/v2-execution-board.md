@@ -536,6 +536,7 @@
 | 2026-10-27 | 修正 | D-5 导入防重复：通用本地导入默认目录改为 `_ingest/local-text/`，通知 JSON 继续使用专用导入器；`node server/scripts/batch-ingest-local.mjs --dry-run` 为 0 扫描/0 新增，浏览器导入预览扫描 261 份、0 新增/0 更新；提交 `82cfbc2` | AI-2（Codex） |
 
 | 2026-10-28 | 占用 | 领取 5.4 技术收口：逐题核对来源与正文、补齐 Top 50/负例/独立留出集证据；AI-2 负责服务端与评估数据，人工现行性签收仍按证据处理 | AI-2（Codex） |
+| 2026-11-24 | 部分 | 7.4 目标环境验收（生产主机）：管理员会话鉴权与 403 边界；社区知识「生成→待审读取→审核发布→已发布读取」生产 MySQL 闭环 + 幂等 + 测试数据回滚；注册验证码发送/冷却/重发/过期/错误码与「注册→真实密码登录」，收件人已确认收到验证码邮件；登录态生产 TTS（管理员 94,732B / 真实用户 157,856B `audio/wav`，匿名 401）；生产主机隔离影子实例模型异常注入（`LLM_UPSTREAM_ERROR`/`LLM_TIMEOUT`、恢复来源、不扣额度、进程存活）；真实 bge-m3 embedding 隔离对照（纯向量 Top-1 hash 2/20→真实 17/20，生产未切换，决定随下批发版先调权重）；公网流式/取消与 HTTPS/证书复核；**MySQL 应用账号由 root 全域权限切换为受限账号 `ai_campus_app`（仅 `ai_campus_agent.*` DML+CREATE），影子验证后重启 1 次并通过健康/社区/认证复核，env 已备份可回滚**。测试数据与 `/tmp` 全部清理，`shared/data` mtime、releaseId 未变。仍待：管理员真实密码登录（默认口令 401，已停止重试）、真实 embedding 生产切换（权重调优 + 下批发版）、7.5 试用。保持 🟡，未设置 `RELEASE_LIVE_VALIDATION_CONFIRMED`。证据：[`releases/v2-7.4-acceptance-20261124.md`](releases/v2-7.4-acceptance-20261124.md) | 本次执行（Agent） |
 ---
 
 ## 7. 每轮开工前的 30 秒检查
