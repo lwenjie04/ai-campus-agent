@@ -1784,6 +1784,13 @@ onMounted(() => {
 
 .source-rail {
   min-width: 0;
+  /* 来源很多时右栏内部滚动，避免把整页撑高导致白底中断/露出页面灰底。 */
+  min-height: 0;
+  max-height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
   padding: 0.4rem 0 1.5rem;
 }
 
@@ -2048,6 +2055,8 @@ onMounted(() => {
 
   .chat-shell {
     height: 100%;
+    /* 行高必须锁定，否则长对话/多来源会把网格行撑到内容高度：消息区无法滚动、输入框被推出视口。 */
+    grid-template-rows: minmax(0, 1fr);
   }
 }
 </style>

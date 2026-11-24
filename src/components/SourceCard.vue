@@ -70,6 +70,10 @@ const emit = defineEmits<{
   border-radius: var(--radius-md);
   padding: 1rem;
   background: var(--silver);
+  /* 来源标题/摘要可能包含不可断行的长 token（文件名#切片 id），统一兜底避免撑破右栏。 */
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .rail-source__tags {
@@ -97,12 +101,20 @@ const emit = defineEmits<{
   color: var(--text);
   font-size: 0.95rem;
   line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .rail-source__meta {
   margin: 0 0 0.5rem;
   color: var(--muted);
   font-size: 0.78rem;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .rail-source__snippet {
@@ -110,6 +122,12 @@ const emit = defineEmits<{
   color: var(--muted);
   font-size: 0.78rem;
   line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .rail-source__link {
@@ -150,5 +168,7 @@ const emit = defineEmits<{
   color: var(--muted);
   font-size: 0.76rem;
   line-height: 1.6;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 </style>
