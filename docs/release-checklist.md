@@ -54,16 +54,16 @@ CI workflow 的一次真实 push run 已全绿。该结果不代表真实模型�
 
 - [x] 真实 LLM 普通问答和 RAG 均成功；样本 TTFT/总耗时分别为普通问答 6.284/6.287s、RAG 1.254/2.656s（4 条来源）。公网 `/api/chat/stream` 在首段后断开，TTFT 2.646s、客户端 reader cancel 2ms；代码级上游取消与额度竞态由服务端测试覆盖。
 - [x] 2026-11-24 公网复核：游客 Cookie `Secure/HttpOnly/SameSite=Lax`，事件 `start→phase→delta…→done` 共 179 个，首 delta 6722ms、完成 7901ms、来源 5 条，取消 2ms。
-- [ ] 配置并验证真实 Embedding 服务端凭据与语义检索结果；2026-11-24 已在生产主机隔离验证 bge-m3 凭据与索引构建，纯向量 Top-1 命中 2/20（hash）→ 17/20（真实），但生产 `server.env` 仍未配置、线上仍为 hash-256，切换需随下批发版并重跑金标。证据见 [7.4 验收记录](releases/v2-7.4-acceptance-20261124.md) §2.6。
+- [ ] 配置并验证真实 Embedding 服务端凭据与语义检索结果；2026-11-24 已在生产主机隔离验证 bge-m3 凭据与索引构建，纯向量 Top-1 命中 2/20（hash）→ 17/20（真实），并完成混合权重调优（推荐 `RAG_VECTOR_MIN_COSINE=0.60` + `RAG_WEIGHT_VECTOR_SCORE=14` + `RAG_ANSWER_MIN_SCORE=9–12`，Top20 19/20、留出 9/10、草稿 48/50 + 负例 9/10）；但生产 `server.env` 仍未配置、线上仍为 hash-256，切换需随下批发版并重跑金标。证据见 [7.4 验收记录](releases/v2-7.4-acceptance-20261124.md) §2.6、§2.9。
 - [x] 2026-11-24 在真实目标环境（生产主机、线上 release 代码）用隔离影子实例注入模型异常：上游 500 → `LLM_UPSTREAM_ERROR`（1.2s、保留 3 条恢复来源、不扣额度、进程存活、非流式 502）；上游挂起 → `LLM_TIMEOUT`（3.08s）；影子进程与端口已清理，线上未受影响。详见 [7.4 验收记录](releases/v2-7.4-acceptance-20261124.md) §2.5。
 - [x] 目标 MySQL 5.7.44 连接、增量迁移、反馈写入与幂等读回通过；备份已在隔离 schema 恢复验证（6 张基础表、6 条社区知识记录），临时 schema 已删除。
 - [x] 2026-11-24 通过管理员会话在生产 MySQL 完成社区知识生成（200，pending）、重复生成幂等、待审列表读取、审核通过（approved）、已发布列表读取与品牌字段校验；测试知识、审核日志与帖子字段全部回滚，复核 knowledge 6→6、日志 58→58。证据见 [7.4 验收记录](releases/v2-7.4-acceptance-20261124.md) §2.2。
 - [x] SMTP transporter 验证通过；用户确认收到生产邮箱检测邮件。该确认只覆盖测试邮件到达，不代表注册验证码生命周期已通过。
 - [x] 验证注册验证码在可访问测试收件箱中的到达、过期与重发；2026-11-24 已对 `linwenjie2004+qa74@gmail.com` 实际发送 2 封验证码并验证发送 200、60s 内重发 429、61s 后重发 200 且旧码 expired、错误码 400 `AUTH_CODE_INVALID`、过期码 400 `AUTH_CODE_EXPIRED`、正确码注册 201 与真实密码登录 200；测试用户与验证码已清理，收件人已确认收到邮件（含垃圾箱）。
 - [x] HTTPS 游客 Cookie 已核对 `Secure`、`HttpOnly`、`SameSite=Lax`；可信代理列表仅为本机回环地址，Nginx 代理边界与服务端 IP 解析测试已核对。
-- [ ] 完成真实登录会话验证；2026-11-24 普通用户「注册→真实密码登录→token 访问管理接口 403」已通过；生产管理员账号用 `server.env` 的默认口令仍返回 `AUTH_INVALID`（仅尝试 1 次即停止），待提供正确密码或临时管理员后再验。
+- [x] 完成真实登录会话验证；2026-11-24 普通用户「注册→真实密码登录→token 访问管理接口 403」已通过；**同日管理员账号真实登录 200（role=admin）**，并在该会话下复验管理接口、TTS 与社区知识闭环。安全建议：该管理员口令属弱口令，需尽快轮换（记录不写入口令值）。
 - [x] 生产已移除共享 `TTS_AUTH_TOKEN`；真实腾讯云合成曾成功（838ms），匿名 `/api/tts` 返回 401 `AUTH_REQUIRED`，服务端单测覆盖登录和限频。
-- [x] 2026-11-24 登录态生产 TTS 复核：管理员会话 200 `audio/wav` 94,732 bytes、真实用户登录会话 200 `audio/wav` 157,856 bytes，`X-TTS-Provider: tencentcloud-short`；匿名仍 401。线上限频未做生产压测（由单测覆盖）。
+- [x] 2026-11-24 登录态生产 TTS 复核：管理员会话 200 `audio/wav` 94,732 bytes、真实管理员登录会话 200 `audio/wav` 70,788 bytes、真实用户登录会话 200 `audio/wav` 157,856 bytes，`X-TTS-Provider: tencentcloud-short`；匿名仍 401。线上限频未做生产压测（由单测覆盖）。
 - [x] Nginx HTTPS、`/api/` 代理、SSE 无缓冲及健康检查通过；生产首页与问答在 360/390/768/1024/1440 共 10/10，无横向溢出。证据：`server/evals/production-7.4-responsive-full-20261023.json`。
 - [x] 生产 `dist` 17M、`server` 1.2M；记录了问答时延和取消样本。部署脚本已从当前 release 回滚到上一版并通过本机健康检查，随后恢复当前 release，公网 `/api/health` 返回 200 且 releaseId 匹配。
 - [ ] 完成真实用户试用并登记问题与结论；当前没有试用记录，模板见 [`releases/v2-trial-record.md`](releases/v2-trial-record.md)。
