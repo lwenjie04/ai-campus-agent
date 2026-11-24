@@ -143,6 +143,54 @@ export const queryLightRag = async (query, options = {}) => {
 // 方便注入 LLM prompt 和返回给前端展示。
 // ---------------------------------------------------------------------------
 
+const LIGHTRAG_TITLE_MAX_LENGTH = 26
+const LIGHTRAG_SNIPPET_MAX_LENGTH = 96
+// LightRAG 的 file_path 常带切片后缀（如 student-handbook-lightrag.json#student_handbook_97774e87），
+// 直接展示会超出右栏宽度且不可读，这里统一映射为可读标题。
+const LIGHTRAG_FILE_LABELS = new Map([
+  ['student-handbook', '学生手册（LightRAG 切片）'],
+  ['student-handbook-lightrag', '学生手册（LightRAG 切片）'],
+  ['knowledge-base', '校园知识库'],
+  ['chunked-knowledge-base', '校园知识库切片'],
+  ['offline-knowledge-base', '离线知识库切片'],
+])
+
+const stripLightragChunkSuffix = (value) => String(value || '').split('#')[0].trim()
+
+const lightragFileName = (filePath) => {
+  const baseName = stripLightragChunkSuffix(filePath).split(/[\\/]/).pop() || ''
+  return baseName.replace(/\.[^.]+$/, '').trim()
+}
+
+const truncateText = (value, maxLength) => {
+  const text = String(value || '').trim()
+  if (text.length <= maxLength) return text
+  return `${text.slice(0, Math.max(1, maxLength - 1)).trimEnd()}…`
+}
+
+export const buildLightragSourceTitle = (reference, index = 0) => {
+  const fileName = lightragFileName(reference?.file_path)
+  if (fileName) {
+    const label = LIGHTRAG_FILE_LABELS.get(fileName.toLowerCase())
+    if (label) return label
+    const readable = fileName.replace(/[-_]+/g, ' ').trim()
+    if (readable) return truncateText(readable, LIGHTRAG_TITLE_MAX_LENGTH)
+  }
+  return `LightRAG 参考 ${index + 1}`
+}
+
+export const cleanLightragSnippet = (content, maxLength = LIGHTRAG_SNIPPET_MAX_LENGTH) => {
+  const raw = Array.isArray(content) ? content.join(' ') : typeof content === 'string' ? content : ''
+  const normalized = String(raw)
+    // 去掉切片 id（#student_handbook_97774e87 这类不可读 token）、控制字符，并合并空白。
+    .replace(/#[A-Za-z0-9_-]{6,}/g, ' ')
+    .replace(/\p{Cc}+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (!normalized) return ''
+  return truncateText(normalized, maxLength)
+}
+
 /**
  * 将 LightRAG 返回的 response / references 转换成前端 MessageSource 数组。
  * LightRAG 图谱检索的可信度固定为 0.75（介于官方通知和社区经验之间）。
@@ -152,24 +200,20 @@ export const lightragContextToSources = (response, references) => {
 
   if (Array.isArray(references) && references.length > 0) {
     references.slice(0, 5).forEach((ref, index) => {
-      // ref.content 可能是字符串、字符串数组、或 null
-      let snippet = `参考资料 ${ref.reference_id || index + 1}`
-      if (typeof ref.content === 'string' && ref.content) {
-        snippet = ref.content.substring(0, 200)
-      } else if (Array.isArray(ref.content) && ref.content.length > 0) {
-        snippet = String(ref.content[0]).substring(0, 200)
-      }
+      // ref.content 可能是字符串、字符串数组、或 null；只保留可读摘要。
+      const snippet = cleanLightragSnippet(ref.content)
+      const fallbackSnippet = `参考资料 ${ref.reference_id || index + 1}`
 
       sources.push({
-        id: ref.reference_id || ref.file_path || `reference-${index + 1}`,
+        id: ref.reference_id || stripLightragChunkSuffix(ref.file_path) || `reference-${index + 1}`,
         attachments: [],
         type: 'lightrag',
         confidence: 0.75,
-        title: ref.file_path || `LightRAG 参考 ${index + 1}`,
+        title: buildLightragSourceTitle(ref, index),
         url: undefined,
         postId: undefined,
         loginRequiredHint: false,
-        snippet,
+        snippet: snippet || fallbackSnippet,
         note: '以下内容由 LightRAG 知识图谱检索。',
       })
     })
