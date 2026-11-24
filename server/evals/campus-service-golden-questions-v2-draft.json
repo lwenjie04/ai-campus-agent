@@ -60,10 +60,10 @@
     {
       "id": "teaching-leave-approval-duration",
       "category": "teaching",
-      "query": "《学生考勤、请假规定》中，请假十天以上由谁批准？",
+      "query": "根据学生手册收录的2016年《学生考勤、请假规定》，请假十天以上由谁批准？",
       "expectedTitleIncludes": ["广东第二师范学院学生考勤、请假规定"],
       "validationStatus": "pending-human-review",
-      "reviewNote": "手册所载请假规定标注为 2016 年，需人工确认现行审批规则。"
+      "reviewNote": "用户于 2026-10-28 指示按历史规则处理；本题只核对 2016 年手册条文，不作为现行审批依据。"
     },
     {
       "id": "teaching-degree-basic-conditions",
@@ -178,10 +178,10 @@
     {
       "id": "scholarship-overseas-camp-support",
       "category": "scholarship",
-      "query": "参加海外专项训练营项目可以获得什么奖学金支持？",
+      "query": "根据2018年《优秀学生海外研学奖学金管理办法》，海外专项训练营当时可获得哪些奖学金支持？",
       "expectedTitleIncludes": ["广东第二师范学院优秀学生海外研学奖学金管理办法"],
       "validationStatus": "pending-human-review",
-      "reviewNote": "办法标注为 2018 年，需人工确认项目仍执行。"
+      "reviewNote": "用户于 2026-10-28 指示按历史规则处理；本题只核对 2018 年办法，不代表项目当前仍执行。"
     },
     {
       "id": "scholarship-funding-review-flow",

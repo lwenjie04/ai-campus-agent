@@ -67,3 +67,18 @@ test('Top 50 draft has the required category balance and review markers', () => 
   assert.ok(draft.negativeItems.length >= 10)
   assert.ok(draft.negativeItems.every((item) => item.expectedNoHit === true))
 })
+
+test('user-approved old rules remain explicitly historical in golden queries', () => {
+  const draft = JSON.parse(
+    readFileSync(resolve('server/evals/campus-service-golden-questions-v2-draft.json'), 'utf8'),
+  )
+  const leaveRule = draft.items.find((item) => item.id === 'teaching-leave-approval-duration')
+  const overseasScholarship = draft.items.find(
+    (item) => item.id === 'scholarship-overseas-camp-support',
+  )
+
+  assert.match(leaveRule.query, /2016年/)
+  assert.match(leaveRule.reviewNote, /不作为现行审批依据/)
+  assert.match(overseasScholarship.query, /2018年/)
+  assert.match(overseasScholarship.reviewNote, /不代表项目当前仍执行/)
+})
